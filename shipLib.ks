@@ -56,8 +56,7 @@ DECLARE FUNCTION extendAntenna {
 			PRINT "EXTENDING ANTENNA " + antenna:PART:TITLE.
 		}
 	}	
- 
-}
+ }
 
 DECLARE FUNCTION retractAntenna {
 	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
@@ -66,8 +65,7 @@ DECLARE FUNCTION retractAntenna {
 			PRINT "RETRACTING ANTENNA " + antenna:PART:TITLE.
 		}
 	}	
- 
-}
+ }
 
 DECLARE FUNCTION deployFairings {
 	FOR fairing IN SHIP:MODULESNAMED("ModuleProceduralFairing") {
