@@ -1,4 +1,4 @@
-//SHIP UTILITY LIBRARY
+SHIP UTILITY LIBRARY
 
 //++++++++++++++++++++++++++++++++++++
 PRINT "shipLib loaded.".
@@ -24,7 +24,6 @@ DECLARE FUNCTION engageParachutes {
 }
 
 DECLARE FUNCTION engageDeployables {
-
 	PRINT "DEPLOYING".
 	deployFairings().
 	WAIT 1.
