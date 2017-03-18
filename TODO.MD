@@ -1,0 +1,2 @@
+- [ ] ascent: sanitize input for apo/peri
+- [ ] orbLib: make min peri a global data structure
