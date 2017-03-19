@@ -202,7 +202,7 @@ DECLARE FUNCTION minAirlessPeri {
 			SET minPeri TO 23000.
 	} ELSE IF bodyName = "Pol" {
 			SET minPeri TO 6000.
-	} ELSE IF bodyName = "Tyleo" {
+	} ELSE IF bodyName = "Tylo" {
 			SET minPeri TO 13500.
 	} ELSE IF bodyName = "Vall" {
 			SET minPeri TO 9000.
@@ -212,3 +212,6 @@ DECLARE FUNCTION minAirlessPeri {
 	
 	return minPeri.
 }
+
+GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500","Gilly","7500","Dres","6500","Moho","7500","Eeloo","4500","Bop","23000","Pol","6000","Tylo","13500","Vall","9000").
+
