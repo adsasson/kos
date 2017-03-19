@@ -23,8 +23,9 @@ DECLARE FUNCTION ascent {
 	}
 
 	//call ascent routine
+	GLOBAL atmoFlag TO SHIP:BODY:ATM:EXISTS.
 
-	IF SHIP:BODY:ATM:EXISTS {
+	IF atmoFlag {
 	
 		LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
 		
@@ -124,7 +125,11 @@ DECLARE FUNCTION ascentCurve {
 //++++++ASCENT LOOP
 
 	UNTIL cSHIP:APOAPSIS >= targetApo {
-		SET cThrottle TO cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR). //thrust PID LOOP
+		IF atmoFlag {
+			SET cThrottle TO cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR). //thrust PID LOOP
+		} ELSE {
+			SET cThrottle TO 1.
+		}
 		SET cPitch TO 90 - (MIN(90,deltaPitch)). //pitch for ascent curve
 		SET cHeading TO HEADING(targetHeading,cPitch).
 
