@@ -2,7 +2,8 @@
 //atmospheric vs airless
 
 
-//orbit library
+RUNONCEPATH("orbitLib.ks").
+
 RUNONCEPATH("shipLib.ks").
 
 DECLARE FUNCTION ascentInclination {
@@ -22,16 +23,25 @@ DECLARE FUNCTION ascent {
 	}
 
 	//call ascent routine
+	GLOBAL atmoFlag TO SHIP:BODY:ATM:EXISTS.
 
-	IF SHIP:BODY:ATM:EXISTS {
+	IF atmoFlag {
 	
-		ascentCurve(targetHeading, targetApo, SHIP:BODY:ATM:HEIGHT).
+		LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
 		
-		ON (SHIP:ALTITUDE > SHIP:BODY:ATM:HEIGHT) {
+		//check to see if apo clears atmosphere
+		IF targetApo < atmoHeight {
+			PRINT "ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING APOAPSIS TO " + atmoHeight + 1000 + " m".
+			SET targetApo TO atmoHeight + 1000.
+		}
+	
+		ascentCurve(targetHeading, targetApo, atmoHeight).
+		
+		ON (SHIP:ALTITUDE > atmoHeight) {
 			engageDeployables().
 		}
 	
-		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT + 100).
+		WAIT UNTIL (SHIP:ALTITUDE >= atmoHeight + 100).
 		
 		//correct for drag?
 		IF (SHIP:APOAPSIS < targetApo) {
@@ -54,6 +64,11 @@ DECLARE FUNCTION ascent {
 		}
 
 	} ELSE {
+		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
+		IF targetApo < minFeatureHeight {
+			PRINT "ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING APOAPSIS TO " + minFeatureHeight + " m".
+			SET targetApo TO minFeatureHeight.
+		}
 		ascentCurve(targetHeading, targetApo, targetApo).
 		engageDeployables().
 	}
@@ -110,7 +125,11 @@ DECLARE FUNCTION ascentCurve {
 //++++++ASCENT LOOP
 
 	UNTIL cSHIP:APOAPSIS >= targetApo {
-		SET cThrottle TO cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR). //thrust PID LOOP
+		IF atmoFlag {
+			SET cThrottle TO cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR). //thrust PID LOOP
+		} ELSE {
+			SET cThrottle TO 1.
+		}
 		SET cPitch TO 90 - (MIN(90,deltaPitch)). //pitch for ascent curve
 		SET cHeading TO HEADING(targetHeading,cPitch).
 
