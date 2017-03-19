@@ -1,6 +1,8 @@
 //orbital maneuver library
 runoncepath("shipLib.ks").
 
+GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500","Gilly","7500","Dres","6500","Moho","7500","Eeloo","4500","Bop","23000","Pol","6000","Tylo","13500","Vall","9000").
+
 
 DECLARE FUNCTION orbitalInsertion {
 
@@ -11,14 +13,20 @@ DECLARE FUNCTION orbitalInsertion {
 	PARAMETER targetPeri IS 0.
 	
 	//adjust default periapsis for atmospheric height/terrain height
-	IF targetPeri = 0 { 
 		IF SHIP:BODY:ATM:EXISTS {
 			LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
-			SET targetPeri TO atmoHeight + 1000.
+			IF targetPeri < atmoHeight {
+				PRINT "ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING PERIAPSIS TO " + atmoHeight + 1000 + " m".
+				SET targetPeri TO atmoHeight + 1000.
+			}
 		} ELSE {
-			SET targetPeri TO minAirlessPeri(SHIP:BODY).
+			LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
+			IF targetPeri < minFeatureHeight {
+				PRINT "ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING PERIAPSIS TO " + minFeatureHeight + " m".
+				SET targetPeri TO minFeatureHeight.
+			}
 		}
-	}
+	
 		//BURN CALCULATIONS
 		LOCAL targetAlpha TO (SHIP:ORBIT:APOAPSIS + targetPeri)/2 + SHIP:BODY:RADIUS.
 		LOCK OIdeltaV TO deltaV(SHIP:ORBIT:APOAPSIS, SHIP:ORBIT:SEMIMAJORAXIS, targetAlpha).
@@ -213,5 +221,4 @@ DECLARE FUNCTION minAirlessPeri {
 	return minPeri.
 }
 
-GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500","Gilly","7500","Dres","6500","Moho","7500","Eeloo","4500","Bop","23000","Pol","6000","Tylo","13500","Vall","9000").
 
