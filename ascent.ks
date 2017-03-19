@@ -2,7 +2,8 @@
 //atmospheric vs airless
 
 
-//orbit library
+RUNONCEPATH("orbitLib.ks").
+
 RUNONCEPATH("shipLib.ks").
 
 DECLARE FUNCTION ascentInclination {
@@ -62,7 +63,7 @@ DECLARE FUNCTION ascent {
 		}
 
 	} ELSE {
-		LOCAL minFeatureHeight TO surfaceFeature(SHIP:BODY).
+		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
 		IF targetApo < minFeatureHeight {
 			PRINT "ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING APOAPSIS TO " + minFeatureHeight + " m".
 			SET targetApo TO minFeatureHeight.

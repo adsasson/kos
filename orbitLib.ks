@@ -1,6 +1,8 @@
 //orbital maneuver library
 runoncepath("shipLib.ks").
 
+GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500","Gilly","7500","Dres","6500","Moho","7500","Eeloo","4500","Bop","23000","Pol","6000","Tylo","13500","Vall","9000").
+
 
 DECLARE FUNCTION orbitalInsertion {
 
@@ -18,7 +20,7 @@ DECLARE FUNCTION orbitalInsertion {
 				SET targetPeri TO atmoHeight + 1000.
 			}
 		} ELSE {
-			LOCAL minFeatureHeight TO surfaceFeature(SHIP:BODY).
+			LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
 			IF targetPeri < minFeatureHeight {
 				PRINT "ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING PERIAPSIS TO " + minFeatureHeight + " m".
 				SET targetPeri TO minFeatureHeight.
@@ -219,5 +221,4 @@ DECLARE FUNCTION minAirlessPeri {
 	return minPeri.
 }
 
-GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500","Gilly","7500","Dres","6500","Moho","7500","Eeloo","4500","Bop","23000","Pol","6000","Tylo","13500","Vall","9000").
 
