@@ -6,3 +6,19 @@
 //STEP 2: DETERMINE DESIRED POSITION OF TARGET
 //STEP 3: FIND INTERCEPT TRAJECTORY
 //STEP 4: CALCULATE DELTAV
+
+IF HASTARGET {
+  LOCAL currentTarget TO TARGET.
+  LOCAL rTarget TO currentTarget:POSITION.
+  LOCAL vTarget TO currentTarget:VELOCITY.
+
+  LOCAL interceptor TO SHIP.
+  LOCAL rInterceptor TO interceptor:POSITION.
+  LOCAL vInterceptor TO interceptor:VELOCITY.
+
+  
+
+
+} ELSE {
+  PRINT "NO TARGET SELECTED."
+}
