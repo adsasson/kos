@@ -9,12 +9,11 @@ DECLARE FUNCTION notify {
 DECLARE FUNCTION download {
   PARAMETER fileName, volumeID IS 1, volumeName IS "", sourceVolumeID IS 0.
 
-  LOCAL volumeLabel.
+  LOCAL volumeLabel TO volumeID.
   IF volumeName <> "" {
-    SET volumeLabel TO volumeID.
-  } ELSE {
     SET volumeLabel TO volumeName.
-  }
+  } ELSE {
+
   SWITCH TO volumeLabel.
   COPYPATH(sourceVolumeID + ":" + fileName,volumeLabel + ":").
 }
@@ -22,7 +21,7 @@ DECLARE FUNCTION download {
 DECLARE FUNCTION dependsOn {
   PARAMETER fileName.
   SWITCH TO 1.
-  LOCAL fileList.
+  LOCAL fileList TO LIST().
   LOCAL hasFile TO FALSE.
   LIST FILES IN fileList.
   FOR cFile IN fileList {
