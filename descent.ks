@@ -28,13 +28,13 @@ DECLARE FUNCTION descent {
 
 	LOCAL cThrottle TO 0.
 	LOCAL orbitAltitude TO ALT:RADAR.
-	LOCAL cAlt.
+	LOCAL cAlt TO ALT:RADAR.
 	LOCK cAlt TO ALT:RADAR.
 
 	SAS OFF.
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 
-	LOCAL cHeading.
+	LOCAL cHeading TO SHIP:SRFRETROGRADE.
 
 	LOCK cHeading TO SHIP:SRFRETROGRADE.
 
@@ -47,7 +47,7 @@ DECLARE FUNCTION descent {
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
 
-	LOCAL cTWR.
+	LOCAL cTWR maxTWR * cThrottle.
 	LOCK cTWR TO maxTWR * cThrottle.
 
 	//TWR PID LOOP SETTINGS
@@ -90,8 +90,8 @@ DECLARE FUNCTION poweredLanding {
 
 	LOCAL horizontalVelocity.
 	LOCK horizontalVelocity TO SHIP:VELOCITY:SURFACE.
-	LOCAL starComponent.
-	LOCAL topComponent.
+	LOCAL starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR:NORMALIZED * horizontalVelocity).
+	LOCAL topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR:NORMALIZED * horizontalVelocity).
 
 	LOCK starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR:NORMALIZED * horizontalVelocity).
 	LOCK topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR:NORMALIZED * horizontalVelocity).
