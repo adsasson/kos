@@ -20,10 +20,12 @@ DECLARE FUNCTION descent {
 	LOCAL cMass TO cShip:MASS.
 	LOCK cMass TO cShip:MASS.
 
-	LOCAL cG to cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-	LOCAL maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cG)).
-	LOCK cG to cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-	LOCK maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cG)).
+	LOCAL cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
+	SET cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
+
+	LOCAL maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGrav)).
+	LOCK cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
+	LOCK maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGrav)).
 
 
 	LOCAL cThrottle TO 0.
@@ -41,8 +43,8 @@ DECLARE FUNCTION descent {
 	LOCK STEERING TO cHeading.
 	LOCK THROTTLE TO cThrottle.
 
-	WAIT UNTIL 	ABS(cHeading:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND
-	 						ABS(cHeading:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
+	WAIT UNTIL 	ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND
+	 						ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
 
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
@@ -53,7 +55,7 @@ DECLARE FUNCTION descent {
 	//TWR PID LOOP SETTINGS
 	LOCAL Kp TO 5.
 	LOCAL Ki TO 0.
-	LOCAL Kd TO 00.
+	LOCAL Kd TO 2.
 	LOCAL twrPID TO PIDLOOP(Kp,Ki,Kd).
 	SET twrPID:SETPOINT TO 1.5.
 
@@ -63,6 +65,11 @@ DECLARE FUNCTION descent {
 	UNTIL cAlt <= transitionHeight {
 
 		stageLogic().
+		IF ABS(VERTICALSPEED) < 5 {
+			SET cHeading TO SRFRETROGRADE:PITCH.
+		} ELSE {
+			SET cHeading TO SRFRETROGRADE.
+		}
 
 		SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
 
