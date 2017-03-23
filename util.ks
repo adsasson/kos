@@ -12,8 +12,7 @@ DECLARE FUNCTION download {
   LOCAL volumeLabel TO volumeID.
   IF volumeName {
     SET volumeLabel TO volumeName.
-  } ELSE {
-
+  } 
   SWITCH TO volumeLabel.
   COPYPATH(sourceVolumeID + ":" + fileName,volumeLabel + ":").
 }
