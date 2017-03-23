@@ -1,6 +1,6 @@
 //ASCENT
 //atmospheric vs airless
-
+@LAZYGLOBAL OFF.
 
 RUNONCEPATH("orbitLib.ks").
 
