@@ -70,8 +70,9 @@ DECLARE FUNCTION descent {
 		} ELSE {
 			SET cHeading TO SRFRETROGRADE.
 		}
-
-		SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
+		//debug
+		SET cThrottle TO 0.33.
+		//SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
 
 		WAIT 0.
 	}
