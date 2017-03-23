@@ -1,5 +1,5 @@
-SHIP UTILITY LIBRARY
-
+//SHIP UTILITY LIBRARY
+@LAZYGLOBAL OFF.
 //++++++++++++++++++++++++++++++++++++
 PRINT "shipLib loaded.".
 
@@ -55,7 +55,7 @@ DECLARE FUNCTION extendAntenna {
 			antenna:DOEVENT("extend antenna").
 			PRINT "EXTENDING ANTENNA " + antenna:PART:TITLE.
 		}
-	}	
+	}
  }
 
 DECLARE FUNCTION retractAntenna {
@@ -64,7 +64,7 @@ DECLARE FUNCTION retractAntenna {
 			antenna:DOEVENT("retract antenna").
 			PRINT "RETRACTING ANTENNA " + antenna:PART:TITLE.
 		}
-	}	
+	}
  }
 
 DECLARE FUNCTION deployFairings {
@@ -73,5 +73,5 @@ DECLARE FUNCTION deployFairings {
 			fairing:DOEVENT("deploy").
 			PRINT "DEPLOYING FAIRING " + fairing:PART:TITLE.
 		}
-	}	
+	}
 }
