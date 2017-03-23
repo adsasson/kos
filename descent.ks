@@ -47,7 +47,7 @@ DECLARE FUNCTION descent {
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
 
-	LOCAL cTWR maxTWR * cThrottle.
+	LOCAL cTWR TO maxTWR * cThrottle.
 	LOCK cTWR TO maxTWR * cThrottle.
 
 	//TWR PID LOOP SETTINGS
@@ -88,7 +88,7 @@ DECLARE FUNCTION poweredLanding {
 	LOCAL descentRatePID TO PIDLOOP(Kp,Ki,Kd).
 	SET descentRatePID:SETPOINT TO currentDescentRate.
 
-	LOCAL horizontalVelocity.
+	LOCAL horizontalVelocity TO SHIP:VELOCITY:SURFACE.
 	LOCK horizontalVelocity TO SHIP:VELOCITY:SURFACE.
 	LOCAL starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR:NORMALIZED * horizontalVelocity).
 	LOCAL topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR:NORMALIZED * horizontalVelocity).
