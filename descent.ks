@@ -4,10 +4,10 @@
 //heading as a function of target
 //Target TWR of 0.5
 
-//runoncepath("orbitLib.ks").
-//runoncepath("shipLib.ks").
-dependsOn("orbitLib.ks").
-dependsOn("shipLib.ks").
+runoncepath("orbitLib.ks").
+runoncepath("shipLib.ks").
+//dependsOn("orbitLib.ks").
+//dependsOn("shipLib.ks").
 
 DECLARE FUNCTION descent {
 	DECLARE PARAMETER transitionHeight IS 750.
