@@ -4,11 +4,14 @@
 //heading as a function of target
 //Target TWR of 0.5
 
-runoncepath("orbitLib.ks").
-runoncepath("shipLib.ks").
+//runoncepath("orbitLib.ks").
+//runoncepath("shipLib.ks").
+dependsOn("orbitLib.ks").
+dependsOn("shipLib.ks").
 
 DECLARE FUNCTION descent {
-	DECLARE PARAMETER transitionHeight IS 750. //height at which transition from descent to hover/land
+	DECLARE PARAMETER transitionHeight IS 750.
+	//height at which transition from descent to hover/land
 
 	//declarations
 	LOCAL cShip TO SHIP.
@@ -38,11 +41,11 @@ DECLARE FUNCTION descent {
 	LOCK STEERING TO cHeading.
 	LOCK THROTTLE TO cThrottle.
 
-	WAIT UNTIL ABS(cHeading:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(cHeading:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
+	WAIT UNTIL 	ABS(cHeading:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND
+	 						ABS(cHeading:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
 
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
-
 
 	LOCAL cTWR.
 	LOCK cTWR TO maxTWR * cThrottle.
@@ -61,11 +64,10 @@ DECLARE FUNCTION descent {
 
 		stageLogic().
 
-		SET cThrottle TO MIN(1, MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
+		SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
 
 		WAIT 0.
 	}
-
 }
 
 DECLARE FUNCTION poweredLanding {
@@ -100,7 +102,8 @@ DECLARE FUNCTION poweredLanding {
 
 		SET descentRatePID:SETPOINT TO descentRate.
 
-		SET cThrottle TO MIN(1, MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS, SHIP:VERTICALSPEED))).
+		SET cThrottle TO MIN(1,MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS,
+			 													SHIP:VERTICALSPEED))).
 
 		//try to zero out horizontal velocity
 		IF (horizontalVelocity:MAG >= 0.1) {
