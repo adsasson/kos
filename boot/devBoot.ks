@@ -1,5 +1,6 @@
 //boot
 //LOAD scripts.
+COPYPATH("0:util.ks","1:").
 
 //launch
 COPYPATH("0:launch.ks","1:").
