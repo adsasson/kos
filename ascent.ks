@@ -41,7 +41,8 @@ DECLARE FUNCTION ascent {
 			engageDeployables().
 		}
 
-		WAIT UNTIL (SHIP:ALTITUDE >= atmoHeight + 100).
+
+		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT + 100).
 
 		//correct for drag?
 		IF (SHIP:APOAPSIS < targetApo) {
@@ -54,6 +55,7 @@ DECLARE FUNCTION ascent {
 
 			LOCAL cThrottle TO 0.1.
 			LOCK THROTTLE TO cTHROTTLE.
+
 
 			WAIT UNTIL (SHIP:APOAPSIS >= targetApo).
 
