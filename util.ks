@@ -7,10 +7,10 @@ DECLARE FUNCTION notify {
 }
 
 DECLARE FUNCTION download {
-  PARAMETER fileName, volumeID IS 1, volumeName IS "", sourceVolumeID IS 0.
+  PARAMETER fileName, volumeID IS 1, volumeName IS FALSE, sourceVolumeID IS 0.
 
   LOCAL volumeLabel TO volumeID.
-  IF volumeName <> "" {
+  IF volumeName {
     SET volumeLabel TO volumeName.
   } ELSE {
 
