@@ -12,7 +12,7 @@ DECLARE FUNCTION download {
   LOCAL volumeLabel TO volumeID.
   IF volumeName {
     SET volumeLabel TO volumeName.
-  } 
+  }
   SWITCH TO volumeLabel.
   COPYPATH(sourceVolumeID + ":" + fileName,volumeLabel + ":").
 }
@@ -32,7 +32,7 @@ DECLARE FUNCTION dependsOn {
     RUNONCEPATH(fileName).
   } ELSE {
     download(fileName).
-    PRINT "Downlaoding dependency.".
+    PRINT "Downloading dependency.".
     RUNONCEPATH(fileName).
   }
 }
