@@ -20,5 +20,6 @@ COPYPATH("0:land.ks","1:").
 
 
 RUNONCEPATH("1:orbitLib.ks").
+RUNONCEPATH("1:util.ks").
 RUNONCEPATH("1:shipLib.ks").
 RUNONCEPATH("1:orbMechLib.ks").
