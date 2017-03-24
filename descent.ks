@@ -54,24 +54,20 @@ DECLARE FUNCTION descent {
 
 	//TWR PID LOOP SETTINGS
 	LOCAL Kp TO 5.
-	LOCAL Ki TO 0.
+	LOCAL Ki TO 0.5.
 	LOCAL Kd TO 2.
 	LOCAL twrPID TO PIDLOOP(Kp,Ki,Kd).
-	SET twrPID:SETPOINT TO 1.5.
+	//SET twrPID:SETPOINT TO 1.
 
 	deployLandingGear().
 
 	//landing loop
-	UNTIL cAlt <= transitionHeight {
 
+	UNTIL cAlt <= transitionHeight {
+		SET twrPID:SETPOINT TO MIN(-4,(-ALT:RADAR/100)).
 		stageLogic().
-		IF ABS(VERTICALSPEED) < 5 {
-			SET cHeading TO SRFRETROGRADE:PITCH.
-		} ELSE {
-			SET cHeading TO SRFRETROGRADE.
-		}
 		//debug
-		SET cThrottle TO 0.33.
+		SET cThrottle TO 0.15.
 		//SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
 
 		WAIT 0.
@@ -94,7 +90,7 @@ DECLARE FUNCTION poweredLanding {
 	LOCAL descentRate TO ALT:RADAR/10.
 	LOCK descentRate TO MIN(-4,(-ALT:RADAR/10)).
 	LOCAL descentRatePID TO PIDLOOP(Kp,Ki,Kd).
-	SET descentRatePID:SETPOINT TO currentDescentRate.
+	SET descentRatePID:SETPOINT TO descentRate.
 
 	LOCAL horizontalVelocity TO SHIP:VELOCITY:SURFACE.
 	LOCK horizontalVelocity TO SHIP:VELOCITY:SURFACE.
@@ -106,7 +102,7 @@ DECLARE FUNCTION poweredLanding {
 
 	//SET currentHeading TO UP.
 	RCS ON.
-	UNTIL currentShip:STATUS = "LANDED" {
+	UNTIL SHIP:STATUS = "LANDED" {
 
 		SET descentRatePID:SETPOINT TO descentRate.
 
