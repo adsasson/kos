@@ -14,8 +14,7 @@ copypath("0:executenode.ks","1:").
 
 COPYPATH("0:ascent.ks","1:").
 
-COPYPATH("0:test.ks","1:").
-
+RUNONCEPATH("1:util.ks").
 RUNONCEPATH("1:testOrbitLib.ks").
 RUNONCEPATH("1:shipLib.ks").
 RUNONCEPATH("1:orbMechLib.ks").
