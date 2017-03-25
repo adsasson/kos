@@ -190,13 +190,31 @@ DECLARE FUNCTION burnTime {
 }
 
 DECLARE FUNCTION killRelativeVelocity {
-	PARAMETER r1, r2, alpha1, alpha2, mu1 IS SHIP:BODY:MU, mu2 IS SHIP:BODY:MU.
+	PARAMETER r1, r2.
 	IF HASTARGET {
-		LOCAL v1 TO visViva(r1,alpha1,mu1).
-		LOCAL v2 TO visViva(r2,alpha2,mu2).
+		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
+		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
+		LOCAL mu1 TO SHIP:BODY:MU.
+		LOCAL mu2 TO TARGET:BODY:MU.
+
+		LOCAL v1 TO visViva(r1,alpha1,mu1). //interceptor position
+		LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
 	} ELSE {
 		notify("No Target Selected.").
 	}
+	LOCAL deltaV TO ABS(v2-v1).
+	LOCAL deltaR TO ABS(r2-r1).
 
-	
+	LOCAL burn TO burnTime(deltaV).
+	//v = v0 + a*t
+	//t = (v-v0)/a
+	//s = (v - v0)/2*t
+	//s = (v-v0)^2/2a
+	LOCAL burnDistance TO (deltaV)^2/2*SHIP:MAXTHRUST + 50. //suicide burn + 50m
+
+	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
+	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
+
+
+
 }
