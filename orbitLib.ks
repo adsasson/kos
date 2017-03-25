@@ -193,7 +193,10 @@ DECLARE FUNCTION killRelativeVelocity {
 	PARAMETER r1, r2, alpha1, alpha2, mu1 IS SHIP:BODY:MU, mu2 IS SHIP:BODY:MU.
 	IF HASTARGET {
 		LOCAL v1 TO visViva(r1,alpha1,mu1).
+		LOCAL v2 TO visViva(r2,alpha2,mu2).
 	} ELSE {
 		notify("No Target Selected.").
 	}
+
+	
 }
