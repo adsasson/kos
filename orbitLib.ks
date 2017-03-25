@@ -1,4 +1,5 @@
 //orbital maneuver library
+@LAZYGLOBAL OFF.
 runoncepath("shipLib.ks").
 runoncepath("util.ks").
 
@@ -208,12 +209,12 @@ DECLARE FUNCTION killRelativeVelocity {
 	LOCAL dV TO ABS(TARGET:VELOCITY:ORBIT:MAG - SHIP:VELOCITY:ORBIT:MAG).
 	LOCAL deltaR TO ABS(posTarget:MAG - posIntercept:MAG).
 
-	LOCAL burn TO burnTime(dV).
+	LOCAL cBurn TO burnTime(dV).
 	//v = v0 + a*t
 	//t = (v-v0)/a
 	//s = (v - v0)/2*t
 	//s = (v-v0)^2/2a
-	LOCAL burnDistance TO dV/2*burn + buffer. //avg velocity * burn time + 50 m (default).
+	LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
 
 	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
 	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
