@@ -1,6 +1,6 @@
 //orbital maneuver library
 runoncepath("shipLib.ks").
-
+runoncepath("util.ks").
 
 GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
 																	7500,"Dres",6500,"Moho",7500,"Eeloo",4500,
@@ -187,4 +187,13 @@ DECLARE FUNCTION burnTime {
 
 	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s".
 	RETURN burn.
+}
+
+DECLARE FUNCTION killRelativeVelocity {
+	PARAMETER r1, r2, alpha1, alpha2, mu1 IS SHIP:BODY:MU, mu2 IS SHIP:BODY:MU.
+	IF HASTARGET {
+		LOCAL v1 TO visViva(r1,alpha1,mu1).
+	} ELSE {
+		notify("No Target Selected.").
+	}
 }
