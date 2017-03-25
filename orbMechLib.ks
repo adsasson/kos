@@ -231,11 +231,8 @@ DECLARE FUNCTION TrueAnForR {
 DECLARE FUNCTION etaToR {
 	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, currentBody IS SHIP:BODY.
 
-<<<<<<< HEAD
-	SET currentR TO SHIP:ALTITUDE + currentBody:RADIUS.
-=======
 	LOCAL currentR TO SHIP:ALTITUDE + currentBody:RADIUS.
->>>>>>> master
+
 	//SET currentEccAn TO eccAnForR(currentR,ecc,alpha).
 	//SET currentMeanAn TO EccAnToMeanAn(currentEccAn,ecc).
 
