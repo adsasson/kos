@@ -1,10 +1,10 @@
 //orbital maneuver library
 runoncepath("shipLib.ks").
 
-GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500",
-																"Gilly","7500","Dres","6500","Moho","7500",
-																"Eeloo","4500","Bop","23000","Pol","6000",
-																"Tylo","13500","Vall","9000").
+
+GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
+																	7500,"Dres",6500,"Moho",7500,"Eeloo",4500,
+																	"Bop",23000,"Pol",6000,"Tylo",13500,"Vall",9000).
 
 
 DECLARE FUNCTION orbitalInsertion {
@@ -187,39 +187,4 @@ DECLARE FUNCTION burnTime {
 
 	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s".
 	RETURN burn.
-}
-//=================================================
-DECLARE FUNCTION minAirlessPeri {
-	DECLARE PARAMETER airlessBody.
-
-	LOCAL bodyName TO airlessBody:Name.
-	LOCAL minPeri TO 0.
-
-	IF bodyName = "Mun" {
-			SET minPeri TO 4000.
-	} ELSE IF bodyName = "Minimus" {
-			SET minPeri TO 6250.
-	} ELSE IF bodyName = "Ike" {
-			SET minPeri TO 13500.
-	} ELSE IF bodyName = "Gilly" {
-				SET minPeri TO 7500.
-	} ELSE IF bodyName = "Dres" {
-			SET minPeri TO 6500.
-	} ELSE IF bodyName = "Moho" {
-			SET minPeri TO 7500.
-	} ELSE IF bodyName = "Eeloo" {
-			SET minPeri TO 4500.
-	} ELSE IF bodyName = "Bop" {
-			SET minPeri TO 23000.
-	} ELSE IF bodyName = "Pol" {
-			SET minPeri TO 6000.
-	} ELSE IF bodyName = "Tylo" {
-			SET minPeri TO 13500.
-	} ELSE IF bodyName = "Vall" {
-			SET minPeri TO 9000.
-	} ELSE {
-		PRINT "Fell through airless body height. Something is wrong".
-	}
-
-	return minPeri.
 }

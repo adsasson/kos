@@ -1,4 +1,4 @@
-@LAZYGLOBAL OFF
+@LAZYGLOBAL OFF.
 
 
 DECLARE FUNCTION notify {
@@ -7,12 +7,10 @@ DECLARE FUNCTION notify {
 }
 
 DECLARE FUNCTION download {
-  PARAMETER fileName, volumeID IS 1, volumeName IS "", sourceVolumeID IS 0.
+  PARAMETER fileName, volumeID IS 1, volumeName IS FALSE, sourceVolumeID IS 0.
 
-  LOCAL volumeLabel.
-  IF volumeName <> "" {
-    SET volumeLabel TO volumeID.
-  } ELSE {
+  LOCAL volumeLabel TO volumeID.
+  IF volumeName {
     SET volumeLabel TO volumeName.
   }
   SWITCH TO volumeLabel.
@@ -22,7 +20,7 @@ DECLARE FUNCTION download {
 DECLARE FUNCTION dependsOn {
   PARAMETER fileName.
   SWITCH TO 1.
-  LOCAL fileList.
+  LOCAL fileList TO LIST().
   LOCAL hasFile TO FALSE.
   LIST FILES IN fileList.
   FOR cFile IN fileList {
@@ -34,7 +32,7 @@ DECLARE FUNCTION dependsOn {
     RUNONCEPATH(fileName).
   } ELSE {
     download(fileName).
-    PRINT "Downlaoding dependency.".
+    PRINT "Downloading dependency.".
     RUNONCEPATH(fileName).
   }
 }
