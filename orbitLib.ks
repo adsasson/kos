@@ -190,7 +190,7 @@ DECLARE FUNCTION burnTime {
 }
 
 DECLARE FUNCTION killRelativeVelocity {
-	PARAMETER r1, r2.
+	PARAMETER r1, r2, buffer IS 50.
 	IF HASTARGET {
 		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
 		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
@@ -210,11 +210,25 @@ DECLARE FUNCTION killRelativeVelocity {
 	//t = (v-v0)/a
 	//s = (v - v0)/2*t
 	//s = (v-v0)^2/2a
-	LOCAL burnDistance TO (deltaV)^2/2*SHIP:MAXTHRUST + 50. //suicide burn + 50m
+	LOCAL burnDistance TO deltaV/2*burn + buffer. //avg velocity * burn time + 50 m (default).
 
 	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
 	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
 
+	IF TARGET:DISTANCE*SHIP:VELOCITY:ORBIT < 300 { //more than 5 minutes from TARGET
+		//if intervept requires a 5 minute or more burn, something is wrong
+		WAIT UNTIL TARGET:DISTANCE <= (burnDistance * 1.1). //wait until close
+		LOCK STEERING TO burnVector:DIRECTION.
+		LOCAL cThrottle TO 0.
+		LOCK THROTTLE TO cThrottle.
+
+		UNTIL TARGET:DISTANCE <= buffer {
+			SET cThrottle TO 1.
+			WAIT 0.
+		}
+	} ELSE {
+		notify("Too far from target: " + TARGET:NAME).
+	}
 
 
 }
