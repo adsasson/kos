@@ -1,3 +1,3 @@
 runoncepath("orbitLib.ks").
 
-killRelativeVelocity().
+killRelativeVelocity(SHIP:POSITION, TARGET:POSITION).
