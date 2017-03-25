@@ -156,6 +156,7 @@ DECLARE FUNCTION deltaVgeneral {
 DECLARE FUNCTION burnTime {
 	DECLARE PARAMETER currentDeltaV, currentShip IS SHIP.
 
+	LOCAL currentEngines TO LIST().
 	LIST ENGINES IN currentEngines.
 
 	LOCAL totalFuelMass TO SHIP:MASS - SHIP:DRYMASS.
@@ -218,8 +219,14 @@ DECLARE FUNCTION killRelativeVelocity {
 
 	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
 	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
+	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
+	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
 
-	IF (ABS(TARGET:DISTANCE*SHIP:VELOCITY:ORBIT:MAG) < 300) { //more than 5 minutes from TARGET
+//debug
+	PRINT "distance: " + TARGET:DISTANCE.
+	PRINT "velRel: " + velRel.
+	PRINT "param: " + ABS(TARGET:DISTANCE*velRel).
+	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
 		WAIT UNTIL TARGET:DISTANCE <= (burnDistance * 1.1). //wait until close
 		LOCK STEERING TO burnVector:DIRECTION.
