@@ -207,8 +207,8 @@ DECLARE FUNCTION killRelativeVelocity {
 		notify("No Target Selected.").
 	}
 	//LOCAL deltaV TO ABS(velTarget - velIntercept).
-	LOCAL dV TO ABS(TARGET:VELOCITY:ORBIT:MAG - SHIP:VELOCITY:ORBIT:MAG).
-	LOCAL deltaR TO ABS(posTarget:MAG - posIntercept:MAG).
+	LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
+	LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
 	LOCAL cBurn TO burnTime(dV).
 	//v = v0 + a*t
@@ -225,16 +225,18 @@ DECLARE FUNCTION killRelativeVelocity {
 //debug
 	PRINT "distance: " + TARGET:DISTANCE.
 	PRINT "velRel: " + velRel.
-	PRINT "param: " + ABS(TARGET:DISTANCE*velRel).
+	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel).
+	PRINT "burn distance: " + burnDistance.
+
 	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
 		WAIT UNTIL TARGET:DISTANCE <= (burnDistance * 1.1). //wait until close
 		LOCK STEERING TO burnVector:DIRECTION.
-		LOCAL cThrottle TO 0.
-		LOCK THROTTLE TO cThrottle.
+		LOCAL cThrott TO 0.
+		LOCK THROTTLE TO cThrott.
 
 		UNTIL TARGET:DISTANCE <= buffer {
-			SET cThrottle TO 1.
+			SET cThrott TO 1.
 			WAIT 0.
 		}
 	} ELSE {
