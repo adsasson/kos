@@ -190,32 +190,35 @@ DECLARE FUNCTION burnTime {
 }
 
 DECLARE FUNCTION killRelativeVelocity {
-	PARAMETER r1, r2, buffer IS 50.
+	PARAMETER posIntercept, posTarget, buffer IS 50.
 	IF HASTARGET {
 		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
 		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
 		LOCAL mu1 TO SHIP:BODY:MU.
 		LOCAL mu2 TO TARGET:BODY:MU.
 
-		LOCAL v1 TO visViva(r1,alpha1,mu1). //interceptor position
-		LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
+		//LOCAL v1 TO visViva(r1,alpha1,mu1). //interceptor position
+		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
+		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
+		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
 	} ELSE {
 		notify("No Target Selected.").
 	}
-	LOCAL deltaV TO ABS(v2-v1).
-	LOCAL deltaR TO ABS(r2-r1).
+	//LOCAL deltaV TO ABS(velTarget - velIntercept).
+	LOCAL dV TO ABS(TARGET:VELOCITY:ORBIT:MAG - SHIP:VELOCITY:ORBIT:MAG).
+	LOCAL deltaR TO ABS(posTarget:MAG - posIntercept:MAG).
 
-	LOCAL burn TO burnTime(deltaV).
+	LOCAL burn TO burnTime(dV).
 	//v = v0 + a*t
 	//t = (v-v0)/a
 	//s = (v - v0)/2*t
 	//s = (v-v0)^2/2a
-	LOCAL burnDistance TO deltaV/2*burn + buffer. //avg velocity * burn time + 50 m (default).
+	LOCAL burnDistance TO dV/2*burn + buffer. //avg velocity * burn time + 50 m (default).
 
 	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
 	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
 
-	IF TARGET:DISTANCE*SHIP:VELOCITY:ORBIT < 300 { //more than 5 minutes from TARGET
+	IF (ABS(TARGET:DISTANCE*SHIP:VELOCITY:ORBIT:MAG) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
 		WAIT UNTIL TARGET:DISTANCE <= (burnDistance * 1.1). //wait until close
 		LOCK STEERING TO burnVector:DIRECTION.
