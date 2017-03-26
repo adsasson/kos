@@ -1,9 +1,16 @@
 //orbital maneuver library
 runoncepath("shipLib.ks").
 
+<<<<<<< HEAD
+GLOBAL surfaceFeature TO LEXICON("Mun","4000","Minimus","6250","Ike","13500",
+																"Gilly","7500","Dres","6500","Moho","7500",
+																"Eeloo","4500","Bop","23000","Pol","6000",
+																"Tylo","13500","Vall","9000").
+=======
 GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
 																	7500,"Dres",6500,"Moho",7500,"Eeloo",4500,
 																	"Bop",23000,"Pol",6000,"Tylo",13500,"Vall",9000).
+>>>>>>> master
 
 
 DECLARE FUNCTION orbitalInsertion {
@@ -187,6 +194,7 @@ DECLARE FUNCTION burnTime {
 	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s".
 	RETURN burn.
 }
+<<<<<<< HEAD
 //=================================================
 DECLARE FUNCTION minAirlessPeri {
 	DECLARE PARAMETER airlessBody.
@@ -222,3 +230,5 @@ DECLARE FUNCTION minAirlessPeri {
 
 	return minPeri.
 }
+=======
+>>>>>>> master

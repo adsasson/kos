@@ -11,7 +11,7 @@ COPYPATH("0:executeNode.ks","1:").
 COPYPATH("0:shipLib.ks","1:").
 COPYPATH("0:orbMechLib.ks","1:").
 
-
+RUNONCEPATH("1:util.ks").
 RUNONCEPATH("1:orbitLib.ks").
 RUNONCEPATH("1:shipLib.ks").
 RUNONCEPATH("1:orbMechLib.ks").

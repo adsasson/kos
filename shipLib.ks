@@ -1,6 +1,7 @@
 //SHIP UTILITY LIBRARY
+
 @LAZYGLOBAL OFF.
-//++++++++++++++++++++++++++++++++++++
+
 PRINT "shipLib loaded.".
 
 DECLARE FUNCTION stageLogic {

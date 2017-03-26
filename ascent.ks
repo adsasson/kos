@@ -23,41 +23,42 @@ DECLARE FUNCTION ascent {
 	}
 
 	//call ascent routine
+	GLOBAL atmoFlag TO SHIP:BODY:ATM:EXISTS.
 
-	IF SHIP:BODY:ATM:EXISTS {
-	
+	IF atmoFlag {
+
 		LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
-		
+
 		//check to see if apo clears atmosphere
 		IF targetApo < atmoHeight {
 			PRINT "ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING APOAPSIS TO " + atmoHeight + 1000 + " m".
 			SET targetApo TO atmoHeight + 1000.
 		}
-	
+
 		ascentCurve(targetHeading, targetApo, atmoHeight).
-		
+
 		ON (SHIP:ALTITUDE > atmoHeight) {
 			engageDeployables().
 		}
-	
-		WAIT UNTIL (SHIP:ALTITUDE >= atmoHeight + 100).
-		
+
+		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT + 100).
+
 		//correct for drag?
 		IF (SHIP:APOAPSIS < targetApo) {
 			PRINT "Correcting apoapsis for atmospheric drag.".
-			
+
 			LOCAL cHeading TO HEADING(targetHeading,0).
 			LOCK STEERING TO cHeading.
-			
+
 			WAIT UNTIL ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
-			
+
 			LOCAL cThrottle TO 0.1.
 			LOCK THROTTLE to cTHROTTLE.
-			
+
 			WAIT UNTIL (SHIP:APOAPSIS >= targetApo).
-			
+
 			SET cThrottle TO 0.
-			
+
 			UNLOCK THROTTLE.
 			UNLOCK STEERING.
 		}
@@ -86,7 +87,7 @@ DECLARE FUNCTION ascentCurve {
 //++++++DECLARATIONS
 	LOCAL cShip TO SHIP. 		//current Ship
 	LOCAL cBody TO cShip:BODY. 	//current Body
-		
+
 	LOCAL cPitch TO 0.		//current Pitch
 	LOCAL cHeading TO HEADING(targetHeading,cPitch). //currentHeading.
 
@@ -109,8 +110,8 @@ DECLARE FUNCTION ascentCurve {
 
 	//ascent curves
 	//LOCK deltaPitch TO 90 * (1.5 * Ka). //known good curve
-	LOCK deltaPitch TO 90 * SQRT(Ka). //more efficient curve 
-	
+	LOCK deltaPitch TO 90 * SQRT(Ka). //more efficient curve
+
 
 	//TWR PID LOOP SETTINGS
 	LOCAL Kp TO 0.1.
@@ -124,7 +125,11 @@ DECLARE FUNCTION ascentCurve {
 //++++++ASCENT LOOP
 
 	UNTIL cSHIP:APOAPSIS >= targetApo {
-		SET cThrottle TO cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR). //thrust PID LOOP
+		IF atmoFlag {
+			SET cThrottle TO MIN(1, MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))). //thrust PID LOOP
+		} ELSE {
+			SET cThrottle TO 1.
+		}
 		SET cPitch TO 90 - (MIN(90,deltaPitch)). //pitch for ascent curve
 		SET cHeading TO HEADING(targetHeading,cPitch).
 
@@ -134,7 +139,7 @@ DECLARE FUNCTION ascentCurve {
 	}
 
 	PRINT "TARGET APOAPSIS REACHED".
-	
+
 	//DEINITIALIZE
 	SET cThrottle TO 0.
 	UNLOCK THROTTLE.
