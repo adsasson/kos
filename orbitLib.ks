@@ -219,8 +219,10 @@ DECLARE FUNCTION killRelativeVelocity {
 			LOCAL cThrott TO 0.
 			LOCK THROTTLE TO cThrott.
 			//WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
-			WAIT UNTIL pointTo(burnVector).
-
+			//debug
+			PRINT "POINTNG".
+			WAIT UNTIL pointTo(burnVector:DIRECTION, FALSE, 0.3).
+			PRINT "POINTED".
 			//LOCAL deltaV TO ABS(velTarget - velIntercept).
 			LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
 			LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
@@ -230,8 +232,12 @@ DECLARE FUNCTION killRelativeVelocity {
 
 			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
 
-			UNTIL velRel <= bufferVel {
+			UNTIL velRel <= bufferVel*10 {
 				SET cThrott TO 1.
+				WAIT 0.
+			}
+			UNTIL velRel <= bufferVel {
+				SET cThrott TO 0.1.
 				WAIT 0.
 			}
 

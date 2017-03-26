@@ -78,7 +78,7 @@ DECLARE FUNCTION deployFairings {
 }
 
 DECLARE FUNCTION pointTo {
-	PARAMETER goal, tol IS 0.15, useRCS IS FALSE.
+	PARAMETER goal, useRCS IS FALSE, tol IS 0.15.
 
 	IF useRCS {
 		RCS ON.
@@ -88,6 +88,7 @@ DECLARE FUNCTION pointTo {
 		SET goal TO goal:DIRECTION.
 	}
 	WAIT UNTIL (ABS(goal:PITCH - SHIP:FACING:PITCH) < tol) AND (ABS(goal:YAW - SHIP:FACING:YAW) < tol).
-
+	//debug
+	PRINT "done pointing".
 	RETURN TRUE.
 }
