@@ -211,37 +211,35 @@ DECLARE FUNCTION killRelativeVelocity {
 	LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
 	LOCAL cBurn TO burnTime(dV).
-	//v = v0 + a*t
-	//t = (v-v0)/a
-	//s = (v - v0)/2*t
-	//s = (v-v0)^2/2a
+
 	LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
 
 	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
 	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
 	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
-	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
+	LOCK velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
 
 //debug
-	PRINT "distance: " + TARGET:DISTANCE.
-	PRINT "velRel: " + velRel.
-	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel).
-	PRINT "burn distance: " + burnDistance.
+	PRINT "distance: " + TARGET:DISTANCE AT (TERMINAL:WIDTH/2,0).
+	PRINT "velRel: " + velRel AT (TERMINAL:WIDTH/2,1).
+	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel) AT (TERMINAL:WIDTH/2,2).
+	PRINT "burn distance: " + burnDistance AT (TERMINAL:WIDTH/2,3).
 
 	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
-		WAIT UNTIL TARGET:DISTANCE <= (burnDistance * 1.1). //wait until close
+
 		LOCK STEERING TO burnVector:DIRECTION.
+		WAIT UNTIL ABS(burnVector:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:YAW - SHIP:FACING:YAW) < 0.15.
 		LOCAL cThrott TO 0.
 		LOCK THROTTLE TO cThrott.
 
-		UNTIL TARGET:DISTANCE <= buffer {
+		WHEN TARGET:DISTANCE <= burnDistance THEN {
 			SET cThrott TO 1.
-			WAIT 0.
-		}
+			}
+		WAIT UNTIL TARGET:DISTANCE <= buffer.
+
 	} ELSE {
 		notify("Too far from target: " + TARGET:NAME).
 	}
-
 
 }
