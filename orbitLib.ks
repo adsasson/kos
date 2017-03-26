@@ -192,7 +192,7 @@ DECLARE FUNCTION burnTime {
 }
 
 DECLARE FUNCTION killRelativeVelocity {
-	PARAMETER posIntercept, posTarget, buffer IS 50.
+	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
 	IF HASTARGET {
 		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
 		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
@@ -214,31 +214,24 @@ DECLARE FUNCTION killRelativeVelocity {
 	LOCK velRel TO (burnVector):MAG.
 
 //debug
-	PRINT "distance: " + ROUND(TARGET:DISTANCE,2) AT (TERMINAL:WIDTH/2,0).
-	PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,1).
-	PRINT "TTI: " + ROUND(ABS(TARGET:DISTANCE/velRel),2) AT (TERMINAL:WIDTH/2,2).
-
 	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
 		LOCK STEERING TO burnVector:DIRECTION.
 		LOCAL cThrott TO 0.
 		LOCK THROTTLE TO cThrott.
-		WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
+		//WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
+		WAIT UNTIL pointTo(burnVector).
 
 		//LOCAL deltaV TO ABS(velTarget - velIntercept).
 		LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
 		LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
 		LOCAL cBurn TO burnTime(dV).
-		LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
+		LOCAL burnDistance TO (dV + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
 
 		WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
 
-		//debug
-		LOCAL v0 TO ((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG)/100.
-		PRINT "Burning to " +ROUND(v0,2) + " m/s".
-		UNTIL velRel <= 0.5 {
-			PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,1).
+		UNTIL velRel <= bufferVel {
 			SET cThrott TO 1.
 			WAIT 0.
 		}
