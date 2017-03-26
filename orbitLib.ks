@@ -206,16 +206,7 @@ DECLARE FUNCTION killRelativeVelocity {
 	} ELSE {
 		notify("No Target Selected.").
 	}
-	//LOCAL deltaV TO ABS(velTarget - velIntercept).
-	LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
-	LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
-	LOCAL cBurn TO burnTime(dV).
-	//v = v0 + a*t
-	//t = (v-v0)/a
-	//s = (v - v0)/2*t
-	//s = (v-v0)^2/2a
-	LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
 
 	LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 	LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
@@ -223,22 +214,35 @@ DECLARE FUNCTION killRelativeVelocity {
 	LOCAL velRel TO (burnVector):MAG.
 
 //debug
-	PRINT "distance: " + TARGET:DISTANCE.
-	PRINT "velRel: " + velRel.
-	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel).
-	PRINT "burn distance: " + burnDistance.
+	PRINT "distance: " + TARGET:DISTANCE AT (TERMINAL:WIDTH/2,0).
+	PRINT "velRel: " + velRel AT (TERMINAL:WIDTH/2,1).
+	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel) AT (TERMINAL:WIDTH/2,2).
 
 	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
-		WAIT UNTIL TARGET:DISTANCE <= (burnDistance * 1.1). //wait until close
 		LOCK STEERING TO burnVector:DIRECTION.
 		LOCAL cThrott TO 0.
 		LOCK THROTTLE TO cThrott.
+		WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
 
-		UNTIL velrel = 0 {
+		//LOCAL deltaV TO ABS(velTarget - velIntercept).
+		LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
+		LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
+
+		LOCAL cBurn TO burnTime(dV).
+		LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
+
+		WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
+
+		UNTIL velrel <= 50 {
 			SET cThrott TO 1.
 			WAIT 0.
 		}
+		UNTIL velrel = 0 {
+			SET cThrott TO (1*velrel/10).
+			WAIT 0.
+		}
+		SET cThrott TO 0.
 	} ELSE {
 		notify("Too far from target: " + TARGET:NAME).
 	}
