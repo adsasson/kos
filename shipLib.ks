@@ -1,10 +1,7 @@
 //SHIP UTILITY LIBRARY
-<<<<<<< HEAD
 
-=======
 @LAZYGLOBAL OFF.
->>>>>>> master
-//++++++++++++++++++++++++++++++++++++
+
 PRINT "shipLib loaded.".
 
 DECLARE FUNCTION stageLogic {
@@ -78,4 +75,26 @@ DECLARE FUNCTION deployFairings {
 			PRINT "DEPLOYING FAIRING " + fairing:PART:TITLE.
 		}
 	}
+}
+
+DECLARE FUNCTION pointTo {
+	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 0.15.
+
+	IF useRCS {
+		RCS ON.
+	}
+
+	IF goal:ISTYPE("Vector")  {
+		SET goal TO goal:DIRECTION.
+	}
+
+	LOCAL timeStart TO TIME.
+	UNTIL (ABS(goal:PITCH - SHIP:FACING:PITCH) < tol) AND (ABS(goal:YAW - SHIP:FACING:YAW) < tol) {
+		IF (TIME - timeStart) > timeOut {
+			break.
+		}
+		WAIT 0.
+	}.
+
+	RETURN TRUE.
 }

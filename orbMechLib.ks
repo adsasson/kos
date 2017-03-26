@@ -61,7 +61,7 @@ DECLARE FUNCTION MeanAnToEccAn {
 			IF ((MeanAn > -180 AND MeanAn < 0) OR (MeanAn > 180)) {
 				LOCAL EccAn TO MeanAn - ecc.
 			} ELSE {
-				SET EccAn TO MeanAnn + ecc.
+				LOCAL EccAn TO MeanAnn + ecc.
 			}
 
 			LOCAL Enew TO EccAn.
@@ -146,7 +146,7 @@ DECLARE FUNCTION EccAnToPhi {
 DECLARE FUNCTION EccAnForR {
 
 	//r = alt + body radius
-	DECLARE PARAMETER R,ecc IS SHIP:ORBIT:ECCENTRICITY,alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
+	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
 	LOCAL cosEccAn TO (alpha - R)/(alpha*ecc).
 	LOCAL EccAn TO ARCCOS(cosEccAn).
@@ -159,11 +159,10 @@ DECLARE FUNCTION EccAnForR {
 DECLARE FUNCTION VisViva {
 	//v = sqrt(mu*(2/r - 1/a))
 
-	DECLARE PARAMETER R, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, currentBody IS SHIP:BODY.
 
-	LOCAL mu TO currentBody:MU.
+	DECLARE PARAMETER R, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, cMu IS SHIP:BODY:MU.
 
-	LOCAL velAtR TO SQRT(mu*(2/R - 1/alpha)).
+	LOCAL velAtR TO SQRT(cMu*(2/R - 1/alpha)).
 
 	RETURN velAtR.
 
@@ -172,7 +171,8 @@ DECLARE FUNCTION VisViva {
 //flight path angle at R (phi or gamma)
 
 DECLARE FUNCTION FlightPathAngleAtR {
-	DECLARE PARAMETER R,ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
+
+	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
 	LOCAL eccAn TO EccAnForR(R,ecc,alpha).
 	LOCAL trueAn TO EccAnToTrueAn(eccAn,ecc).
@@ -231,7 +231,8 @@ DECLARE FUNCTION TrueAnForR {
 DECLARE FUNCTION etaToR {
 	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, currentBody IS SHIP:BODY.
 
-	SET currentR TO SHIP:ALTITUDE + currentBody:RADIUS.
+	LOCAL currentR TO SHIP:ALTITUDE + currentBody:RADIUS.
+
 	//SET currentEccAn TO eccAnForR(currentR,ecc,alpha).
 	//SET currentMeanAn TO EccAnToMeanAn(currentEccAn,ecc).
 

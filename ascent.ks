@@ -128,7 +128,7 @@ DECLARE FUNCTION ascentCurve {
 
 	UNTIL cSHIP:APOAPSIS >= targetApo {
 		IF atmoFlag {
-			SET cThrottle TO cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR). //thrust PID LOOP
+			SET cThrottle TO MIN(1, MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))). //thrust PID LOOP
 		} ELSE {
 			SET cThrottle TO 1.
 		}
