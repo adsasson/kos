@@ -3,10 +3,10 @@
 runoncepath("shipLib.ks").
 runoncepath("util.ks").
 
+<<<<<<< HEAD
 GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
-																	7500,"Dres",6500,"Moho",7500,"Eeloo",4500,
-																	"Bop",23000,"Pol",6000,"Tylo",13500,"Vall",9000).
-
+																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
+																23000,"Pol",6000,"Tylo",13500,"Vall",9000).
 
 DECLARE FUNCTION orbitalInsertion {
 
@@ -203,9 +203,8 @@ DECLARE FUNCTION killRelativeVelocity {
 		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
 		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
 		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
-	} ELSE {
-		notify("No Target Selected.").
-	}
+=======
+
 
 
 	LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
