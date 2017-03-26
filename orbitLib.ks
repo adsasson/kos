@@ -235,7 +235,7 @@ DECLARE FUNCTION killRelativeVelocity {
 		LOCAL cThrott TO 0.
 		LOCK THROTTLE TO cThrott.
 
-		UNTIL TARGET:DISTANCE <= buffer {
+		UNTIL velrel = 0 {
 			SET cThrott TO 1.
 			WAIT 0.
 		}
