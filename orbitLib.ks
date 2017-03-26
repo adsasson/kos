@@ -184,10 +184,10 @@ DECLARE FUNCTION burnTime {
 	IF totalThrust > 0 {
 		SET burn TO g0*SHIP:MASS*avgISP*(1-CONSTANT:E^(-currentDeltaV/(g0*avgISP)))/totalThrust.
 	} ELSE {
-		PRINT "ERROR: AVAILABLE THRUST IS 0.".
+		notify("ERROR: AVAILABLE THRUST IS 0.").
 	}
 
-	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s".
+	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s" AT (TERMINAL:WIDTH/2,0).
 	RETURN burn.
 }
 
@@ -230,7 +230,6 @@ DECLARE FUNCTION killRelativeVelocity {
 			//AIT UNTIL cBurn >= ABS(TARGET:DISTANCE/velRel).
 
 			UNTIL velRel <= bufferVel*10 {
-				PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,0).
 				SET cThrott TO 1.
 				WAIT 0.
 			}
