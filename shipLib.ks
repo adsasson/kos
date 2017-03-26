@@ -89,9 +89,10 @@ DECLARE FUNCTION pointTo {
 	}
 	LOCAL timeStart TO TIME.
 	UNTIL (ABS(goal:PITCH - SHIP:FACING:PITCH) < tol) AND (ABS(goal:YAW - SHIP:FACING:YAW) < tol) {
-		IF (TIME - timeStart) > 60 {
+		IF (TIME - timeStart) > timeOut {
 			break.
 		}
+		WAIT 0.
 	}.
 
 	RETURN TRUE.
