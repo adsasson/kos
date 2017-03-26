@@ -3,10 +3,10 @@
 runoncepath("shipLib.ks").
 runoncepath("util.ks").
 
-GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
-																	7500,"Dres",6500,"Moho",7500,"Eeloo",4500,
-																	"Bop",23000,"Pol",6000,"Tylo",13500,"Vall",9000).
 
+GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
+																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
+																23000,"Pol",6000,"Tylo",13500,"Vall",9000).
 
 DECLARE FUNCTION orbitalInsertion {
 
@@ -184,15 +184,16 @@ DECLARE FUNCTION burnTime {
 	IF totalThrust > 0 {
 		SET burn TO g0*SHIP:MASS*avgISP*(1-CONSTANT:E^(-currentDeltaV/(g0*avgISP)))/totalThrust.
 	} ELSE {
-		PRINT "ERROR: AVAILABLE THRUST IS 0.".
+		notify("ERROR: AVAILABLE THRUST IS 0.").
 	}
 
-	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s".
+	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s" AT (TERMINAL:WIDTH/2,0).
 	RETURN burn.
 }
 
+
 DECLARE FUNCTION killRelativeVelocity {
-	PARAMETER posIntercept, posTarget, buffer IS 50.
+	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
 	IF HASTARGET {
 		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
 		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
@@ -203,43 +204,46 @@ DECLARE FUNCTION killRelativeVelocity {
 		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
 		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
 		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
-	} ELSE {
-		notify("No Target Selected.").
-	}
-	//LOCAL deltaV TO ABS(velTarget - velIntercept).
-	LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
-	LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
-	LOCAL cBurn TO burnTime(dV).
+		LOCAL tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCK tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 
-	LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
+		LOCAL velRel TO (tgtRetrograde):MAG.
+		LOCK velRel TO (tgtRetrograde):MAG.
 
-	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
-	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
-	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
-	LOCK velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
+		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
+			//if intercept requires a 5 minute or more burn, something is wrong
+			LOCK STEERING TO tgtRetrograde:DIRECTION.
+			LOCAL cThrott TO 0.
+			LOCK THROTTLE TO cThrott.
 
-//debug
-	PRINT "distance: " + TARGET:DISTANCE AT (TERMINAL:WIDTH/2,0).
-	PRINT "velRel: " + velRel AT (TERMINAL:WIDTH/2,1).
-	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel) AT (TERMINAL:WIDTH/2,2).
-	PRINT "burn distance: " + burnDistance AT (TERMINAL:WIDTH/2,3).
+			WAIT UNTIL pointTo(tgtRetrograde:DIRECTION, FALSE, 0.3).
+			//LOCAL deltaV TO ABS(velTarget - velIntercept).
 
-	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
-		//if intervept requires a 5 minute or more burn, something is wrong
+			LOCAL cBurn TO burnTime(velRel).
+			LOCK cBurn TO burnTime(velRel).
 
-		LOCK STEERING TO burnVector:DIRECTION.
-		WAIT UNTIL ABS(burnVector:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:YAW - SHIP:FACING:YAW) < 0.15.
-		LOCAL cThrott TO 0.
-		LOCK THROTTLE TO cThrott.
+			LOCAL burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+			LOCK burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
 
-		WHEN TARGET:DISTANCE <= burnDistance THEN {
-			SET cThrott TO 1.
+			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
+			//AIT UNTIL cBurn >= ABS(TARGET:DISTANCE/velRel).
+
+			UNTIL velRel <= bufferVel*10 {
+				SET cThrott TO 1.
+				WAIT 0.
 			}
-		WAIT UNTIL TARGET:DISTANCE <= buffer.
+			UNTIL velRel <= bufferVel {
+				SET cThrott TO 0.1.
+				WAIT 0.
+			}
 
+			SET cThrott TO 0.
+		} ELSE {
+			notify("Too far from target: " + TARGET:NAME).
+		}
 	} ELSE {
-		notify("Too far from target: " + TARGET:NAME).
+		notify("No target selected.").
 	}
 
 }

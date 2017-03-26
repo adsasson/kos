@@ -24,7 +24,7 @@ IF HASTARGET {
 }
 
 DECLARE FUNCTION lambertProblem {
-  PARAMETER inputLexicon, tof, retroFlag IS FALSE, multiRev IS 5.
+  PARAMETER tof, inputLexicon IS LambertLexicon,  retroFlag IS FALSE, multiRev IS 5.
   SET LambertLexicon["tof"] TO tof.
 
   IF tof <= 0 {
@@ -49,7 +49,8 @@ DECLARE FUNCTION lambertProblem {
 
   SET LambertLexicon["lambda"] TO (1-chord/semiPerimeter).
 
-  LOCAL t1, t2.
+  LOCAL t1 TO V(0,0,0).
+  LOCAL t2 TO V(0,0,0).
 
   IF angMomentum:Z < 0 {
     SET LambertLexicon["lambda"] TO -(1-chord/semiPerimeter).
@@ -82,7 +83,7 @@ DECLARE FUNCTION lambertProblem {
   SET LambertLexicon["nMax"] TO cNMax.
   LOCAL tau00 TO ARCCOS(cLambda) + cLambda*(SQRT(1-cLambda^2)).
   LOCAL tau0 TO tau00 + cNMax*CONSTANT:PI.
-  LOCAL tau1 TO 2/3 * (1 - lambda^3).
+  LOCAL tau1 TO 2/3 * (1 - cLambda^3).
 
   LOCAL dTLexicon TO LEXICON("dT",0,"ddT",0,"dddT",0).
 
@@ -124,7 +125,7 @@ DECLARE FUNCTION lambertProblem {
   LOCAL iterList TO LIST().
   LOCAL xList TO LIST().
 
-  FROM {LOCAL i IS 1} UNTIL i < (cNMax*2+1) STEP {SET i TO i+1} DO {
+  FROM {LOCAL i IS 1.} UNTIL i < (cNMax*2+1) STEP {SET i TO i+1.} DO {
     v1List:ADD("").
     v2List:ADD("").
     iterList:ADD("").
@@ -137,22 +138,22 @@ DECLARE FUNCTION lambertProblem {
   } ELSE IF tau <= tau1 {
     SET xList[0] TO tau1*(tau1-tau)/(2/5*(1-cLambda^5)*tau) + 1.
   } ELSE {
-    SET xList[0] TO ((tau/tau00)^0.69)/LOG(tau1/tau00)) - 1.
+    SET xList[0] TO ((tau/tau00)^0.69)/LOG(tau1/tau00) - 1.
   }
   LOCAL householderList TO householder(tau,xList[0],0,1e-15,15).
   SET xList[0] TO householderList[0].
   SET LambertLexicon["iter"] TO householderList[1].
 
   LOCAL tmp TO "".
-  FROM {LOCAL i is 1} UNTIL i < cNMax STEP {SET i TO i+1} DO {
+  FROM {LOCAL i is 1.} UNTIL i < cNMax STEP {SET i TO i+1.} DO {
     SET tmp TO ((i*CONSTANT:PI^2)/(8*tau))^(2/3).
     SET xList[(2*i-1)] TO ((tmp-1)/(tmp+1)).
-    SET householderList TO (householder(tau,xList[(2*i-1)],i,1e-8,15))
+    SET householderList TO (householder(tau,xList[(2*i-1)],i,1e-8,15)).
     SET xList[(2*i-1)] TO householderList[0].
     SET iterList[(2*i-1)] TO householderList[1].
 
     SET tmp TO ((8*tau)/(i*CONSTANT:PI))^(2/3).
-    SET householderList TO (householder(tau,xList[(2*i)],i,1e-8,15))
+    SET householderList TO (householder(tau,xList[(2*i)],i,1e-8,15)).
     SET xList[(2*i)] TO householderList[0].
     SET iterList[(2*i)] TO householderList[1].
   }
@@ -169,8 +170,8 @@ DECLARE FUNCTION lambertProblem {
 
   FOR xVal IN xList {
     SET y TO SQRT(1 - cLambda^2*xVal^2).
-    SET vR1 = gamma * ((cLambda*y - xVal) - rho*(cLambda*y*xVal))/r1Mag.
-    SET vR2 = -gamma * ((cLambda*y - xVal) + rho*(cLambda*y*xVal))/r2Mag.
+    SET vR1 TO gamma * ((cLambda*y - xVal) - rho*(cLambda*y*xVal))/r1Mag.
+    SET vR2 TO -gamma * ((cLambda*y - xVal) + rho*(cLambda*y*xVal))/r2Mag.
     LOCAL vt TO gamma*sigma*(y*cLambda*xVal).
     SET vT1 TO vt/r1Mag.
     SET vT2 TO vt/r2Mag.
@@ -182,6 +183,7 @@ DECLARE FUNCTION lambertProblem {
   LambertLexicon:ADD("v1List",v1List).
   LambertLexicon:ADD("v2List",v2List).
 
+  PRINT "LAMBERT LEXICON: " + LambertLexicon.
   return LambertLexicon.
 }
 
@@ -193,8 +195,8 @@ DECLARE FUNCTION dTdX {
   LOCAL y TO SQRT(1 - cLambda^2*umx2).
 
   LOCAL cDT TO 1/umx2 * (3*tau*x - 2 + 2*cLambda^3*x/y).
-  LOCAL cDDT TO 1/umx2 * (3*tau + 5*x*dT + 2*(1-cLambda^2)*cLambda^3/y^3).
-  LOCAL cDDDT TO 1/umx2 * (7*x*ddT + 8*dT - 6*(1-lambcLambdada^2)*cLambda^2*cLambda^3*x/y^3/y^2).
+  LOCAL cDDT TO 1/umx2 * (3*tau + 5*x*cDT + 2*(1-cLambda^2)*cLambda^3/y^3).
+  LOCAL cDDDT TO 1/umx2 * (7*x*cDDT + 8*cDT - 6*(1-cLambda^2)*cLambda^2*cLambda^3*x/y^3/y^2).
 
   SET inputLexicon["dT"] TO cDT.
   SET inputLexicon["ddT"] TO cDDT.
@@ -265,7 +267,7 @@ DECLARE FUNCTION x2ToF2 {
   PARAMETER x, N.
 
   LOCAL returnToF TO "".
-  LOCAL a = 1/1-x^2.
+  LOCAL a TO 1/1-x^2.
 
   IF (a>0) {//ellipse
     LOCAL alpha TO 2*ARCCOS(x).
