@@ -206,6 +206,7 @@ DECLARE FUNCTION killRelativeVelocity {
 
 		LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 		LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+
 		LOCAL velRel TO (burnVector):MAG.
 		LOCK velRel TO (burnVector):MAG.
 
@@ -217,14 +218,14 @@ DECLARE FUNCTION killRelativeVelocity {
 
 			WAIT UNTIL pointTo(burnVector:DIRECTION, FALSE, 0.3).
 			//LOCAL deltaV TO ABS(velTarget - velIntercept).
-			LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
 
-			LOCAL cBurn TO burnTime(dV).
-			LOCAL burnDistance TO (dV + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+			LOCAL cBurn TO burnTime(velRel).
+			LOCAL burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
 
 			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
 
 			UNTIL velRel <= bufferVel*10 {
+				PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,0).
 				SET cThrott TO 1.
 				WAIT 0.
 			}
