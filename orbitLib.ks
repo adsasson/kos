@@ -1,10 +1,12 @@
 //orbital maneuver library
+@LAZYGLOBAL OFF.
 runoncepath("shipLib.ks").
+runoncepath("util.ks").
+
 
 GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
-																	7500,"Dres",6500,"Moho",7500,"Eeloo",4500,
-																	"Bop",23000,"Pol",6000,"Tylo",13500,"Vall",9000).
-
+																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
+																23000,"Pol",6000,"Tylo",13500,"Vall",9000).
 
 DECLARE FUNCTION orbitalInsertion {
 
@@ -154,6 +156,7 @@ DECLARE FUNCTION deltaVgeneral {
 DECLARE FUNCTION burnTime {
 	DECLARE PARAMETER currentDeltaV, currentShip IS SHIP.
 
+	LOCAL currentEngines TO LIST().
 	LIST ENGINES IN currentEngines.
 
 	LOCAL totalFuelMass TO SHIP:MASS - SHIP:DRYMASS.
@@ -186,4 +189,62 @@ DECLARE FUNCTION burnTime {
 
 	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s".
 	RETURN burn.
+}
+
+
+DECLARE FUNCTION killRelativeVelocity {
+	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
+	IF HASTARGET {
+		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
+		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
+		LOCAL mu1 TO SHIP:BODY:MU.
+		LOCAL mu2 TO TARGET:BODY:MU.
+
+		//LOCAL v1 TO visViva(r1,alpha1,mu1). //interceptor position
+		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
+		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
+		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
+
+		LOCAL tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCK tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+
+		LOCAL velRel TO (tgtRetrograde):MAG.
+		LOCK velRel TO (tgtRetrograde):MAG.
+
+		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
+			//if intercept requires a 5 minute or more burn, something is wrong
+			LOCK STEERING TO tgtRetrograde:DIRECTION.
+			LOCAL cThrott TO 0.
+			LOCK THROTTLE TO cThrott.
+
+			WAIT UNTIL pointTo(tgtRetrograde:DIRECTION, FALSE, 0.3).
+			//LOCAL deltaV TO ABS(velTarget - velIntercept).
+
+			LOCAL cBurn TO burnTime(velRel).
+			LOCK cBurn TO burnTime(velRel).
+
+			LOCAL burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+			LOCK burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+
+			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
+			//AIT UNTIL cBurn >= ABS(TARGET:DISTANCE/velRel).
+
+			UNTIL velRel <= bufferVel*10 {
+				PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,0).
+				SET cThrott TO 1.
+				WAIT 0.
+			}
+			UNTIL velRel <= bufferVel {
+				SET cThrott TO 0.1.
+				WAIT 0.
+			}
+
+			SET cThrott TO 0.
+		} ELSE {
+			notify("Too far from target: " + TARGET:NAME).
+		}
+	} ELSE {
+		notify("No target selected.").
+	}
+
 }

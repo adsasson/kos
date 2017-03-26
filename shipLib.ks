@@ -87,6 +87,7 @@ DECLARE FUNCTION pointTo {
 	IF goal:ISTYPE("Vector")  {
 		SET goal TO goal:DIRECTION.
 	}
+
 	LOCAL timeStart TO TIME.
 	UNTIL (ABS(goal:PITCH - SHIP:FACING:PITCH) < tol) AND (ABS(goal:YAW - SHIP:FACING:YAW) < tol) {
 		IF (TIME - timeStart) > timeOut {

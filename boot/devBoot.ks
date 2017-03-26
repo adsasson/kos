@@ -18,6 +18,8 @@ COPYPATH("0:land.ks","1:").
 
 
 
+COPYPATH("0:ascent.ks","1:").
+COPYPATH("0:testIntercept.ks","1:").
 
 RUNONCEPATH("1:orbitLib.ks").
 RUNONCEPATH("1:util.ks").
