@@ -217,10 +217,10 @@ DECLARE FUNCTION killRelativeVelocity {
 	//s = (v-v0)^2/2a
 	LOCAL burnDistance TO dV/2*cBurn + buffer. //avg velocity * burn time + 50 m (default).
 
-	LOCAL burnVector TO SHIP:POSITION - TARGET:POSITION.
-	LOCK burnVector TO SHIP:POSITION - TARGET:POSITION.
-	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
-	LOCAL velRel TO (TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG.
+	LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+	LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+	LOCAL velRel TO (burnVector):MAG.
+	LOCAL velRel TO (burnVector):MAG.
 
 //debug
 	PRINT "distance: " + TARGET:DISTANCE.
