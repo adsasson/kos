@@ -204,25 +204,29 @@ DECLARE FUNCTION killRelativeVelocity {
 		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
 		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
 
-		LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
-		LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCAL tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCK tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 
-		LOCAL velRel TO (burnVector):MAG.
-		LOCK velRel TO (burnVector):MAG.
+		LOCAL velRel TO (tgtRetrograde):MAG.
+		LOCK velRel TO (tgtRetrograde):MAG.
 
 		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 			//if intercept requires a 5 minute or more burn, something is wrong
-			LOCK STEERING TO burnVector:DIRECTION.
+			LOCK STEERING TO tgtRetrograde:DIRECTION.
 			LOCAL cThrott TO 0.
 			LOCK THROTTLE TO cThrott.
 
-			WAIT UNTIL pointTo(burnVector:DIRECTION, FALSE, 0.3).
+			WAIT UNTIL pointTo(tgtRetrograde:DIRECTION, FALSE, 0.3).
 			//LOCAL deltaV TO ABS(velTarget - velIntercept).
 
 			LOCAL cBurn TO burnTime(velRel).
+			LOCK cBurn TO burnTime(velRel).
+
 			LOCAL burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+			LOCK burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
 
 			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
+			//AIT UNTIL cBurn >= ABS(TARGET:DISTANCE/velRel).
 
 			UNTIL velRel <= bufferVel*10 {
 				PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,0).
