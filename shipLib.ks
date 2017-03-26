@@ -80,7 +80,7 @@ DECLARE FUNCTION deployFairings {
 DECLARE FUNCTION pointTo {
 	PARAMETER goal, to IS 0.15.
 
-	IF goal:TYPE = "Vector" {
+	IF goal:ISTYPE("Vector")  {
 		SET goal TO goal:DIRECTION.
 	}
 	WAIT UNTIL (ABS(goal:PITCH - SHIP:FACING:PITCH) < tol) AND (ABS(goal:YAW - SHIP:FACING:YAW) < tol).
