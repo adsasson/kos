@@ -211,12 +211,12 @@ DECLARE FUNCTION killRelativeVelocity {
 	LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 	LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 	LOCAL velRel TO (burnVector):MAG.
-	LOCAL velRel TO (burnVector):MAG.
+	LOCK velRel TO (burnVector):MAG.
 
 //debug
-	PRINT "distance: " + TARGET:DISTANCE AT (TERMINAL:WIDTH/2,0).
-	PRINT "velRel: " + velRel AT (TERMINAL:WIDTH/2,1).
-	PRINT "TTI: " + ABS(TARGET:DISTANCE/velRel) AT (TERMINAL:WIDTH/2,2).
+	PRINT "distance: " + ROUND(TARGET:DISTANCE,2) AT (TERMINAL:WIDTH/2,0).
+	PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,1).
+	PRINT "TTI: " + ROUND(ABS(TARGET:DISTANCE/velRel),2) AT (TERMINAL:WIDTH/2,2).
 
 	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
 		//if intervept requires a 5 minute or more burn, something is wrong
@@ -234,14 +234,15 @@ DECLARE FUNCTION killRelativeVelocity {
 
 		WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
 
-		UNTIL velrel <= 50 {
+		//debug
+		LOCAL v0 TO ((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG)/100.
+		PRINT "Burning to " +ROUND(v0,2) + " m/s".
+		UNTIL velRel <= 0.5 {
+			PRINT "velRel: " + ROUND(velRel,2) AT (TERMINAL:WIDTH/2,1).
 			SET cThrott TO 1.
 			WAIT 0.
 		}
-		UNTIL velrel = 0 {
-			SET cThrott TO (1*velrel/10).
-			WAIT 0.
-		}
+
 		SET cThrott TO 0.
 	} ELSE {
 		notify("Too far from target: " + TARGET:NAME).
