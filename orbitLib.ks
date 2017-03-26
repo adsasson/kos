@@ -204,28 +204,20 @@ DECLARE FUNCTION killRelativeVelocity {
 		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
 		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
 
-
-
-
 		LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 		LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
 		LOCAL velRel TO (burnVector):MAG.
 		LOCK velRel TO (burnVector):MAG.
 
-		//debug
 		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
-			//if intervept requires a 5 minute or more burn, something is wrong
+			//if intercept requires a 5 minute or more burn, something is wrong
 			LOCK STEERING TO burnVector:DIRECTION.
 			LOCAL cThrott TO 0.
 			LOCK THROTTLE TO cThrott.
-			//WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
-			//debug
-			PRINT "POINTNG".
+
 			WAIT UNTIL pointTo(burnVector:DIRECTION, FALSE, 0.3).
-			PRINT "POINTED".
 			//LOCAL deltaV TO ABS(velTarget - velIntercept).
 			LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
-			LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
 			LOCAL cBurn TO burnTime(dV).
 			LOCAL burnDistance TO (dV + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
