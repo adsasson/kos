@@ -207,38 +207,40 @@ DECLARE FUNCTION killRelativeVelocity {
 
 
 
-	LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
-	LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
-	LOCAL velRel TO (burnVector):MAG.
-	LOCK velRel TO (burnVector):MAG.
+		LOCAL burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCK burnVector TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCAL velRel TO (burnVector):MAG.
+		LOCK velRel TO (burnVector):MAG.
 
-//debug
-	IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
-		//if intervept requires a 5 minute or more burn, something is wrong
-		LOCK STEERING TO burnVector:DIRECTION.
-		LOCAL cThrott TO 0.
-		LOCK THROTTLE TO cThrott.
-		//WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
-		WAIT UNTIL pointTo(burnVector).
+		//debug
+		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
+			//if intervept requires a 5 minute or more burn, something is wrong
+			LOCK STEERING TO burnVector:DIRECTION.
+			LOCAL cThrott TO 0.
+			LOCK THROTTLE TO cThrott.
+			//WAIT UNTIL ABS(burnVector:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(burnVector:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
+			WAIT UNTIL pointTo(burnVector).
 
-		//LOCAL deltaV TO ABS(velTarget - velIntercept).
-		LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
-		LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
+			//LOCAL deltaV TO ABS(velTarget - velIntercept).
+			LOCAL dV TO ABS((TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT):MAG).
+			LOCAL deltaR TO ABS((posTarget - posIntercept):MAG).
 
-		LOCAL cBurn TO burnTime(dV).
-		LOCAL burnDistance TO (dV + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+			LOCAL cBurn TO burnTime(dV).
+			LOCAL burnDistance TO (dV + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
 
-		WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
+			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
 
-		UNTIL velRel <= bufferVel {
-			SET cThrott TO 1.
-			WAIT 0.
+			UNTIL velRel <= bufferVel {
+				SET cThrott TO 1.
+				WAIT 0.
+			}
+
+			SET cThrott TO 0.
+		} ELSE {
+			notify("Too far from target: " + TARGET:NAME).
 		}
-
-		SET cThrott TO 0.
 	} ELSE {
-		notify("Too far from target: " + TARGET:NAME).
+		notify("No target selected.").
 	}
-
 
 }
