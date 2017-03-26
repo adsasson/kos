@@ -191,6 +191,7 @@ DECLARE FUNCTION burnTime {
 	RETURN burn.
 }
 
+
 DECLARE FUNCTION killRelativeVelocity {
 	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
 	IF HASTARGET {
