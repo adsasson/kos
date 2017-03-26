@@ -78,7 +78,7 @@ DECLARE FUNCTION deployFairings {
 }
 
 DECLARE FUNCTION pointTo {
-	PARAMETER goal, to IS 0.15.
+	PARAMETER goal, tol IS 0.15.
 
 	IF goal:ISTYPE("Vector")  {
 		SET goal TO goal:DIRECTION.
