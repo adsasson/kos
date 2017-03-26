@@ -203,7 +203,7 @@ DECLARE FUNCTION killRelativeVelocity {
 		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
 		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
 		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
-=======
+
 
 
 
