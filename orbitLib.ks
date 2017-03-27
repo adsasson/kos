@@ -38,14 +38,6 @@ DECLARE FUNCTION orbitalInsertion {
 		LOCK OIdeltaV TO deltaV(SHIP:ORBIT:APOAPSIS, SHIP:ORBIT:SEMIMAJORAXIS, targetAlpha).
 		LOCAL OIBurnTime TO burnTime(OIDeltaV,SHIP).
 
-	LOCAL nodeFlag TO FALSE.
-
-	IF nodeFlag {
-		LOCAL OInode TO NODE(TIME:SECONDS + ETA:APOAPSIS, 0, 0, OIdeltaV).
-		ADD OInode.
-		run executeNode.
-
-	} ELSE {
 		//DIRECTION VECTORS
 		LOCK progradeVec TO SHIP:PROGRADE:FOREVECTOR.
 		LOCK cPhi TO flightPathAngle().
@@ -71,14 +63,13 @@ DECLARE FUNCTION orbitalInsertion {
 		UNTIL done {
 			stageLogic().
 				clearscreen.
-				PRINT "DeltaV: " + ROUND(OIdeltaV*COS(cPhi),2) + " m/s".
+				PRINT "DeltaV: " + ROUND(OIdeltaV*COS(cPhi),2) + " m/s" AT (TERMINAL:WIDTH/2,0).
 				IF (ABS(OIdeltaV*COS(cPhi)) < 0.1) {
 				notify("FINALIZING BURN").
 				LOCK THROTTLE TO 0.
 				SET done TO TRUE.
 			}
 		}
-	}
 }
 
 //======================================
