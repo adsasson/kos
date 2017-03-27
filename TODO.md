@@ -11,3 +11,6 @@
 ### Lambert
 - [ ] test lambert function with tof based on hohmann transfer
 - [ ] figure out how to construct node for lambert values.
+
+### Misc
+- [ ] resource transfer functions
