@@ -1,56 +1,57 @@
+	@LAZYGLOBAL OFF.
 	runoncepath("orbitLib.ks").
-	//runoncepath("testorbitLib.ks").
 	runoncepath("shipLib.ks").
+	runoncepath("util.ks").
 
-	SET node TO NEXTNODE.
+	LOCAL node TO NEXTNODE.
 	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
-	
-	LOCAL burnTime TO burnTime(node:DELTAV:MAG,SHIP).
-	
+
+	LOCAL nodeBurnTime TO burnTime(node:DELTAV:MAG,SHIP).
+
 	//INSERT WARP LOGIC
-	
-	WAIT UNTIL node:ETA <= (burnTime/2 + 60).
-	
-	SET nodePrograde TO node:DELTAV.
-	
+
+	WAIT UNTIL node:ETA <= (nodeBurnTime/2 + 60).
+
+	LOCAL nodePrograde TO node:DELTAV.
+
 	LOCK STEERING TO nodePrograde.
-	
+
 	SAS OFF.
-	
-	PRINT "ORIENTING TO NODE".
+
+	notify("ORIENTING TO NODE").
 	WAIT UNTIL ABS(nodePrograde:DIRECTION:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(nodePrograde:DIRECTION:YAW - SHIP:FACING:YAW) < 0.15.
 
-	WAIT UNTIL node:ETA <= (burnTime/2).
-	
-	SET currentThrottle TO 0.
+	WAIT UNTIL node:ETA <= (nodeBurnTime/2).
+
+	LOCAL currentThrottle TO 0.
 	LOCK THROTTLE TO currentThrottle.
 
-	SET done TO FALSE.
-	
-	//INITIAL DELTAV
-	SET deltaV0 TO node:DELTAV.
-	
-	UNTIL DONE {
-			
-		stageLogic().
-	
-		//RECALCULATE CURRENT MAX_ACCELERATION, AS IT CHANGES WHILE WE BURN THROUGH FUEL
-		SET maxAcc TO SHIP:MAXTHRUST/SHIP:MASS.
+	LOCAL done TO FALSE.
 
-		//debug escape 
+	//INITIAL DELTAV
+	LOCAL deltaV0 TO node:DELTAV.
+
+	UNTIL DONE {
+
+		stageLogic().
+
+		//RECALCULATE CURRENT MAX_ACCELERATION, AS IT CHANGES WHILE WE BURN THROUGH FUEL
+		LOCAL maxAcc TO SHIP:MAXTHRUST/SHIP:MASS.
+
+		//debug escape
 			IF maxAcc = 0 {
-				PRINT "ERROR. NO AVAILABLE THRUST.".
+				notify("ERROR. NO AVAILABLE THRUST.").
 			} ELSE {
 		//THROTTLE IS 100% UNTIL THERE IS LESS THAN 1 SECOND OF TIME LEFT TO BURN
 		//WHEN THERE IS LESS THAN 1 SECOND - DECREASE THE THROTTLE LINEARLY
 		SET currentThrottle TO MIN(node:DELTAV:MAG/maxAcc, 1).
 			}
-		
+
 		//HERE'S THE TRICKY PART, WE NEED TO CUT THE THROTTLE AS SOON AS OUR ND:DELTAV AND INITIAL DELTAV START FACING OPPOSITE DIRECTIONS
 		//THIS CHECK IS DONE VIA CHECKING THE DOT PRODUCT OF THOSE 2 VECTORS
 		IF vDot(deltaV0, node:DELTAV) < 0 {
 			PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(vDot(deltaV0, node:DELTAV),1).
-			LOCK THROTTLE TO 0.
+			SET currentThrottle TO 0.
 			BREAK.
 		}
 
@@ -61,7 +62,7 @@
 			//THIS USUALLY MEANS WE ARE ON POINT
 			WAIT UNTIL vDot(deltaV0, node:DELTAV) < 0.5.
 
-			LOCK THROTTLE TO 0.
+			SET currentThrottle TO 0.
 			PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(vDot(deltaV0,node:DELTAV),1).
 			SET done TO TRUE.
 		}
@@ -75,4 +76,3 @@
 
 	//SET THROTTLE TO 0 JUST IN CASE.
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
-		
