@@ -20,13 +20,15 @@ DECLARE FUNCTION orbitalInsertion {
 		IF SHIP:BODY:ATM:EXISTS {
 			LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
 			IF targetPeri < atmoHeight {
-				PRINT "ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING PERIAPSIS TO " + atmoHeight + 1000 + " m".
+				notify("ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING PERIAPSIS TO " +
+								atmoHeight + 1000 + " m").
 				SET targetPeri TO atmoHeight + 1000.
 			}
 		} ELSE {
 			LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
 			IF targetPeri < minFeatureHeight {
-				PRINT "ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING PERIAPSIS TO " + minFeatureHeight + " m".
+				notify("ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE." +
+							" ADJUSTING PERIAPSIS TO " + minFeatureHeight + " m").
 				SET targetPeri TO minFeatureHeight.
 			}
 		}
@@ -57,7 +59,7 @@ DECLARE FUNCTION orbitalInsertion {
 		LOCK STEERING TO targetHeading.
 
 		IF (SHIP:ORBIT:MEANANOMALYATEPOCH > 0) OR ETA:APOAPSIS > OIBurnTime {
-			PRINT "WAITING FOR apoapsis.".
+			notify("WAITING FOR apoapsis.").
 			WAIT UNTIL ETA:APOAPSIS <= OIBurnTime/2.
 		}
 
@@ -66,12 +68,12 @@ DECLARE FUNCTION orbitalInsertion {
 			LOCK THROTTLE TO cThrottle.
 
 		LOCAL done TO FALSE.
-		UNTIL DONE {
+		UNTIL done {
 			stageLogic().
 				clearscreen.
-				PRINT "DeltaV: " + ROUND(OIdeltaV,2) + " m/s".
-				IF (ABS(OIdeltaV) < 0.1) {
-				PRINT "FINALIZING BURN".
+				PRINT "DeltaV: " + ROUND(OIdeltaV*COS(cPhi),2) + " m/s".
+				IF (ABS(OIdeltaV*COS(cPhi)) < 0.1) {
+				notify("FINALIZING BURN").
 				LOCK THROTTLE TO 0.
 				SET done TO TRUE.
 			}
