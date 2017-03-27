@@ -3,7 +3,7 @@
 @LAZYGLOBAL OFF.
 
 RUNONCEPATH("orbitLib.ks").
-
+RUNONCEPATH("util.ks").
 RUNONCEPATH("shipLib.ks").
 
 DECLARE FUNCTION ascentInclination {
@@ -31,7 +31,7 @@ DECLARE FUNCTION ascent {
 
 		//check to see if apo clears atmosphere
 		IF targetApo < atmoHeight {
-			PRINT "ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING APOAPSIS TO " + atmoHeight + 1000 + " m".
+			notify("ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING APOAPSIS TO " + atmoHeight + 1000 + " m").
 			SET targetApo TO atmoHeight + 1000.
 		}
 
@@ -46,7 +46,7 @@ DECLARE FUNCTION ascent {
 
 		//correct for drag?
 		IF (SHIP:APOAPSIS < targetApo) {
-			PRINT "Correcting apoapsis for atmospheric drag.".
+			notify("Correcting apoapsis for atmospheric drag.").
 
 			LOCAL cHeading TO HEADING(targetHeading,0).
 			LOCK STEERING TO cHeading.
@@ -68,7 +68,7 @@ DECLARE FUNCTION ascent {
 	} ELSE {
 		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
 		IF targetApo < minFeatureHeight {
-			PRINT "ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING APOAPSIS TO " + minFeatureHeight + " m".
+			notify("ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING APOAPSIS TO " + minFeatureHeight + " m").
 			SET targetApo TO minFeatureHeight.
 		}
 		ascentCurve(targetHeading, targetApo, targetApo).
@@ -84,7 +84,6 @@ DECLARE FUNCTION ascentCurve {
 	//initialize controls
 
 	SAS OFF.
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 
 //++++++DECLARATIONS
 	LOCAL cShip TO SHIP. 		//current Ship
@@ -95,7 +94,6 @@ DECLARE FUNCTION ascentCurve {
 
 
 	//THRUST locks
-	LOCK cThrottle TO SHIP:CONTROL:PILOTMAINTHROTTLE. //current Throttle
 	LOCAL cThrottle TO 0.5.
 
 	LOCK cMass TO cShip:MASS.
@@ -140,10 +138,10 @@ DECLARE FUNCTION ascentCurve {
 		WAIT 0.
 	}
 
-	PRINT "TARGET APOAPSIS REACHED".
+	notify("TARGET APOAPSIS REACHED").
 
 	//DEINITIALIZE
-	SET cThrottle TO 0.
+	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 	UNLOCK THROTTLE.
 	UNLOCK STEERING.
 }
