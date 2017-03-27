@@ -52,6 +52,9 @@ DECLARE FUNCTION descent {
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
 	LOCAL tempFacing TO SHIP:FACING.
+	LOCAL beta TO VDOT(SHIP:VELOCITY:SURFACE,SHIP:BODY:UP:VECTOR:NORMALIZED).
+	LOCK beta TO VDOT(SHIP:VELOCITY:SURFACE,SHIP:BODY:UP:VECTOR:NORMALIZED).
+
 
 	LOCAL cTWR TO maxTWR * cThrottle.
 	LOCK cTWR TO maxTWR * cThrottle * SIN(VANG(SHIP:SRFRETROGRADE:VECTOR,tempFacing:VECTOR)).
@@ -71,11 +74,14 @@ DECLARE FUNCTION descent {
 	UNTIL cAlt <= transitionHeight {
 		PRINT "?down component of thrust: " + ROUND(cTWR,2) AT (TERMINAL:WIDTH/2,0).
 		PRINT "facingPhi: " + ROUND(VANG(SHIP:SRFRETROGRADE:VECTOR,tempFacing:VECTOR),2) AT (TERMINAL:WIDTH/2,1).
+		PRINT "beta: " + ROUND(beta,2) AT (TERMINAL:WIDTH/2,2).
+		//PRINT "arccosbeta: " + ROUND(ARCCOS(beta),2) AT (TERMINAL:WIDTH/2,2).
 
 		stageLogic().
 		//debug
-		//SET cThrottle TO 0.15.
-		SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
+		SET cThrottle TO 0.15.
+		//SET cThrottle TO MIN(1,MAX(0,2/maxTWR)).
+		//SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
 
 		WAIT 0.
 	}
@@ -107,7 +113,7 @@ DECLARE FUNCTION poweredLanding {
 	LOCK starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR:NORMALIZED * horizontalVelocity).
 	LOCK topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR:NORMALIZED * horizontalVelocity).
 
-	LOCK STEERING TO UP.
+	LOCK STEERING TO SHIP:BODY:UP.
 	RCS ON.
 	UNTIL SHIP:STATUS = "LANDED" {
 		PRINT "Vx: " + ROUND(SHIP:VELOCITY:SURFACE:X,2) AT (TERMINAL:WIDTH/2,0).
