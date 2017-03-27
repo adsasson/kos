@@ -8,6 +8,7 @@ runoncepath("orbitLib.ks").
 runoncepath("shipLib.ks").
 //dependsOn("orbitLib.ks").
 //dependsOn("shipLib.ks").
+SET TERMINAL:WIDTH TO 75.
 
 DECLARE FUNCTION descent {
 	DECLARE PARAMETER transitionHeight IS 750.
@@ -43,32 +44,38 @@ DECLARE FUNCTION descent {
 	LOCK STEERING TO cHeading.
 	LOCK THROTTLE TO cThrottle.
 
-	WAIT UNTIL 	ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND
-	 						ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
+	//WAIT UNTIL 	ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND
+	// 						ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
+
+	WAIT UNTIL pointTo(cHeading).
 
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
+	LOCAL tempFacing TO SHIP:FACING.
 
 	LOCAL cTWR TO maxTWR * cThrottle.
-	LOCK cTWR TO maxTWR * cThrottle.
+	LOCK cTWR TO maxTWR * cThrottle * SIN(VANG(SHIP:SRFRETROGRADE:VECTOR,tempFacing:VECTOR)).
 
 	//TWR PID LOOP SETTINGS
-	LOCAL Kp TO 5.
-	LOCAL Ki TO 0.5.
-	LOCAL Kd TO 2.
+	LOCAL Kp TO 0.5.
+	LOCAL Ki TO 0.
+	LOCAL Kd TO 0.
 	LOCAL twrPID TO PIDLOOP(Kp,Ki,Kd).
-	//SET twrPID:SETPOINT TO 1.
+	SET twrPID:SETPOINT TO 0.9.
 
 	deployLandingGear().
+
 
 	//landing loop
 
 	UNTIL cAlt <= transitionHeight {
-		SET twrPID:SETPOINT TO MIN(-4,(-ALT:RADAR/100)).
+		PRINT "?down component of thrust: " + ROUND(cTWR,2) AT (TERMINAL:WIDTH/2,0).
+		PRINT "facingPhi: " + ROUND(VANG(SHIP:SRFRETROGRADE:VECTOR,tempFacing:VECTOR),2) AT (TERMINAL:WIDTH/2,1).
+
 		stageLogic().
 		//debug
-		SET cThrottle TO 0.15.
-		//SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
+		//SET cThrottle TO 0.15.
+		SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
 
 		WAIT 0.
 	}
@@ -100,9 +107,14 @@ DECLARE FUNCTION poweredLanding {
 	LOCK starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR:NORMALIZED * horizontalVelocity).
 	LOCK topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR:NORMALIZED * horizontalVelocity).
 
-	//SET currentHeading TO UP.
+	LOCK STEERING TO UP.
 	RCS ON.
 	UNTIL SHIP:STATUS = "LANDED" {
+		PRINT "Vx: " + ROUND(SHIP:VELOCITY:SURFACE:X,2) AT (TERMINAL:WIDTH/2,0).
+		PRINT "Vy: " + ROUND(SHIP:VELOCITY:SURFACE:Y,2) AT (TERMINAL:WIDTH/2,1).
+		PRINT "Vz: " + ROUND(SHIP:VELOCITY:SURFACE:Z,2) AT (TERMINAL:WIDTH/2,2).
+		PRINT "StarComp: " + ROUND(starComponent:MAG,2) AT (TERMINAL:WIDTH/2,3).
+		PRINT "topComp: " + ROUND(topComponent:MAG,2) AT (TERMINAL:WIDTH/2,4).
 
 		SET descentRatePID:SETPOINT TO descentRate.
 
