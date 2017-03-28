@@ -4,6 +4,6 @@ DECLARE PARAMETER transitionPoint IS 750.
 
 
 runoncepath("descent.ks").
-
-descent(transitionPoint).
+testDescent(transitionPoint).
+//descent(transitionPoint).
 poweredLanding().
