@@ -193,7 +193,7 @@ DECLARE FUNCTION testDescent {
 }
 
 DECLARE FUNCTION poweredLanding {
-
+	SAS OFF.
 	LOCAL Kp TO 2.
 	LOCAL Ki TO 0.
 	LOCAL Kd TO 1.
@@ -232,6 +232,67 @@ DECLARE FUNCTION poweredLanding {
 
 		SET cThrottle TO MIN(1,MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS,
 			 													SHIP:VERTICALSPEED))).
+
+		//try to zero out horizontal velocity
+		IF (horizontalVelocity:MAG >= 0.1) {
+			SET SHIP:CONTROL:STARBOARD TO -(MIN(MAX(starComponent,-1),1)).
+			SET SHIP:CONTROL:TOP TO -(MIN(MAX(topComponent,-1),1)).
+		}
+
+	}
+	SAS ON.
+	SET cThrottle TO 0.
+
+	UNLOCK THROTTLE.
+	UNLOCK STEERING.
+}
+
+DECLARE FUNCTION hover {
+	DECLARE PARAMETER hoverPoint.
+
+	LOCAL Kp TO 0.1.
+	LOCAL Ki TO 0.
+	LOCAL Kd TO 0.
+
+	LOCAL cThrottle TO SHIP:CONTROL:PILOTMAINTHROTTLE.
+	LOCK THROTTLE TO cThrottle.
+	LOCAL cHeading TO HEADING(90,90).
+	LOCK cHeading TO HEADING(90,90).
+	LOCK STEERING TO cHeading.
+
+	//new PID for velocity guided descent. Target of vertical velocity = -altitude/10, not to go below 4 m/s.
+	LOCAL hoverPID TO PIDLOOP(Kp,Ki,Kd).
+	SET hoverPID:SETPOINT TO hoverPoint.
+
+	LOCAL horizontalVelocity TO SHIP:VELOCITY:SURFACE.
+	LOCK horizontalVelocity TO SHIP:VELOCITY:SURFACE.
+	LOCAL starComponent TO (cHeading:STARVECTOR:NORMALIZED * horizontalVelocity).
+	LOCAL topComponent TO (cHeading:TOPVECTOR:NORMALIZED * horizontalVelocity).
+
+	LOCK starComponent TO (cHeading:STARVECTOR:NORMALIZED * horizontalVelocity).
+	LOCK topComponent TO (cHeading:TOPVECTOR:NORMALIZED * horizontalVelocity).
+
+	//LOCK STEERING TO SHIP:BODY:UP.
+	RCS ON.
+	LOCAL fuelRes TO 0.
+
+	FOR res IN STAGE:RESOURCES {
+		IF res:NAME = "LIQUIDFUEL".
+		SET fuelRes TO res.
+	}
+
+	//LOCAL fuelLeft TO fuelRes:AMOUNT/fuelRes:CAPACITY.
+	//LOCK fuelLeft TO fuelRes:AMOUNT/fuelRes:CAPACITY.
+
+	clearscreen.
+	UNTIL FALSE {
+		PRINT "StarComp: " + ROUND(starComponent,2) AT (TERMINAL:WIDTH/2,0).
+		PRINT "TopComp: " + ROUND(topComponent,2) AT (TERMINAL:WIDTH/2,1).
+		PRINT "Star Control: " + ROUND(SHIP:CONTROL:STARBOARD,2) AT (TERMINAL:WIDTH/2,3).
+		PRINT "Top Control: " + ROUND(SHIP:CONTROL:TOP,2) AT (TERMINAL:WIDTH/2,4).
+
+		SET cThrottle TO MIN(1,MAX(0,cThrottle + hoverPID:UPDATE(TIME:SECONDS,
+			 													ALT:RADAR))).
 
 		//try to zero out horizontal velocity
 		IF (horizontalVelocity:MAG >= 0.1) {
