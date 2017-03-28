@@ -12,7 +12,7 @@ runoncepath("shipLib.ks").
 SET TERMINAL:WIDTH TO 75.
 
 DECLARE FUNCTION descent {
-	DECLARE PARAMETER transitionHeight IS 750.
+	DECLARE PARAMETER transitionHeight IS 1000.
 	//height at which transition from descent to hover/land
 
 	//declarations
@@ -52,38 +52,48 @@ DECLARE FUNCTION descent {
 
 	LOCAL Ka TO 1.
 	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
-	LOCAL tempFacing TO SHIP:FACING.
-	LOCAL beta TO VDOT(SHIP:VELOCITY:SURFACE,SHIP:BODY:UP:VECTOR:NORMALIZED).
-	LOCK beta TO VANG(SHIP:VELOCITY:SURFACE,SHIP:BODY:UP:VECTOR:NORMALIZED).
-
 
 	LOCAL cTWR TO maxTWR * cThrottle.
-	LOCK cTWR TO maxTWR * cThrottle * SIN(VANG(SHIP:SRFRETROGRADE:VECTOR,tempFacing:VECTOR)).
+	LOCK cTWR TO maxTWR * cThrottle.
 
-	//TWR PID LOOP SETTINGS
-	LOCAL Kp TO 0.5.
+	LOCAL alt0 TO ALT:RADAR + transitionHeight.
+	LOCAL Ka TO ALT:RADAR/alt0.
+	LOCK Ka TO ALT:RADAR/alt0.
+	LOCAL v0 TO SHIP:GROUNDSPEED.
+
+
+	LOCAL Kp TO 2.
 	LOCAL Ki TO 0.
-	LOCAL Kd TO 0.
-	LOCAL twrPID TO PIDLOOP(Kp,Ki,Kd).
-	SET twrPID:SETPOINT TO 0.9.
+	LOCAL Kd TO 1.
+	LOCAL descentRate TO ALT:RADAR/10.
+	LOCK descentRate TO MIN(-4,(-ALT:RADAR/10)).
+	LOCAL descentRatePID TO PIDLOOP(Kp,Ki,Kd).
+	SET descentRatePID:SETPOINT TO descentRate.
+
+	LOCAL hrzPID TO PIDLOOP(Kp,Ki,Kd).
+	SET hrzPID:SETPOINT TO v0*Ka.
 
 	deployLandingGear().
 
-	LOCAL tempSetPoint TO 3.
 	//landing loop
+	SET cThrottle TO 0.5.
+	//WAIT UNTIL SHIP:PERIAPSIS <= transitionHeight.
+	WAIT UNTIL SHIP:GROUNDSPEED/v0 <= 0.5.
 
 	UNTIL cAlt <= transitionHeight {
-		PRINT "?down component of thrust: " + ROUND(cTWR,2) AT (TERMINAL:WIDTH/2,0).
-		PRINT "facingPhi: " + ROUND(VANG(SHIP:SRFRETROGRADE:VECTOR,tempFacing:VECTOR),2) AT (TERMINAL:WIDTH/2,1).
-		PRINT "beta: " + ROUND(beta,2) AT (TERMINAL:WIDTH/2,2).
-		//PRINT "arccosbeta: " + ROUND(ARCCOS(beta),2) AT (TERMINAL:WIDTH/2,2).
+		SET hrzPID:SETPOINT TO v0*Ka.
 
 		stageLogic().
 		//debug
-		SET cThrottle TO MIN(1,MAX(0,(tempSetPoint/maxTWR - ((tempSetPoint/maxTWR)*SIN(beta))/2))).
+		//SET cThrottle TO MIN(1,MAX(0,(tempSetPoint/maxTWR - ((tempSetPoint/maxTWR)*SIN(beta))/2))).
 		//SET cThrottle TO (MIN(1,MAX(0,2/maxTWR))).
-		//SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
+	//	IF v0/SHIP:GROUNDSPEED > Ka {
+			//SET cThrottle TO MIN(1,MAX(0,cThrottle + hrzPID:UPDATE(TIME:SECONDS, -SHIP:GROUNDSPEED))).
+		//}
+		SET descentRatePID:SETPOINT TO descentRate.
 
+		SET cThrottle TO MIN(1,MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS,
+			 													SHIP:VERTICALSPEED))).
 		WAIT 0.
 	}
 }
