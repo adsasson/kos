@@ -52,7 +52,7 @@ DECLARE FUNCTION ascent {
 
 			WAIT UNTIL ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
 
-			LOCAL cThrottle TO 0.1.
+			LOCAL cThrottle TO MAX(1,(targetApo - SHIP:APOAPSIS)/targetApo * 10).
 			LOCK THROTTLE to cTHROTTLE.
 
 			WAIT UNTIL (SHIP:APOAPSIS >= targetApo).
@@ -124,7 +124,10 @@ DECLARE FUNCTION ascentCurve {
 
 	UNTIL cSHIP:APOAPSIS >= targetApo {
 		IF atmoFlag {
-			SET cThrottle TO MIN(1, MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))). //thrust PID LOOP
+			//SET cThrottle TO MIN(1, MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))). //thrust PID LOOP
+			IF (maxTWR > 0) {
+				SET cThrottle TO MIN(1,MAX(0,twrPID:SETPOINT/maxTWR)).
+			}
 		} ELSE {
 			SET cThrottle TO 1.
 		}
