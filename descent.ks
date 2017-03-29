@@ -12,7 +12,7 @@ runoncepath("shipLib.ks").
 SET TERMINAL:WIDTH TO 75.
 
 DECLARE FUNCTION descent {
-	DECLARE PARAMETER transitionHeight IS 1000.
+	DECLARE PARAMETER transitionHeight IS 1000, deorbitBurn TO TRUE.
 	//height at which transition from descent to hover/land
 
 	//declarations
@@ -76,10 +76,11 @@ DECLARE FUNCTION descent {
 	deployLandingGear().
 
 	//landing loop
-	SET cThrottle TO 0.5.
-	//WAIT UNTIL SHIP:PERIAPSIS <= transitionHeight.
-	WAIT UNTIL SHIP:GROUNDSPEED/v0 <= 0.5.
-
+	IF deorbitBurn {
+		SET cThrottle TO 0.5.
+		//WAIT UNTIL SHIP:PERIAPSIS <= transitionHeight.
+		WAIT UNTIL SHIP:GROUNDSPEED/v0 <= 0.5.
+	}
 	UNTIL cAlt <= transitionHeight {
 		SET hrzPID:SETPOINT TO v0*Ka.
 
