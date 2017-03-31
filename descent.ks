@@ -65,13 +65,10 @@ DECLARE FUNCTION descent {
 	LOCAL Kp TO 2.
 	LOCAL Ki TO 0.
 	LOCAL Kd TO 1.
-	LOCAL descentRate TO ALT:RADAR/10.
-	LOCK descentRate TO MIN(-4,(-ALT:RADAR/10)).
+	LOCAL descentRate TO SHIP:GROUNDSPEED/10.
+	LOCK descentRate TO (SHIP:GROUNDSPEED/10).
 	LOCAL descentRatePID TO PIDLOOP(Kp,Ki,Kd).
 	SET descentRatePID:SETPOINT TO descentRate.
-
-	LOCAL hrzPID TO PIDLOOP(Kp,Ki,Kd).
-	SET hrzPID:SETPOINT TO v0*Ka.
 
 	deployLandingGear().
 
@@ -82,7 +79,7 @@ DECLARE FUNCTION descent {
 		WAIT UNTIL SHIP:GROUNDSPEED/v0 <= 0.5.
 	}
 	UNTIL cAlt <= transitionHeight {
-		SET hrzPID:SETPOINT TO v0*Ka.
+
 
 		stageLogic().
 		//debug
