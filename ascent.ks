@@ -37,7 +37,7 @@ DECLARE FUNCTION ascent {
 
 		ascentCurve(targetHeading, targetApo, atmoHeight).
 
-		ON (SHIP:ALTITUDE > atmoHeight) {
+		ON (SHIP:ALTITUDE > SHIP:BODY:ATM:HEIGHT) {
 			engageDeployables().
 		}
 
