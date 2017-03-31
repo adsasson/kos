@@ -62,16 +62,16 @@ DECLARE FUNCTION descent {
 	LOCAL v0 TO SHIP:GROUNDSPEED.
 
 
-	LOCAL Kp TO 2.
+	LOCAL Kp TO 0.5.
 	LOCAL Ki TO 0.
-	LOCAL Kd TO 1.
-	LOCAL descentRate TO SHIP:GROUNDSPEED/10.
-	LOCK descentRate TO (SHIP:GROUNDSPEED/10).
+	LOCAL Kd TO 0.
+	LOCAL descentRate TO (MIN(SHIP:GROUNDSPEED,ALT:RADAR/10)).
+	LOCK descentRate TO (MIN(SHIP:GROUNDSPEED,ALT:RADAR/10)).
 	LOCAL descentRatePID TO PIDLOOP(Kp,Ki,Kd).
 	SET descentRatePID:SETPOINT TO descentRate.
 
 	deployLandingGear().
-
+	PRINT deorbitBurn.
 	//landing loop
 	IF deorbitBurn {
 		SET cThrottle TO 0.5.
@@ -79,7 +79,8 @@ DECLARE FUNCTION descent {
 		WAIT UNTIL SHIP:GROUNDSPEED/v0 <= 0.5.
 	}
 	UNTIL cAlt <= transitionHeight {
-
+		PRINT "GROUNDSPEED: " + SHIP:GROUNDSPEED AT (TERMINAL:WIDTH/2,0).
+		PRINT "ALT/100: " + descentRate AT (TERMINAL:WIDTH/2,2).
 
 		stageLogic().
 		//debug
@@ -90,8 +91,8 @@ DECLARE FUNCTION descent {
 		//}
 		SET descentRatePID:SETPOINT TO descentRate.
 
-		SET cThrottle TO MIN(1,MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS,
-			 													SHIP:VERTICALSPEED))).
+		SET cThrottle TO MIN(1,MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS,descentRate/SHIP:GROUNDSPEED))).
+		//SET cThrottle TO (1 - descentRate/SHIP:GROUNDSPEED).
 		WAIT 0.
 	}
 }
