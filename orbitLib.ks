@@ -56,7 +56,9 @@ DECLARE FUNCTION orbitalInsertion {
 		}
 
 			LOCK mAcc TO SHIP:MAXTHRUST/SHIP:MASS.
-			LOCK cThrottle TO MIN(ABS(OIdeltaV)/mAcc, 1).
+			IF (mAcc > 0) {
+				LOCK cThrottle TO MIN(ABS(OIdeltaV)/mAcc, 1).
+			}
 			LOCK THROTTLE TO cThrottle.
 
 		LOCAL done TO FALSE.
