@@ -126,13 +126,14 @@ DECLARE FUNCTION descent {
 	LOCAL velBurnTime TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
 	LOCK velBurnTime TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
 
-	LOCAL verticalImpactTime TO (cAlt + transitionHeight)/(SHIP:VELOCITY:ORBIT:MAG * sinPhi).
-	LOCK verticalImpactTime TO (cAlt + transitionHeight)/(SHIP:VELOCITY:ORBIT:MAG * sinPhi).
+	LOCAL verticalImpactTime TO (cAlt - transitionHeight)/(SHIP:VELOCITY:ORBIT:MAG * sinPhi).
+	LOCK verticalImpactTime TO (cAlt - transitionHeight)/(SHIP:VELOCITY:ORBIT:MAG * sinPhi) + velBurnTime/2.
 
 
 	SAS OFF.
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 	stageLogic().
+	deployLandingGear().
 
 	LOCK cHeading TO SHIP:SRFRETROGRADE.
 	//LOCK tempHeading TO V(cheading:X - tempSinThrust, cheading:Y + tempCosThrust, 0).
