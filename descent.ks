@@ -11,7 +11,7 @@ runoncepath("shipLib.ks").
 //dependsOn("shipLib.ks").
 SET TERMINAL:WIDTH TO 75.
 
-DECLARE FUNCTION descent {
+DECLARE FUNCTION descentOld {
 	DECLARE PARAMETER transitionHeight IS 1000, deorbitBurn TO TRUE.
 	//height at which transition from descent to hover/land
 
@@ -97,7 +97,7 @@ DECLARE FUNCTION descent {
 	}
 }
 
-DECLARE FUNCTION testDescent {
+DECLARE FUNCTION descent {
 	DECLARE PARAMETER transitionHeight IS 750.
 	//height at which transition from descent to hover/land
 
@@ -105,91 +105,57 @@ DECLARE FUNCTION testDescent {
 	LOCAL cShip TO SHIP.
 	LOCAL cBody TO SHIP:BODY.
 
-	LOCAL cMass TO cShip:MASS.
-	LOCK cMass TO cShip:MASS.
+	LOCAL ecc TO SHIP:ORBIT:ECCENTRICITY.
+	LOCK ecc TO SHIP:ORBIT:ECCENTRICITY.
 
-	LOCAL cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-	SET cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
+	LOCAL trueAn TO SHIP:ORBIT:TRUEANOMALY.
+	LOCK trueAn TO SHIP:ORBIT:TRUEANOMALY.
 
-	LOCAL maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGrav)).
-	LOCK cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-	LOCK maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGrav)).
-
+	LOCAL cosPhi TO (1 + ecc*COS(trueAn))/(SQRT(1 + ecc^2 + 2*ecc*COS(trueAn))).
+	LOCK cosPhi TO (1 + ecc*COS(trueAn))/(SQRT(1 + ecc^2 + 2*ecc*COS(trueAn))).
+	LOCAL sinPhi TO SQRT(1 - cosPhi^2).
+	LOCK sinPhi TO SQRT(1 - cosPhi^2).
 
 	LOCAL cThrottle TO 0.
-	LOCAL orbitAltitude TO ALT:RADAR.
 	LOCAL cAlt TO ALT:RADAR.
 	LOCK cAlt TO ALT:RADAR.
 
 	LOCAL vHoriz TO (SHIP:VELOCITY:SURFACE:X).
 	LOCAL vVert TO (SHIP:VELOCITY:SURFACE:Y).
 
-	LOCAL tempTime TO SQRT(2*ALT:RADAR/(cGrav*0.9)).
-	LOCAL tempSinThrust TO vHoriz/tempTime.
-	LOCAL tempCosThrust TO (0.9*cGrav).
+	LOCAL velBurnTime TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
+	LOCK velBurnTime TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
 
-	LOCAL tanThrust TO tempSinThrust/tempCosThrust.
-
-	LOCAL goalThrust TO tanThrust*SHIP:AVAILABLETHRUST.
-	LOCAL goalPhi TO ARCTAN(tanThrust).
+	LOCAL verticalImpactTime TO (cAlt + transitionHeight)/(SHIP:VELOCITY:ORBIT:MAG * sinPhi).
+	LOCK verticalImpactTime TO (cAlt + transitionHeight)/(SHIP:VELOCITY:ORBIT:MAG * sinPhi).
 
 
 	SAS OFF.
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+	stageLogic().
 
-	LOCK cHeading TO SHIP:VELOCITY:ORBIT:NORMALIZED.
+	LOCK cHeading TO SHIP:SRFRETROGRADE.
 	//LOCK tempHeading TO V(cheading:X - tempSinThrust, cheading:Y + tempCosThrust, 0).
-	LOCK tempHeading TO SHIP:SRFRETROGRADE.
 
-	LOCK STEERING TO tempHeading.
+
+	LOCK STEERING TO cHeading.
 	LOCK THROTTLE TO cThrottle.
 
-	//WAIT UNTIL 	ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND
-	// 						ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
+	pointTo(cHeading).
 
-	LOCK testPhi TO flightPathAngle().
-	LOCK tempSetPoint TO 0.5/(MAX(0.0001,SIN(testPhi))).
-
-	WAIT UNTIL pointTo(tempHeading).
-
-
-	LOCAL cTWR TO maxTWR * cThrottle.
-	LOCK cTWR TO maxTWR * cThrottle.
-
-	//TWR PID LOOP SETTINGS
-	LOCAL Kp TO 0.5.
-	LOCAL Ki TO 0.
-	LOCAL Kd TO 0.
-	LOCAL twrPID TO PIDLOOP(Kp,Ki,Kd).
-	SET twrPID:SETPOINT TO 0.9.
-
-	deployLandingGear().
-
-
-	//landing loop
-	IF cAlt <= transitionHeight {
-		RETURN TRUE.
+	UNTIL FALSE {
+		//PRINT "velBurnTime: " + round(velBurnTime,2) AT (TERMINAL:WIDTH/2,1).
+		PRINT "verticalImpactTime: " + round(verticalImpactTime,2) AT (TERMINAL:WIDTH/2,1).
+		IF velBurnTime*1.2 >= verticalImpactTime  {
+			SET cThrottle TO 1.
+			WAIT UNTIL SHIP:GROUNDSPEED <= 1.
+			BREAK.
+		}
 	}
-	SET vHoriz TO (SHIP:VELOCITY:SURFACE:X).
-	LOCK cHoriz TO SHIP:VELOCITY:SURFACE:X.
 
-	SET cThrottle TO 1.
-	WAIT UNTIL cHoriz/vHoriz <= 0.3.
-
-	UNTIL cAlt <= transitionHeight {
-		PRINT "sin phi: " + ROUND(SIN(testPhi),2) AT (TERMINAL:WIDTH/2,0).
-		PRINT "SETPOINT: " + ROUND(tempSetPoint,2) AT (TERMINAL:WIDTH/2,1).
-		//PRINT "arccosbeta: " + ROUND(ARCCOS(beta),2) AT (TERMINAL:WIDTH/2,2).
-
-		stageLogic().
-		//debug
-		SET cThrottle TO MIN(1,MAX(0,(tempSetPoint/(MAX(0.00001,maxTWR))))).
-		//SET cThrottle TO (MIN(1,MAX(0,2/maxTWR))).
-		//SET cThrottle TO MIN(1,MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))).
-
-		WAIT 0.
-	}
+	SET cThrottle TO 0.
 }
+
 
 DECLARE FUNCTION poweredLanding {
 	SAS OFF.
@@ -305,4 +271,62 @@ DECLARE FUNCTION hover {
 
 	UNLOCK THROTTLE.
 	UNLOCK STEERING.
+}
+
+DECLARE FUNCTION doi {
+	PARAMETER periBody IS (surfaceFeature[SHIP:BODY:NAME] + 100).
+	LOCK STEERING TO SRFRETROGRADE.
+	UNTIL SHIP:PERIAPSIS <= periBody {
+		LOCK THROTTLE TO 1.
+	}
+	LOCK THROTTLE TO 0.
+	UNLOCK STEERING.
+	UNLOCK THROTTLE.
+}
+
+DECLARE FUNCTION pdi {
+	//after afshari et al (2009) J Mech Sci Tech 23:3239-3244,
+	LOCK beta TO VANG(SHIP:FACING:VECTOR,SHIP:VELOCITY:SURFACE).
+	LOCK phi TO flightPathAngle().
+	LOCAL uStar TO SHIP:VELOCITY:ORBIT * SIN(phi).
+	LOCAL vStar TO SHIP:VELOCITY:ORBIT * COS(phi).
+	LOCAL tStar TO TIME:SECONDS/uStar.
+	LOCAL yStar TO ALT:RADAR.
+
+	LOCAL uBar TO (SHIP:VELOCITY:ORBIT * SIN(phi))/uStar.
+	LOCK uBar TO (SHIP:VELOCITY:ORBIT * SIN(phi))/uStar.
+	LOCAL vBar TO (SHIP:VELOCITY:ORBIT * COS(phi))/vStar.
+	LOCK vBar TO (SHIP:VELOCITY:ORBIT * COS(phi))/vStar.
+	LOCAL tau TO TIME:SECONDS/tStar.
+	LOCK tau TO TIME:SECONDS/tStar.
+	LOCAL yBar TO SHIP:POSITION/yStar.
+	LOCK yBar TO SHIP:POSITION/yStar.
+
+	LOCAL maxThrust TO SHIP:AVAILABLETHRUST.
+	LOCK maxThrust TO SHIP:AVAILABLETHRUST.
+
+	LOCAL bodyG TO SHIP:BODY:MU/(SHIP:BODY:RADIUS)^2. //using gravity at datum
+
+	LOCAL omega1 TO maxThrust*tStar/uStar.
+	LOCAL omega2 TO bodyG * tStar/uStar.
+	LOCAL omega3 TO uStar * tStar/yStar.
+
+	LOCK omega1 TO maxThrust*tStar/uStar.
+	LOCK omega2 TO bodyG * tStar/uStar.
+	LOCK omega3 TO uStar * tStar/yStar.
+
+	LOCAL sumBetaR TO 0.
+
+	FROM {LOCAL n IS 1.} UNTIL n = 6 STEP {SET n TO n+1.} DO {
+	  SET sumBetaR TO sumBetaR + (COS((2 * n + 1)*beta))/(2*n+1)^3.
+	}
+
+	LOCAL kappa1 TO 1.
+	LOCAL kappa2 TO 1.
+	LOCAL kappa3 TO 1.
+	LOCAL gammaU TO kappa1.
+	LOCAL gammaV TO -kappa3 * omega3 * tau + kappa2.
+	LOCAL gammaY TO kappa3.
+
+	LOCAL dUdBeta TO (8 * omega1 * COS(beta) * SIN(beta))/CONSTANT:PI * gammaY.
 }

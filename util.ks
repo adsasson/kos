@@ -3,7 +3,7 @@
 
 DECLARE FUNCTION notify {
   PARAMETER message.
-  HUDTEXT("kOS: " + message, 5, 2, 50, YELLOW, false).
+  HUDTEXT("kOS: " + message, 5, 3, 20, YELLOW, TRUE).
 }
 
 DECLARE FUNCTION download {
