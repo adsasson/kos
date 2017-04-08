@@ -57,7 +57,13 @@ DECLARE FUNCTION testDescent {
 	//landing loop
 	stageLogic().
 
-	WAIT tManeuver.
+	LOCAL startTime TO TIME:SECONDS.
+	UNTIL FALSE {
+		PRINT "Time To Burn: " + (startTime + tManeuver - TIME:SECONDS) AT (TERMINAL:WIDTH/2, 0).
+		WAIT tManeuver.
+		BREAK.
+	}
+	//WAIT tManeuver.
 	SET cThrottle TO 1.
 	WAIT tB.
 	SET cThrottle TO 0.
