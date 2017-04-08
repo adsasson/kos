@@ -1,8 +1,11 @@
 //landing
 
-DECLARE PARAMETER transitionPoint IS 1000, deorbit IS TRUE.
+DECLARE PARAMETER transitionPoint IS 1000, deorbit IS FALSE.
 
 
 runoncepath("descent.ks").
-descent(transitionPoint,deorbit).
+IF deorbit {
+  doi().
+}
+descent(transitionPoint).
 poweredLanding().
