@@ -11,96 +11,67 @@ runoncepath("shipLib.ks").
 //dependsOn("shipLib.ks").
 SET TERMINAL:WIDTH TO 75.
 
-DECLARE FUNCTION descentOld {
-	DECLARE PARAMETER transitionHeight IS 1000, deorbitBurn TO TRUE.
+DECLARE FUNCTION testDescent {
+	DECLARE PARAMETER transitionHeight IS 1000.
 	//height at which transition from descent to hover/land
 
-	//declarations
-	LOCAL cShip TO SHIP.
-	LOCAL cBody TO SHIP:BODY.
-
-	LOCAL cMass TO cShip:MASS.
-	LOCK cMass TO cShip:MASS.
-
-	LOCAL cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-	SET cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-
-	LOCAL maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGrav)).
-	LOCK cGrav TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2.
-	LOCK maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGrav)).
-
-
-	LOCAL cThrottle TO 0.
-	LOCAL orbitAltitude TO ALT:RADAR.
-	LOCAL cAlt TO ALT:RADAR.
-	LOCK cAlt TO ALT:RADAR.
-
+	//orient first
 	SAS OFF.
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
-
 	LOCAL cHeading TO SHIP:SRFRETROGRADE.
-
 	LOCK cHeading TO SHIP:SRFRETROGRADE.
 
 	LOCK STEERING TO cHeading.
 	LOCK THROTTLE TO cThrottle.
 
-	//WAIT UNTIL 	ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND
-	// 						ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
-
 	WAIT UNTIL pointTo(cHeading).
 
-	LOCAL Ka TO 1.
-	LOCK Ka TO ROUND((cAlt/orbitAltitude),2). //normalize distance to ground
+	//declarations
+	LOCAL cShip TO SHIP.
+	LOCAL cBody TO SHIP:BODY.
 
-	LOCAL cTWR TO maxTWR * cThrottle.
-	LOCK cTWR TO maxTWR * cThrottle.
+	LOCAL cGrav TO cBody:MU/cBody:RADIUS^2. //grav at sea level
 
-	LOCAL alt0 TO ALT:RADAR + transitionHeight.
-	LOCAL Ka TO ALT:RADAR/alt0.
-	LOCK Ka TO ALT:RADAR/alt0.
-	LOCAL v0 TO SHIP:GROUNDSPEED.
+	LOCAL cThrottle TO 0.
+	LOCAL r0 TO ALT:RADAR. //initial
+	//LOCAL r1 TO ALT:RADAR. //current
+	//LOCK r1 TO ALT:RADAR.
+	LOCAL rF TO r0 - transitionHeight. //final altitude
 
+	//Time to impact
+	//rf = r0 + v0*t + 1/2*a*t^2
+	//by quadratic formula
+	//t = -v0 + SQRT(v0^2 - 2a(r0-rf))/a a= gravity r0 - rf = r0 - (r0 - transitionHeight) = transitionHeight
 
-	LOCAL Kp TO 0.5.
-	LOCAL Ki TO 0.
-	LOCAL Kd TO 0.
-	LOCAL descentRate TO (MIN(SHIP:GROUNDSPEED,ALT:RADAR/10)).
-	LOCK descentRate TO (MIN(SHIP:GROUNDSPEED,ALT:RADAR/10)).
-	LOCAL descentRatePID TO PIDLOOP(Kp,Ki,Kd).
-	SET descentRatePID:SETPOINT TO descentRate.
+	LOCAL vX0 TO SHIP:GROUNDSPEED.
+	LOCAL vY0 TO SHIP:VERTICALSPEED.
+
+	LOCAL TTI TO -vY0 + (SQRT(vY0^2 - 2*cGrav*transitionHeight))/cGrav.
+	//velocity at transition height by VisViva
+	LOCAL vF TO VisViva(rF + cBody:RADIUS).
+	LOCAL tB TO burnTime(vF).
+
+	LOCAL tManeuver TO TTI - tB.
 
 	deployLandingGear().
-	PRINT deorbitBurn.
+
 	//landing loop
-	IF deorbitBurn {
-		SET cThrottle TO 0.5.
-		//WAIT UNTIL SHIP:PERIAPSIS <= transitionHeight.
-		WAIT UNTIL SHIP:GROUNDSPEED/v0 <= 0.5.
-	}
-	UNTIL cAlt <= transitionHeight {
-		PRINT "GROUNDSPEED: " + SHIP:GROUNDSPEED AT (TERMINAL:WIDTH/2,0).
-		PRINT "ALT/100: " + descentRate AT (TERMINAL:WIDTH/2,2).
+	stageLogic().
 
-		stageLogic().
-		//debug
-		//SET cThrottle TO MIN(1,MAX(0,(tempSetPoint/maxTWR - ((tempSetPoint/maxTWR)*SIN(beta))/2))).
-		//SET cThrottle TO (MIN(1,MAX(0,2/maxTWR))).
-	//	IF v0/SHIP:GROUNDSPEED > Ka {
-			//SET cThrottle TO MIN(1,MAX(0,cThrottle + hrzPID:UPDATE(TIME:SECONDS, -SHIP:GROUNDSPEED))).
-		//}
-		SET descentRatePID:SETPOINT TO descentRate.
+	WAIT tManeuver.
+	SET cThrottle TO 1.
+	WAIT tB.
+	SET cThrottle TO 0.
 
-		SET cThrottle TO MIN(1,MAX(0,cThrottle + descentRatePID:UPDATE(TIME:SECONDS,descentRate/SHIP:GROUNDSPEED))).
-		//SET cThrottle TO (1 - descentRate/SHIP:GROUNDSPEED).
-		WAIT 0.
-	}
 }
 
 DECLARE FUNCTION descent {
 	DECLARE PARAMETER transitionHeight IS 750.
 	//height at which transition from descent to hover/land
 
+	//check to see if below transition height and exit if so
+	IF ALT:RADAR <= transitionHeight {
+		RETURN.
+	}
 	//declarations
 	LOCAL cShip TO SHIP.
 	LOCAL cBody TO SHIP:BODY.
@@ -131,7 +102,7 @@ DECLARE FUNCTION descent {
 
 
 	SAS OFF.
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+	//SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 	stageLogic().
 	deployLandingGear().
 
