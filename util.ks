@@ -14,7 +14,7 @@ DECLARE FUNCTION download {
     SET volumeLabel TO volumeName.
   }
   SWITCH TO volumeLabel.
-  COPYPATH(sourceVolumeID + ":" + fileName,volumeLabel + ":").
+  COPYPATH(sourceVolumeID + ":" + fileName, volumeLabel + ":").
 }
 
 DECLARE FUNCTION dependsOn {
