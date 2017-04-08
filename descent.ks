@@ -7,8 +7,7 @@
 runoncepath("orbitLib.ks").
 runoncepath("orbMechLib.ks").
 runoncepath("shipLib.ks").
-//dependsOn("orbitLib.ks").
-//dependsOn("shipLib.ks").
+
 SET TERMINAL:WIDTH TO 75.
 
 
@@ -207,8 +206,8 @@ DECLARE FUNCTION hover {
 	DECLARE PARAMETER hoverPoint.
 
 	LOCAL Kp TO 0.1.
-	LOCAL Ki TO 0.
-	LOCAL Kd TO 0.
+	LOCAL Ki TO 0.005.
+	LOCAL Kd TO 0.01.
 
 	LOCAL cThrottle TO SHIP:CONTROL:PILOTMAINTHROTTLE.
 	LOCK THROTTLE TO cThrottle.
