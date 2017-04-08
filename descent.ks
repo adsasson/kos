@@ -11,46 +11,58 @@ runoncepath("shipLib.ks").
 //dependsOn("shipLib.ks").
 SET TERMINAL:WIDTH TO 75.
 
-DECLARE FUNCTION testDescent {
+
+DECLARE FUNCTION descent {
+	DECLARE PARAMETER transitionHeight IS 1000, flag IS "analytic".
+
+	IF flag = "analytic" {
+		descentAnalytic(transitionHeight).
+	} ELSE {
+		descentNumeric(transitionHeight).
+	}
+}
+
+//analytic descent
+DECLARE FUNCTION descentAnalytic {
 	DECLARE PARAMETER transitionHeight IS 1000.
 	//height at which transition from descent to hover/land
-
+	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 	//orient first
 	SAS OFF.
 	LOCAL cHeading TO SHIP:SRFRETROGRADE.
 	LOCK cHeading TO SHIP:SRFRETROGRADE.
 
+	LOCAL cThrottle TO 0.
 	LOCK STEERING TO cHeading.
 	LOCK THROTTLE TO cThrottle.
 
-	WAIT UNTIL pointTo(cHeading).
+	WAIT UNTIL pointTo(cHeading,FALSE,30,1).
 
 	//declarations
 	LOCAL cShip TO SHIP.
 	LOCAL cBody TO SHIP:BODY.
 
-	LOCAL cGrav TO cBody:MU/cBody:RADIUS^2. //grav at sea level
+	LOCAL cGrav TO -cBody:MU/(cBody:RADIUS)^2. //grav at datum, down is negative
 
-	LOCAL cThrottle TO 0.
 	LOCAL r0 TO ALT:RADAR. //initial
-	//LOCAL r1 TO ALT:RADAR. //current
-	//LOCK r1 TO ALT:RADAR.
 	LOCAL rF TO r0 - transitionHeight. //final altitude
 
 	//Time to impact
-	//rf = r0 + v0*t + 1/2*a*t^2
+	//transitionHeight = r0 + v0*t + 1/2*a*t^2
 	//by quadratic formula
-	//t = -v0 + SQRT(v0^2 - 2a(r0-rf))/a a= gravity r0 - rf = r0 - (r0 - transitionHeight) = transitionHeight
+	//t = -v0 +/- SQRT(v0^2 - 2a(r0-transitionHeight))/a a= gravity
 
 	LOCAL vX0 TO SHIP:GROUNDSPEED.
 	LOCAL vY0 TO SHIP:VERTICALSPEED.
 
-	LOCAL TTI TO -vY0 + (SQRT(vY0^2 - 2*cGrav*transitionHeight))/cGrav.
+	LOCAL TTI TO 0.
+		SET TTI TO MAX((-vY0 - SQRT(vY0^2 - 2*cGrav*rF))/cGrav,(-vY0 + SQRT(vY0^2 - 2*cGrav*rF))/cGrav).
+
 	//velocity at transition height by VisViva
 	LOCAL vF TO VisViva(rF + cBody:RADIUS).
 	LOCAL tB TO burnTime(vF).
 
-	LOCAL tManeuver TO TTI - tB.
+	LOCAL tManeuver TO TTI - tB/2.
 
 	deployLandingGear().
 
@@ -58,19 +70,20 @@ DECLARE FUNCTION testDescent {
 	stageLogic().
 
 	LOCAL startTime TO TIME:SECONDS.
-	UNTIL FALSE {
-		PRINT "Time To Burn: " + (startTime + tManeuver - TIME:SECONDS) AT (TERMINAL:WIDTH/2, 0).
-		WAIT tManeuver.
-		BREAK.
+	UNTIL TIME:SECONDS >= (startTime + tManeuver) {
+		PRINT "Time To Burn: " + ROUND((startTime + tManeuver - TIME:SECONDS),2) AT (TERMINAL:WIDTH/2, 1).
+		PRINT "Time To Impact: " + ROUND((startTime + TTI - TIME:SECONDS),2) AT (TERMINAL:WIDTH/2, 2).
+		WAIT 0.
 	}
-	//WAIT tManeuver.
+
 	SET cThrottle TO 1.
 	WAIT tB.
 	SET cThrottle TO 0.
 
 }
 
-DECLARE FUNCTION descent {
+//descent numeric
+DECLARE FUNCTION descentNumeric {
 	DECLARE PARAMETER transitionHeight IS 750.
 	//height at which transition from descent to hover/land
 
