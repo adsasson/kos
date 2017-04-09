@@ -2,7 +2,7 @@
 @LAZYGLOBAL OFF.
 //atmo_ascent
 //orbital insertion
-DECLARE PARAMETER cHeading IS 90, cApo IS 100000, cPeri IS 0.
+DECLARE PARAMETER cHeading IS 90, cApo IS 100000, cPeri IS 0, goalTWR IS 2.
 
 
 runoncepath("ascent.ks").
@@ -15,5 +15,5 @@ IF cApo < cPeri {
 	SET cApo TO oldValue.
 }
 
-ascent(cHeading,cApo).
+ascent(cHeading,cApo,goalTWR).
 orbitalInsertion(cPeri).

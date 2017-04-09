@@ -98,3 +98,35 @@ DECLARE FUNCTION pointTo {
 
 	RETURN TRUE.
 }
+
+DECLARE FUNCTION stageDeltaV {
+	PARAMETER stageNumber is STAGE:NUMBER, pressure IS 0.
+	LOCAL cEngines TO SHIP:ENGINES.
+	LOCAL totalThrust TO 0.
+	LOCAL totalISP TO 0.
+	LOCAL avgISP TO 0.
+
+	FOR eng IN cEngines {
+		IF eng:STAGE = stageNumber {
+				SET totalThrust TO totalThrust + eng:AVAILABLETHRUST.
+				SET totalISP TO totalISP + (eng:AVAILABLETHRUST/eng:ISPaT(pressure)).
+		}
+	}
+
+	IF totalISP > 0 {
+		SET avgISP TO totalThrust/totalISP.
+	}
+
+	RETURN avgISP*9.81*LN(SHIP:MASS/SHIP:DRYMASS).
+}
+
+DECLARE FUNCTION shipDeltaV {
+	PARAMETER pressure IS 0.
+
+	LOCAL totalDeltaV TO 0.
+
+	FROM {LOCAL x IS STAGE:NUMBER.} UNTIL x = 0 STEP {SET x TO x-1.} DO {
+		SET totalDeltaV TO totalDeltaV + stageDeltaV(x,pressure).
+	}
+	RETURN totalDeltaV.
+}
