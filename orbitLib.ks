@@ -149,7 +149,7 @@ DECLARE FUNCTION deltaVgeneral {
 
 //parameters SHIP, deltaV.
 DECLARE FUNCTION burnTime {
-	DECLARE PARAMETER currentDeltaV, currentShip IS SHIP.
+	DECLARE PARAMETER currentDeltaV, currentShip IS SHIP, pressure is 0.
 
 	LOCAL currentEngines TO LIST().
 	LIST ENGINES IN currentEngines.
@@ -163,12 +163,12 @@ DECLARE FUNCTION burnTime {
 	LOCAL totalIsp TO 0.
 	LOCAL avgISP TO 0.
 
-	LOCAL currentStage TO STAGE:NUMBER.
+	//LOCAL currentStage TO STAGE:NUMBER.
 
 	FOR eng IN currentEngines {
 		IF eng:IGNITION {
 				SET totalThrust TO totalThrust + eng:AVAILABLETHRUST.
-				SET totalISP TO totalISP + (eng:AVAILABLETHRUST/eng:ISP).
+				SET totalISP TO totalISP + (eng:AVAILABLETHRUST/eng:ISPAT(pressure)).
 		}
 	}
 	IF totalISP > 0 {
