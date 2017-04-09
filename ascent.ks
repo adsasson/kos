@@ -7,14 +7,14 @@ RUNONCEPATH("util.ks").
 RUNONCEPATH("shipLib.ks").
 
 DECLARE FUNCTION ascentInclination {
-	PARAMETER targetInclination IS 0, targetApo IS 100000.
-	ascent(targetInclination + 90, targetApo).
+	PARAMETER targetInclination IS 0, targetApo IS 100000 goalTWR IS 2.
+	ascent(targetInclination + 90, targetApo, goalTWR).
 }
 
 ////////////////////////////////////////////////////////////
 
 DECLARE FUNCTION ascent {
-	PARAMETER targetHeading IS 90, targetApo IS 100000.
+	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2.
 
 	//sanitize input
 	IF targetHeading > 360 {
@@ -35,7 +35,7 @@ DECLARE FUNCTION ascent {
 			SET targetApo TO atmoHeight + 1000.
 		}
 
-		ascentCurve(targetHeading, targetApo, atmoHeight).
+		ascentCurve(targetHeading, targetApo, atmoHeight, goalTWR).
 
 		ON (SHIP:ALTITUDE > SHIP:BODY:ATM:HEIGHT) {
 			engageDeployables().
@@ -77,7 +77,7 @@ DECLARE FUNCTION ascent {
 ///////////////////////////////////////////////////////////
 
 DECLARE FUNCTION ascentCurve {
-	PARAMETER targetHeading IS 90, targetApo IS 100000, scaleHeight IS 100000.
+	PARAMETER targetHeading IS 90, targetApo IS 100000, scaleHeight IS 100000, goalTWR IS 2.
 
 	//initialize controls
 
@@ -110,23 +110,12 @@ DECLARE FUNCTION ascentCurve {
 	//LOCK deltaPitch TO 90 * (1.5 * Ka). //known good curve
 	LOCK deltaPitch TO 90 * SQRT(Ka). //more efficient curve
 
-
-	//TWR PID LOOP SETTINGS
-	LOCAL Kp TO 0.1.
-	LOCAL Ki TO 0.006.
-	LOCAL Kd TO 0.001.
-	LOCAL twrPID TO PIDLOOP(Kp,Ki,Kd).
-	SET twrPID:SETPOINT TO 2.
-	//SET twrPID:MAXOUTPUT TO maxTWR. //pid doesn't seem to work correctly when limits set
-	//SET twrPID:MINOUTPUT TO 0.
-
 //++++++ASCENT LOOP
 
 	UNTIL cSHIP:APOAPSIS >= targetApo {
 		IF atmoFlag {
-			//SET cThrottle TO MIN(1, MAX(0,cThrottle + twrPID:UPDATE(TIME:SECONDS, cTWR))). //thrust PID LOOP
 			IF (maxTWR > 0) {
-				SET cThrottle TO MIN(1,MAX(0,twrPID:SETPOINT/maxTWR)).
+				SET cThrottle TO MIN(1,MAX(0,goalTWR/maxTWR)).
 			}
 		} ELSE {
 			SET cThrottle TO 1.
