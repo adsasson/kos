@@ -98,3 +98,14 @@ DECLARE FUNCTION pointTo {
 
 	RETURN TRUE.
 }
+
+DECLARE FUNCTION rcsISP {
+	LOCAL totalISP TO 0.
+	FOR rcsBlock IN SHIP:MODULESNAMED("ModuleRCS") {
+		SET totalISP TO totalISP + rcsBlock:GETFIELD("rcs isp").
+	}
+	FOR rcsBlock IN SHIP:MODULESNAMED("ModuleRCSFX") {
+		SET totalISP TO totalISP + rcsBlock:GETFIELD("rcs isp").
+	}
+	RETURN totalISP.
+}
