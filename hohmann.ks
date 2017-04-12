@@ -26,7 +26,7 @@ DECLARE FUNCTION hohmman {
     RETURN result.
   } ELSE {
     PRINT "Start and end points undefined".
-    RETURN "".
+    RETURN LEXICON().
   }
 }
 
