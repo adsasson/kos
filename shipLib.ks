@@ -78,18 +78,18 @@ DECLARE FUNCTION deployFairings {
 }
 
 DECLARE FUNCTION pointTo {
-	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 0.15.
+	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 1.
 
 	IF useRCS {
 		RCS ON.
 	}
 
-	IF goal:ISTYPE("Vector")  {
-		SET goal TO goal:DIRECTION.
+	IF goal:ISTYPE("DIRECTION")  {
+		SET goal TO goal:VECTOR.
 	}
 
 	LOCAL timeStart TO TIME.
-	UNTIL (ABS(goal:PITCH - SHIP:FACING:PITCH) < tol) AND (ABS(goal:YAW - SHIP:FACING:YAW) < tol) {
+	UNTIL ABS(VANG(SHIP:FACING:VECTOR,goal)) < tol {
 		IF (TIME - timeStart) > timeOut {
 			break.
 		}
