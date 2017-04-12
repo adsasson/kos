@@ -1,23 +1,54 @@
 //boot
-//LOAD scripts.
+//should update files to most current version
+//should declare relevant globals
+//should run library files
+//should load files necessary for ship profile (eg satellites don't need
+//landing scripts).
+//? check for automated instructions?
 
-COPYPATH("0:util.ks","1:").
-COPYPATH("0:orbitLib.ks","1:").
-COPYPATH("0:shipLib.ks","1:").
-COPYPATH("0:orbMechLib.ks","1:").
 
-//launch
-COPYPATH("0:launch.ks","1:").
-COPYPATH("0:ascent.ks","1:").
+GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
+																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
+																23000,"Pol",6000,"Tylo",13500,"Vall",9000).
 
-//node
-copypath("0:executenode.ks","1:").
+//global constants?
+GLOBAL kMu TO SHIP:BODY:MU.
 
-//landing
-COPYPATH("0:descent.ks","1:").
-COPYPATH("0:land.ks","1:").
+GLOBAL kLiquidFuel TO "LIQUID FUEL".
+GLOBAL kOx TO "OXIDIZER".
+GLOBAL kMono TO "MONOPROPELLANT".
 
-RUNONCEPATH("1:orbitLib.ks").
-RUNONCEPATH("1:util.ks").
-RUNONCEPATH("1:shipLib.ks").
-RUNONCEPATH("1:orbMechLib.ks").
+GLOBAL libList TO LIST("orbitLib.ks","shipLib.ks","utilLib.ks").
+
+FUNCTION updateLibraryFiles {
+  copyLibraryFiles().
+  runLibraryFiles().
+}
+
+FUNCTION download {
+  PARAMETER fileName, volumeLabel, sourceVolumeID IS 0.
+  SWITCH TO volumeLabel.
+  COPYPATH(sourceVolumeID + ":" + fileName, volumeLabel + ":").
+}
+
+FUNCTION copyLibraryFiles {
+  PARAMETER targetVolume IS 1.
+  FOR library IN libList {
+    download(library,targetVolume).
+  }
+}
+
+FUNCTION runLibraryFiles {
+  PARAMETER volumeID IS 1.
+  FOR library IN libList {
+    RUNONCEPATH(volumeID + ":" + library).
+  }
+}
+
+FUNCTION bootMain {
+  updateLibraryFiles().
+  //update craft specific files.
+  //check for automated instructions.
+}
+
+bootMain().
