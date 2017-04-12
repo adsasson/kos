@@ -1,121 +1,47 @@
-//ASCENT
-//atmospheric vs airless
 @LAZYGLOBAL OFF.
 
-RUNONCEPATH("orbitLib.ks").
-RUNONCEPATH("util.ks").
-RUNONCEPATH("shipLib.ks").
+//RUNONCEPATH("orbitLib.ks").
+//RUNONCEPATH("utilLib.ks").
+//RUNONCEPATH("shipLib.ks").
 
-DECLARE FUNCTION ascentInclination {
-	PARAMETER targetInclination IS 0, targetApo IS 100000 goalTWR IS 2.
-	ascent(targetInclination + 90, targetApo, goalTWR).
-}
+//atmo vs airless
 
-////////////////////////////////////////////////////////////
+dependsOn("orbitLib.ks").
+dependsOn("shipLib.ks").
 
-DECLARE FUNCTION ascent {
-	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2.
 
-	//sanitize input
-	IF targetHeading > 360 {
-		LOCAL thMod TO MOD(targetHeading,360).
-		LOCAL targetHeading TO targetHeading - 360*thMod.
-	}
 
-	//call ascent routine
-	GLOBAL atmoFlag TO SHIP:BODY:ATM:EXISTS.
-
-	IF atmoFlag {
-
-		LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
-
-		//check to see if apo clears atmosphere
-		IF targetApo < atmoHeight {
-			notify("ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING APOAPSIS TO " + atmoHeight + 1000 + " m").
-			SET targetApo TO atmoHeight + 1000.
-		}
-
-		ascentCurve(targetHeading, targetApo, atmoHeight, goalTWR).
-
-		ON (SHIP:ALTITUDE > SHIP:BODY:ATM:HEIGHT) {
-			engageDeployables().
-		}
-
-		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT + 100).
-
-		//correct for drag?
-		IF (SHIP:APOAPSIS < targetApo) {
-			notify("Correcting apoapsis for atmospheric drag.").
-
-			LOCAL cHeading TO HEADING(targetHeading,0).
-			LOCK STEERING TO cHeading.
-
-			WAIT UNTIL ABS(cHeading:PITCH - SHIP:FACING:PITCH) < 0.15 AND ABS(cHeading:YAW - SHIP:FACING:YAW) < 0.15.
-
-			LOCAL cThrottle TO MAX(1,(targetApo - SHIP:APOAPSIS)/targetApo * 10).
-			LOCK THROTTLE to cTHROTTLE.
-
-			WAIT UNTIL (SHIP:APOAPSIS >= targetApo).
-
-			SET cThrottle TO 0.
-
-			UNLOCK THROTTLE.
-			UNLOCK STEERING.
-		}
-
-	} ELSE {
-		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
-		IF targetApo < minFeatureHeight {
-			notify("ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE. ADJUSTING APOAPSIS TO " + minFeatureHeight + " m").
-			SET targetApo TO minFeatureHeight.
-		}
-		ascentCurve(targetHeading, targetApo, targetApo).
-		engageDeployables().
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-DECLARE FUNCTION ascentCurve {
+FUNCTION ascentCurve {
 	PARAMETER targetHeading IS 90, targetApo IS 100000, scaleHeight IS 100000, goalTWR IS 2.
 
 	//initialize controls
-
 	SAS OFF.
 
-//++++++DECLARATIONS
-	LOCAL cShip TO SHIP. 		//current Ship
-	LOCAL cBody TO cShip:BODY. 	//current Body
-
-	LOCAL cPitch TO 0.		//current Pitch
+	//DECLARATIONS
+	LOCAL cPitch TO 0.		//current Pitch, pointing straight up
 	LOCAL cHeading TO HEADING(targetHeading,cPitch). //currentHeading.
 
 
 	//THRUST locks
 	LOCAL cThrottle TO 0.5.
-
-	LOCK cMass TO cShip:MASS.
-	LOCK cGravity TO cBody:MU/(cShip:ALTITUDE + cBody:RADIUS)^2. //gravity for altitude
-	LOCK maxTWR TO (cShip:AVAILABLETHRUST/(cMass * cGravity)).
-
-	LOCK cTWR TO maxTWR * cThrottle. //current TWR
-
+	LOCAL LOCK mTWR TO maxTWR().
 	LOCK THROTTLE TO cThrottle.
 
 	//NAVIGATION locks
 	LOCK STEERING TO cHeading.
-	LOCK Ka TO ROUND((cShip:ALTITUDE/scaleHeight),2). //normalize altitude to scaleHeight
+	LOCK Ka TO ROUND((SHIP:ALTITUDE/scaleHeight),2). //normalize altitude to scaleHeight
 
 	//ascent curves
 	//LOCK deltaPitch TO 90 * (1.5 * Ka). //known good curve
 	LOCK deltaPitch TO 90 * SQRT(Ka). //more efficient curve
 
-//++++++ASCENT LOOP
+	//ASCENT LOOP
 
-	UNTIL cSHIP:APOAPSIS >= targetApo {
-		IF atmoFlag {
-			IF (maxTWR > 0) {
-				SET cThrottle TO MIN(1,MAX(0,goalTWR/maxTWR)).
+	UNTIL SHIP:APOAPSIS >= targetApo {
+		stageLogic().
+		IF SHIP:BODY:ATM:EXISTS {
+			IF (mTWR > 0) {
+				SET cThrottle TO MIN(1,MAX(0,goalTWR/mTWR)).
 			}
 		} ELSE {
 			SET cThrottle TO 1.
@@ -123,15 +49,71 @@ DECLARE FUNCTION ascentCurve {
 		SET cPitch TO 90 - (MIN(90,deltaPitch)). //pitch for ascent curve
 		SET cHeading TO HEADING(targetHeading,cPitch).
 
-		stageLogic().
-
 		WAIT 0.
 	}
 
-	notify("TARGET APOAPSIS REACHED").
+	notify("Target apoapsis reached").
 
-	//DEINITIALIZE
-	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+	SET cThrottle TO 0.
 	UNLOCK THROTTLE.
-	UNLOCK STEERING.
+}
+
+FUNCTION atmosphericAscent {
+	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2.
+	LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
+
+	//check inputs
+	IF targetApo < atmoHeight {
+		notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + atmoHeight + 1000 + " m").
+		SET targetApo TO atmoHeight + 1000.
+	}
+	ascentCurve(targetHeading,targetApo,goalTWR).
+}
+
+FUNCTION correctForDrag {
+	PARAMETER targetApo, .
+
+	IF (SHIP:APOAPSIS < targetApo) {
+		notify("Correcting apoapsis for atmospheric drag.").
+
+		LOCK STEERING TO SHIP:PROGRADE.
+
+		pointTo(SHIP:PROGRADE).
+
+		LOCAL cThrottle TO MAX(1,(targetApo - SHIP:APOAPSIS)/targetApo * 10).
+		LOCK THROTTLE to cTHROTTLE.
+
+		WAIT UNTIL (SHIP:APOAPSIS >= targetApo).
+
+		SET cThrottle TO 0.
+
+		UNLOCK THROTTLE.
+		UNLOCK STEERING.
+	}
+}
+
+FUNCTION airlessAscent {
+	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2.
+	LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
+
+	//check inputs
+	IF targetApo < minFeatureHeight {
+		notify("WARNING: Orbit will not clear minimum surface feature altitude. Adjusting apoapsis to " + minFeatureHeight + " m").
+		SET targetApo TO minFeatureHeight.
+	}
+	ascentCurve(targetHeading,targetApo,goalTWR)
+}
+
+FUNCTION ascent {
+	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2.
+
+	IF SHIP:BODY:ATM:EXISTS {
+		atmosphericAscent(targetHeading,targetApo,goalTWR).
+		ON SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT {
+			correctForDrag(targetApo).
+		}
+	} ELSE {
+		airlessAscent(targetHeading,targetApo,goalTWR).
+	}
+	engageDeployables().
 }

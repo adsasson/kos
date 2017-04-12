@@ -14,6 +14,9 @@ IF cApo < cPeri {
 	SET cPeri TO cApo.
 	SET cApo TO oldValue.
 }
+IF cHeading > 360 {
+	SET cHeading TO cHeading - 360*MOD(targetHeading,360).
+}
 
 ascent(cHeading,cApo,goalTWR).
 orbitalInsertion(cPeri).
