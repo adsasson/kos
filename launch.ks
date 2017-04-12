@@ -1,12 +1,12 @@
-//LAUNCH SCRIPT
 @LAZYGLOBAL OFF.
-//atmo_ascent
-//orbital insertion
-DECLARE PARAMETER cHeading IS 90, cApo IS 100000, cPeri IS 0, goalTWR IS 2.
 
+//ascent
+//orbital insertion
 
 runoncepath("ascent.ks").
 runoncepath("orbitLib.ks").
+
+DECLARE PARAMETER cHeading IS 90, cApo IS 100000, cPeri IS 0, goalTWR IS 2.
 
 //sanitize input
 IF cApo < cPeri {
