@@ -1,12 +1,7 @@
 //orbital maneuver library
 @LAZYGLOBAL OFF.
-runoncepath("shipLib.ks").
-runoncepath("util.ks").
-
-
-GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
-																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
-																23000,"Pol",6000,"Tylo",13500,"Vall",9000).
+dependsOn("shipLib.ks").
+dependsOn("util.ks").
 
 DECLARE FUNCTION orbitalInsertion {
 
@@ -79,7 +74,10 @@ DECLARE FUNCTION orbitalInsertion {
 DECLARE FUNCTION deltaV {
 
 	//v^2= GM*(2/r-1/a)
-	PARAMETER burnPoint, alpha1 IS SHIP:BODY:RADIUS, alpha2 IS SHIP:BODY:RADIUS, cBody IS SHIP:BODY.
+	PARAMETER burnPoint,
+						alpha1 IS SHIP:BODY:RADIUS,
+						alpha2 IS SHIP:BODY:RADIUS,
+						cBody IS SHIP:BODY.
 
 	LOCAL r0 TO cBody:RADIUS + burnPoint.
 
@@ -96,27 +94,15 @@ DECLARE FUNCTION deltaV {
 
 	return ABS(vel1 - vel2).
 }
-//======================================
-DECLARE FUNCTION deltaVhohmann {
-	//this only works for circular orbits.
-
-	PARAMETER start, end, cBody IS SHIP:BODY.
-
-	LOCAL r0 TO start + cBody:RADIUS.
-	LOCAL r1 TO end  + cBody:RADIUS.
-
-	LOCAL currentMu TO cBody:MU.
-
-	LOCAL currentDeltaV TO SQRT(currentMu/r0)*(sqrt((2*r1)/(r0+r1))-1).
-
-	return currentDeltaV.
-}
-
 
 DECLARE FUNCTION deltaVgeneral {
 
 	//v^2= GM*(2/r-1/a)
-	PARAMETER alt1 IS 0, alt2 IS 0, alpha1 IS 0, alpha2 IS 0, cBody IS SHIP:BODY.
+	PARAMETER alt1 IS SHIP:ALTITUDE,
+						alt2 IS SHIP:ALTITUDE,
+						alpha1 IS SHIP:ORBIT:SEMIMAJORAXIS,
+						alpha2 IS SHIP:ORBIT:SEMIMAJORAXIS,
+						cBody IS SHIP:BODY.
 
 	LOCAL r1 TO cBody:RADIUS + alt1.
 	LOCAL r2 TO cBody:RADIUS + alt2.
@@ -151,33 +137,20 @@ DECLARE FUNCTION deltaVgeneral {
 DECLARE FUNCTION burnTime {
 	DECLARE PARAMETER currentDeltaV, currentShip IS SHIP, pressure is 0.
 
-	LOCAL currentEngines TO LIST().
-	LIST ENGINES IN currentEngines.
-
 	LOCAL totalFuelMass TO SHIP:MASS - SHIP:DRYMASS.
 
 	LOCAL g0 TO 9.82.
 
-
-	LOCAL totalThrust TO 0.
-	LOCAL totalIsp TO 0.
-	LOCAL avgISP TO 0.
-
-	//LOCAL currentStage TO STAGE:NUMBER.
-
-	FOR eng IN currentEngines {
-		IF eng:IGNITION {
-				SET totalThrust TO totalThrust + eng:AVAILABLETHRUST.
-				SET totalISP TO totalISP + (eng:AVAILABLETHRUST/eng:ISPAT(pressure)).
-		}
-	}
-	IF totalISP > 0 {
-		SET avgISP TO totalThrust/totalISP.
-	}
+	LOCAL enginesLex TO enginesStats(pressure).
+	LOCAL avgISP TO enginesLex["avgISP"].
+	LOCAL totalThrust TO enginesLex["totalThrust"].
 	LOCAL burn TO 0.
+
 	//check for div by 0.
 	IF totalThrust > 0 {
-		SET burn TO g0*SHIP:MASS*avgISP*(1-CONSTANT:E^(-currentDeltaV/(g0*avgISP)))/totalThrust.
+		SET burn TO g0 * SHIP:MASS * avgISP *
+		(1-CONSTANT:E^(-currentDeltaV / (g0 * avgISP)))
+		/totalThrust.
 	} ELSE {
 		notify("ERROR: AVAILABLE THRUST IS 0.").
 	}

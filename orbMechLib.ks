@@ -10,7 +10,7 @@ PRINT "orbMechLib loaded.".
 //---------------------------------
 
 //EccAnToMeanAn
-DECLARE FUNCTION EccAnToMeanAn {
+FUNCTION EccAnToMeanAn {
 	DECLARE PARAMETER eccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1))  {
@@ -29,7 +29,7 @@ DECLARE FUNCTION EccAnToMeanAn {
 //  cosf = (cos(E) - e)/(1 - e * cos(E));
 //  f = atan2(sinf, cosf);
 
-DECLARE FUNCTION EccAnToTrueAn {
+FUNCTION EccAnToTrueAn {
 	DECLARE PARAMETER eccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 
@@ -43,7 +43,7 @@ DECLARE FUNCTION EccAnToTrueAn {
 	}
 }
 //-----------------------------------------------------------
-DECLARE FUNCTION MeanAnToEccAn {
+FUNCTION MeanAnToEccAn {
 
 	//uses newton's method (for f(x), roots R Ri+1 = Ri - (f(Ri)/f'(Ri)).
 	DECLARE PARAMETER  MeanAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
@@ -82,7 +82,7 @@ DECLARE FUNCTION MeanAnToEccAn {
 
 //------------------===========
 
-DECLARE FUNCTION MeanAnToTrueAn {
+FUNCTION MeanAnToTrueAn {
 	DECLARE PARAMETER MeanAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1)) {
@@ -95,7 +95,7 @@ DECLARE FUNCTION MeanAnToTrueAn {
 }
 
 //------------------
-DECLARE FUNCTION TrueAnToEccAn {
+FUNCTION TrueAnToEccAn {
 	DECLARE PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	//?? i1 = sqrt(1-ecc)/(1+ecc).
@@ -112,7 +112,7 @@ DECLARE FUNCTION TrueAnToEccAn {
 }
 
 //------------------------------
-DECLARE FUNCTION TrueAnToMeanAn {
+FUNCTION TrueAnToMeanAn {
 	DECLARE PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1)) {
@@ -125,7 +125,7 @@ DECLARE FUNCTION TrueAnToMeanAn {
 }
 //================
 //tangential angle for eccAn
-DECLARE FUNCTION EccAnToPhi {
+FUNCTION EccAnToPhi {
 	DECLARE PARAMETER  EccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1)) {
@@ -143,7 +143,7 @@ DECLARE FUNCTION EccAnToPhi {
 }
 //=====================
 //eccAn for Ralt
-DECLARE FUNCTION EccAnForR {
+FUNCTION EccAnForR {
 
 	//r = alt + body radius
 	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
@@ -156,7 +156,7 @@ DECLARE FUNCTION EccAnForR {
 //===========================
 //vis viva
 
-DECLARE FUNCTION VisViva {
+FUNCTION VisViva {
 	//v = sqrt(mu*(2/r - 1/a))
 
 
@@ -170,7 +170,7 @@ DECLARE FUNCTION VisViva {
 //=======================
 //flight path angle at R (phi or gamma)
 
-DECLARE FUNCTION FlightPathAngleAtR {
+FUNCTION FlightPathAngleAtR {
 
 	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
@@ -186,7 +186,7 @@ DECLARE FUNCTION FlightPathAngleAtR {
 }
 //==============================
 //flight path angle
-DECLARE FUNCTION flightPathAngle {
+FUNCTION flightPathAngle {
 	LOCAL ecc TO SHIP:ORBIT:ECCENTRICITY.
 	LOCAL trueAn TO SHIP:ORBIT:TRUEANOMALY.
 	LOCAL cosPhi TO (1 + ecc*COS(trueAn))/(SQRT(1 + ecc^2 + 2*ecc*COS(trueAn))).
@@ -197,7 +197,7 @@ DECLARE FUNCTION flightPathAngle {
 //==============================
 //R for TA
 //r = (a(1-e^2))/(1+e*cos(TA)).
-DECLARE FUNCTION RfromTA {
+FUNCTION RfromTA {
 	DECLARE PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
 	LOCAL R TO alpha*((1-ecc^2)/(1 + ecc*COS(TrueAn))).
@@ -207,7 +207,7 @@ DECLARE FUNCTION RfromTA {
 //==========================
 //TA for R
 //need to test
-DECLARE FUNCTION TrueAnForR {
+FUNCTION TrueAnForR {
 	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:ALPHA.
 
 	IF ecc = 0 {
@@ -228,7 +228,7 @@ DECLARE FUNCTION TrueAnForR {
 //=========================
 //compute position from orbital elements.
 //
-DECLARE FUNCTION etaToR {
+FUNCTION etaToR {
 	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, currentBody IS SHIP:BODY.
 
 	LOCAL currentR TO SHIP:ALTITUDE + currentBody:RADIUS.

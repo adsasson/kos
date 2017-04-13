@@ -116,7 +116,7 @@ DECLARE FUNCTION descentNumeric {
 FUNCTION poweredLanding {
 	PARAMETER maximumImpactTolerance TO 8.
 	SAS OFF.
-	LOCAL Kp TO 0.05.
+	LOCAL Kp TO 0.1.
 	LOCAL Ki TO 0.005.
 	LOCAL Kd TO 0.01.
 
@@ -133,8 +133,8 @@ FUNCTION poweredLanding {
 	SET descentRatePID:SETPOINT TO descentRate.
 
 	LOCAL LOCK horizontalVelocity TO SHIP:VELOCITY:SURFACE.
-	LOCAL LOCK starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR).
-	LOCAL LOCK topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR).
+	LOCAL LOCK starComponent 			TO SHIP:SRFRETROGRADE:STARVECTOR.
+	LOCAL LOCK topComponent 			TO SHIP:SRFRETROGRADE:TOPVECTOR.
 
 	//LOCK STEERING TO SHIP:BODY:UP.
 	RCS ON.
@@ -152,8 +152,8 @@ FUNCTION poweredLanding {
 		IF starComponent:MAG > 1 SET starComponent TO starComponent:NORMALIZED.
 		IF topComponent:MAG > 1 SET topComponent TO topComponent:NORMALIZED.
 
-	  SET SHIP:CONTROL:STARBOARD  TO starComponent * SHIP:FACING:STARVECTOR.
-	  SET SHIP:CONTROL:TOP        TO topComponent * SHIP:FACING:TOPVECTOR.
+	  SET SHIP:CONTROL:STARBOARD  TO starComponent 	* SHIP:FACING:STARVECTOR.
+	  SET SHIP:CONTROL:TOP        TO topComponent 	* SHIP:FACING:TOPVECTOR.
 
 	}
 	SAS ON.
@@ -164,7 +164,7 @@ FUNCTION poweredLanding {
 }
 
 DECLARE FUNCTION hover {
-	DECLARE PARAMETER hoverPoint.
+	DECLARE PARAMETER hoverPoint, bingoFuel IS 0.1.
 
 	LOCAL Kp TO 0.1.
 	LOCAL Ki TO 0.005.
@@ -180,21 +180,15 @@ DECLARE FUNCTION hover {
 	SET hoverPID:SETPOINT TO hoverPoint.
 
 	LOCAL LOCK horizontalVelocity TO SHIP:VELOCITY:SURFACE.
-	LOCAL LOCK starComponent TO (SHIP:SRFRETROGRADE:STARVECTOR).
-	LOCAL LOCK topComponent TO (SHIP:SRFRETROGRADE:TOPVECTOR).
+	LOCAL LOCK starComponent 			TO SHIP:SRFRETROGRADE:STARVECTOR.
+	LOCAL LOCK topComponent 			TO SHIP:SRFRETROGRADE:TOPVECTOR.
 
 	//LOCK STEERING TO SHIP:BODY:UP.
 	RCS ON.
-	LOCAL fuelRes TO 0.
 
-	FOR res IN STAGE:RESOURCES {
-		IF res:NAME = kLiquidFuel.
-		SET fuelRes TO res.
-	}
-	IF fuelRes <> 0 LOCAL LOCK fuelLeft TO fuelRes:AMOUNT/fuelRes:CAPACITY.
-
+	LOCAL LOCK fuelRes TO fuelReserve(kLiquidFuel).
 	clearscreen.
-	UNTIL FALSE {
+	UNTIL fuelRes <= bingoFuel {
 		PRINT "StarComp: " + ROUND(starComponent,2) AT (TERMINAL:WIDTH/2,0).
 		PRINT "TopComp: " + ROUND(topComponent,2) AT (TERMINAL:WIDTH/2,1).
 		PRINT "Star Control: " + ROUND(SHIP:CONTROL:STARBOARD,2) AT (TERMINAL:WIDTH/2,3).
@@ -205,11 +199,11 @@ DECLARE FUNCTION hover {
 
 		//try to zero out horizontal velocity
 		//try to zero out horizontal velocity
-		IF starComponent:MAG > 1 SET starComponent TO starComponent:NORMALIZED.
-		IF topComponent:MAG > 1 SET topComponent TO topComponent:NORMALIZED.
+		IF starComponent:MAG 	> 1 SET starComponent TO starComponent:NORMALIZED.
+		IF topComponent:MAG 	> 1 SET topComponent 	TO topComponent:NORMALIZED.
 
-	  SET SHIP:CONTROL:STARBOARD  TO starComponent * SHIP:FACING:STARVECTOR.
-	  SET SHIP:CONTROL:TOP        TO topComponent * SHIP:FACING:TOPVECTOR.
+	  SET SHIP:CONTROL:STARBOARD  TO starComponent 	* SHIP:FACING:STARVECTOR.
+	  SET SHIP:CONTROL:TOP        TO topComponent 	* SHIP:FACING:TOPVECTOR.
 	}
 	SAS ON.
 	SET cThrottle TO 0.

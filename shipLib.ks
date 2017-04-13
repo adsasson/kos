@@ -138,5 +138,44 @@ FUNCTION maxTWR {
 
 FUNCTION timeToImpact {
 	PARAMETER v0, distance, accel.
-	RETURN MAX(-v0 - SQRT(v0^2 - 2*accel*distance))/accel,-v0 + SQRT(v0^2 - 2*accel*distance))/accel).
+	RETURN MAX(-v0 - SQRT(v0^2 - 2*accel*distance))/accel,
+						 -v0 + SQRT(v0^2 - 2*accel*distance))/accel).
+}
+
+FUNCTION fuelReserve {
+	PARAMETER resourceName, allStages IS FALSE.
+	LOCAL fuelRes TO 0.
+	LOCAL resList TO LIST().
+
+	IF allStages {
+		SET resList TO RESOURCES.
+	} ELSE {
+		SET resList TO STAGE:RESOURCES.
+	}
+
+	FOR res IN resList {
+		IF res:NAME = resourceName.
+		SET fuelRes TO res.
+	}
+
+	IF fuelRes <> 0 RETURN fuelRes:AMOUNT/fuelRes:CAPACITY.
+}
+
+FUNCTION engineStats {
+		PARAMETER pressure IS 0.
+		//for active engines only
+		LOCAL totalThrust TO 0.
+		LOCAL totalISP TO 0.
+		LOCAL avgISP TO 0.
+		FOR eng IN SHIP:ENGINES. {
+		IF eng:IGNITION {
+				SET totalThrust TO totalThrust + eng:AVAILABLETHRUSTAT(pressure).
+				SET totalISP TO totalISP + (eng:AVAILABLETHRUSTAT(pressure)/
+																		eng:ISPAT(pressure)).
+		}
+	}
+	IF totalISP > 0 {
+		SET avgISP TO totalThrust/totalISP.
+	}
+	RETURN LEXICON("totalISP",totalISP,"totalThrust",totalThrust,"avgISP",avgISP).
 }
