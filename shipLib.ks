@@ -140,8 +140,8 @@ FUNCTION maxTWR {
 
 FUNCTION timeToImpact {
 	PARAMETER v0, distance, accel.
-	RETURN MAX(-v0 - SQRT(v0^2 - 2*accel*distance))/accel,
-						 -v0 + SQRT(v0^2 - 2*accel*distance))/accel).
+	RETURN MAX((-v0 - SQRT(v0^2 - 2*accel*distance))/accel,
+						 (-v0 + SQRT(v0^2 - 2*accel*distance))/accel).
 }
 
 FUNCTION fuelReserve {
