@@ -4,7 +4,7 @@
 
 PRINT "shipLib loaded.".
 
-DECLARE FUNCTION stageLogic {
+FUNCTION stageLogic {
 	WHEN NOT (SHIP:AVAILABLETHRUST > 0) THEN {
 		PRINT "ACTIVATING STAGE " + STAGE:NUMBER.
 		STAGE.
@@ -16,7 +16,7 @@ DECLARE FUNCTION stageLogic {
 	}
 }
 
-DECLARE FUNCTION engageParachutes {
+FUNCTION engageParachutes {
 	PRINT "ENGAGING PARACHUTES".
 	WHEN (NOT CHUTESSAFE) THEN {
 		CHUTESSAFE ON.
@@ -24,7 +24,7 @@ DECLARE FUNCTION engageParachutes {
 	}
 }
 
-DECLARE FUNCTION engageDeployables {
+FUNCTION engageDeployables {
 	PRINT "DEPLOYING".
 	deployFairings().
 	WAIT 1.
@@ -35,22 +35,22 @@ DECLARE FUNCTION engageDeployables {
 	extendAntenna().
 }
 
-DECLARE FUNCTION disengageDeployables {
+FUNCTION disengageDeployables {
 	PRINT "RETRACTING".
 	retractAntenna().
 	PANELS OFF.
 	RADIATORS OFF.
 }
 
-DECLARE FUNCTION deployLandingGear {
+FUNCTION deployLandingGear {
 	GEAR ON.
 }
 
-DECLARE FUNCTION retractLandingGear {
+FUNCTION retractLandingGear {
 	GEAR OFF.
 }
 
-DECLARE FUNCTION extendAntenna {
+FUNCTION extendAntenna {
 	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
 		IF antenna:HASEVENT("extend antenna") {
 			antenna:DOEVENT("extend antenna").
@@ -59,7 +59,7 @@ DECLARE FUNCTION extendAntenna {
 	}
  }
 
-DECLARE FUNCTION retractAntenna {
+FUNCTION retractAntenna {
 	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
 		IF antenna:HASEVENT("retract antenna") {
 			antenna:DOEVENT("retract antenna").
@@ -68,7 +68,7 @@ DECLARE FUNCTION retractAntenna {
 	}
  }
 
-DECLARE FUNCTION deployFairings {
+FUNCTION deployFairings {
 	FOR fairing IN SHIP:MODULESNAMED("ModuleProceduralFairing") {
 		IF fairing:HASEVENT("deploy") {
 			fairing:DOEVENT("deploy").
@@ -77,7 +77,7 @@ DECLARE FUNCTION deployFairings {
 	}
 }
 
-DECLARE FUNCTION pointTo {
+FUNCTION pointTo {
 	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 1.
 
 	IF useRCS {
@@ -99,7 +99,7 @@ DECLARE FUNCTION pointTo {
 	RETURN TRUE.
 }
 
-DECLARE FUNCTION stageDeltaV {
+FUNCTION stageDeltaV {
 	PARAMETER stageNumber is STAGE:NUMBER, pressure IS 0.
 	LOCAL cEngines TO SHIP:ENGINES.
 	LOCAL totalThrust TO 0.
@@ -120,7 +120,7 @@ DECLARE FUNCTION stageDeltaV {
 	RETURN avgISP*9.81*LN(SHIP:MASS/SHIP:DRYMASS).
 }
 
-DECLARE FUNCTION shipDeltaV {
+FUNCTION shipDeltaV {
 	PARAMETER pressure IS 0.
 
 	LOCAL totalDeltaV TO 0.
@@ -134,4 +134,9 @@ DECLARE FUNCTION shipDeltaV {
 FUNCTION maxTWR {
 	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2. //gravity for altitude
 	RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
+}
+
+FUNCTION timeToImpact {
+	PARAMETER v0, distance, accel.
+	RETURN MAX(-v0 - SQRT(v0^2 - 2*accel*distance))/accel,-v0 + SQRT(v0^2 - 2*accel*distance))/accel).
 }
