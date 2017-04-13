@@ -10,8 +10,8 @@ PRINT "orbMechLib loaded.".
 //---------------------------------
 
 //EccAnToMeanAn
-FUNCTION EccAnToMeanAn {
-	DECLARE PARAMETER eccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
+FUNCTION meanAnomalyFromEccentricAnomaly {
+	PARAMETER eccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1))  {
 		LOCAL MeanAn TO EccAn - ecc * SIN(EccAn).
@@ -19,34 +19,12 @@ FUNCTION EccAnToMeanAn {
 	} ELSE {
 		RETURN FALSE.
 	}
-
-}
-
-//=============================================
-
-//EccAnToTrueAn
-//  sinf = sin(E)*sqrt(1 - e^2)/(1 - e * cos(E));
-//  cosf = (cos(E) - e)/(1 - e * cos(E));
-//  f = atan2(sinf, cosf);
-
-FUNCTION EccAnToTrueAn {
-	DECLARE PARAMETER eccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
-
-
-	IF (NOT (ecc > 1))  {
-		LOCAL sinF TO SIN(EccAn)*SQRT(1-ecc^2)/(1 - ecc * cos(EccAn)).
-		LOCAL cosF TO (COS(EccAn) - ecc)/(1 - ecc * cos(EccAn)).
-		LOCAL TrueAn TO ARCTAN2(sinF,cosF).
-		RETURN TrueAn.
-	} ELSE {
-		RETURN FALSE.
-	}
 }
 //-----------------------------------------------------------
-FUNCTION MeanAnToEccAn {
+FUNCTION eccentricAnomalyFromMeanAnomaly {
 
 	//uses newton's method (for f(x), roots R Ri+1 = Ri - (f(Ri)/f'(Ri)).
-	DECLARE PARAMETER  MeanAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
+	PARAMETER  MeanAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 
 		IF (NOT (ecc > 1))  {
@@ -79,24 +57,26 @@ FUNCTION MeanAnToEccAn {
 
 }
 
+//EccAnToTrueAn
+//  sinf = sin(E)*sqrt(1 - e^2)/(1 - e * cos(E));
+//  cosf = (cos(E) - e)/(1 - e * cos(E));
+//  f = atan2(sinf, cosf);
 
-//------------------===========
+FUNCTION trueAnomalyFromEccentricAnomaly {
+	PARAMETER eccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
-FUNCTION MeanAnToTrueAn {
-	DECLARE PARAMETER MeanAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
-
-	IF (NOT (ecc > 1)) {
-		LOCAL EccAn TO MeanAnToEccAn(MeanAn,ecc).
-		LOCAL TrueAn TO EccAnToTrueAn(EccAn,ecc).
+	IF (NOT (ecc > 1))  {
+		LOCAL sinF TO SIN(EccAn)*SQRT(1-ecc^2)/(1 - ecc * cos(EccAn)).
+		LOCAL cosF TO (COS(EccAn) - ecc)/(1 - ecc * cos(EccAn)).
+		LOCAL TrueAn TO ARCTAN2(sinF,cosF).
 		RETURN TrueAn.
 	} ELSE {
 		RETURN FALSE.
 	}
 }
-
 //------------------
-FUNCTION TrueAnToEccAn {
-	DECLARE PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
+FUNCTION eccentricAnomalyFromTrueAnomaly {
+	PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	//?? i1 = sqrt(1-ecc)/(1+ecc).
 	// arctan(i1*tan(TA/2))*2
@@ -111,22 +91,36 @@ FUNCTION TrueAnToEccAn {
 	}
 }
 
-//------------------------------
-FUNCTION TrueAnToMeanAn {
-	DECLARE PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
+//------------------===========
+FUNCTION trueAnomalyFromMeanAnomaly {
+	PARAMETER MeanAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1)) {
-		LOCAL EccAn TO TrueAnToEccAn(TrueAn,ecc).
-		LOCAL MeanAn TO EccAnToMeanAn(EccAn,ecc).
+		LOCAL EccAn TO eccentricAnomalyFromMeanAnomaly(MeanAn,ecc).
+		LOCAL TrueAn TO trueAnomalyFromEccentricAnomaly(EccAn,ecc).
+		RETURN TrueAn.
+	} ELSE {
+		RETURN FALSE.
+	}
+}
+
+//------------------------------
+FUNCTION meanAnomalyFromTrueAnomaly {
+	PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
+
+	IF (NOT (ecc > 1)) {
+		LOCAL EccAn TO eccentricAnomalyFromTrueAnomaly(TrueAn,ecc).
+		LOCAL MeanAn TO meanAnomalyFromEccentricAnomaly(EccAn,ecc).
 		RETURN MeanAn.
 	} ELSE {
 		RETURN FALSE.
 	}
 }
+
 //================
 //tangential angle for eccAn
-FUNCTION EccAnToPhi {
-	DECLARE PARAMETER  EccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
+FUNCTION phiFromEccentricAnomaly {
+	PARAMETER  EccAn, ecc IS SHIP:ORBIT:ECCENTRICITY.
 
 	IF (NOT (ecc > 1)) {
 		//-tan t = swrt(1-ecc2)cotphi
@@ -143,10 +137,12 @@ FUNCTION EccAnToPhi {
 }
 //=====================
 //eccAn for Ralt
-FUNCTION EccAnForR {
+FUNCTION eccentricAnomalyFromPosition {
 
 	//r = alt + body radius
-	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
+	PARAMETER R,
+						ecc IS SHIP:ORBIT:ECCENTRICITY,
+						alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
 	LOCAL cosEccAn TO (alpha - R)/(alpha*ecc).
 	LOCAL EccAn TO ARCCOS(cosEccAn).
@@ -158,24 +154,20 @@ FUNCTION EccAnForR {
 
 FUNCTION VisViva {
 	//v = sqrt(mu*(2/r - 1/a))
+	PARAMETER R, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, cMu IS SHIP:BODY:MU.
 
-
-	DECLARE PARAMETER R, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, cMu IS SHIP:BODY:MU.
-
-	LOCAL velAtR TO SQRT(cMu*(2/R - 1/alpha)).
+	LOCAL velAtR TO SQRT(cMu * (2/R - 1/alpha)).
 
 	RETURN velAtR.
-
 }
 //=======================
 //flight path angle at R (phi or gamma)
 
 FUNCTION FlightPathAngleAtR {
+	PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
-	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
-
-	LOCAL eccAn TO EccAnForR(R,ecc,alpha).
-	LOCAL trueAn TO EccAnToTrueAn(eccAn,ecc).
+	LOCAL eccAn TO eccentricAnomalyFromPosition(R,ecc,alpha).
+	LOCAL trueAn TO trueAnomalyFromEccentricAnomaly(eccAn,ecc).
 
 	LOCAL numerator TO (1 + ecc*COS(trueAn)).
 	LOCAL denominator TO SQRT(1 + ecc^2 + 2*ecc*COS(trueAn)).
@@ -187,28 +179,32 @@ FUNCTION FlightPathAngleAtR {
 //==============================
 //flight path angle
 FUNCTION flightPathAngle {
-	LOCAL ecc TO SHIP:ORBIT:ECCENTRICITY.
-	LOCAL trueAn TO SHIP:ORBIT:TRUEANOMALY.
-	LOCAL cosPhi TO (1 + ecc*COS(trueAn))/(SQRT(1 + ecc^2 + 2*ecc*COS(trueAn))).
-	LOCAL phi TO ARCCOS(cosPhi).
+	LOCAL ecc 		TO SHIP:ORBIT:ECCENTRICITY.
+	LOCAL trueAn 	TO SHIP:ORBIT:TRUEANOMALY.
+	LOCAL cosPhi 	TO (1 + ecc*COS(trueAn))/(SQRT(1 + ecc^2 + 2*ecc*COS(trueAn))).
+	LOCAL phi 		TO ARCCOS(cosPhi).
 
 	RETURN phi.
 }
 //==============================
 //R for TA
 //r = (a(1-e^2))/(1+e*cos(TA)).
-FUNCTION RfromTA {
-	DECLARE PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
+FUNCTION positionFromTrueAnomaly {
+	PARAMETER TrueAn,
+										ecc IS SHIP:ORBIT:ECCENTRICITY,
+										alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
-	LOCAL R TO alpha*((1-ecc^2)/(1 + ecc*COS(TrueAn))).
+	LOCAL position TO alpha*((1-ecc^2)/(1 + ecc*COS(TrueAn))).
 
-	RETURN R.
+	RETURN position.
 }
 //==========================
 //TA for R
 //need to test
-FUNCTION TrueAnForR {
-	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:ALPHA.
+FUNCTION trueAnomalyFromPosition {
+	PARAMETER R,
+						ecc IS SHIP:ORBIT:ECCENTRICITY,
+						alpha IS SHIP:ORBIT:ALPHA.
 
 	IF ecc = 0 {
 		RETURN FALSE.
@@ -228,16 +224,19 @@ FUNCTION TrueAnForR {
 //=========================
 //compute position from orbital elements.
 //
-FUNCTION etaToR {
-	DECLARE PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, currentBody IS SHIP:BODY.
+FUNCTION etaToPosition {
+	PARAMETER position,
+						ecc IS SHIP:ORBIT:ECCENTRICITY,
+						alpha IS SHIP:ORBIT:SEMIMAJORAXIS,
+						currentBody IS SHIP:BODY.
 
-	LOCAL currentR TO SHIP:ALTITUDE + currentBody:RADIUS.
+	LOCAL currentPosition TO SHIP:ALTITUDE + currentBody:RADIUS.
 
 	//SET currentEccAn TO eccAnForR(currentR,ecc,alpha).
 	//SET currentMeanAn TO EccAnToMeanAn(currentEccAn,ecc).
 
-	LOCAL currentTrueAn TO TrueAnForR(currentR,ecc,alpha).
-	LOCAL currentMeanAn TO TrueAnToMeanAn(currentTrueAn, ecc).
+	LOCAL currentTrueAn TO trueAnomalyFromPosition(currentPosition,ecc,alpha).
+	LOCAL currentMeanAn TO meanAnomalyFromTrueAnomaly(currentTrueAn, ecc).
 
 	PRINT "currentMeanAn: " + round(currentMeanAn,2).
 
@@ -245,8 +244,8 @@ FUNCTION etaToR {
 
 	LOCAL meanMotion TO SQRT(currentMu/alpha^3).
 
-	LOCAL trueAnAtR TO TrueAnForR(R,ecc,alpha).
-	LOCAL meanAnAtR TO TrueAnToMeanAn(trueAnAtR, ecc).
+	LOCAL trueAnAtR TO trueAnomalyFromPosition(position,ecc,alpha).
+	LOCAL meanAnAtR TO meanAnomalyFromTrueAnomaly(trueAnAtR, ecc).
 
 	LOCAL deltaM TO MOD(meanAnAtR - currentMeanAn+360,360).
 	LOCAL deltaT TO deltaM/meanMotion.
