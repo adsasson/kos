@@ -108,8 +108,9 @@ FUNCTION stageDeltaV {
 
 	FOR eng IN cEngines {
 		IF eng:STAGE = stageNumber {
-				SET totalThrust TO totalThrust + eng:AVAILABLETHRUST.
-				SET totalISP TO totalISP + (eng:AVAILABLETHRUST/eng:ISPaT(pressure)).
+				SET totalThrust TO totalThrust + eng:AVAILABLETHRUSTAT(pressure).
+				SET totalISP TO totalISP + (eng:AVAILABLETHRUSTAT(pressure) /
+																		eng:ISPAT(pressure)).
 		}
 	}
 
@@ -132,7 +133,8 @@ FUNCTION shipDeltaV {
 }
 
 FUNCTION maxTWR {
-	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2. //gravity for altitude
+	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
+	//gravity for altitude
 	RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
 }
 
