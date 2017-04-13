@@ -3,7 +3,64 @@
 dependsOn("shipLib.ks").
 dependsOn("util.ks").
 
-DECLARE FUNCTION orbitalInsertion {
+LOCAL apsis TO SHIP:APOAPSIS.
+LOCAL burnDirection TO SHIP:PROGRADE.
+
+IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
+	SET apsis TO SHIP:APOAPSIS.
+	SET burnDirection TO SHIP:PROGRADE.
+} ELSE { //parabolic or hyperbolic
+	SET apsis TO SHIP:PERIAPSIS.
+	SET burnDirection TO SHIP:RETROGRADE.
+}
+
+FUNCTION orbitalInsertion {
+	PARAMETER targetAlt IS 0.
+	IF SHIP:BODY:ATM:EXISTS {
+		IF targetAlt < SHIP:BODY:ATM:HEIGHT {
+			SET targetAlt TO SHIP:BODY:ATM:HEIGHT + 1000.
+			notify("WARNING: Orbit will not clear atmosphere. " +
+							"Adjusting periapsis to " +	targetAlt + " m").
+		}
+	} ELSE {
+		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
+		IF targetAlt < minFeatureHeight {
+			notify("WARNING: Orbit will not clear minimum surface feature altitude."
+						+ " Adjusting periapsis to " + minFeatureHeight + " m").
+			SET targetAlt TO minFeatureHeight.
+	}
+
+	OIBurn(targetAlt).
+}
+
+FUNCTION OIBurn {
+	PARAMETER targetAlt.
+	LOCAL targetSemiMajorAxis TO (apsis + targetAlt)/2 + SHIP:BODY:RADIUS.
+	LOCAL LOCK OIdeltaV TO deltaV(apsis,
+																SHIP:ORBIT:SEMIMAJORAXIS,
+																targetSemiMajorAxis).
+	LOCAL LOCK OIBurnTime TO burnTime(OIdeltaV).
+
+	LOCAL targetVelVector TO VELOCITYAT(SHIP,TIME + ETA:apsis):ORBIT.
+	//if the above doesn't work, get v at apsis by visViva and multiply
+	//by horizontal vector normalized
+	LOCAL currentVelVector TO SHIP:VELOCITY:ORBIT.
+	LOCAL LOCK burnVector TO 2*targetVelVector - currentVelVector.
+
+	LOCAL cThrottle TO 0.
+	LOCK THROTTLE TO cThrottle.
+
+	LOCK STEERING TO burnVector:DIRECTION.
+	pointTo(burnVector).
+
+	WAIT UNTIL ETA:apsis <= OIBurnTime/2.
+	SET cThrottle TO 1.
+	stageLogic().
+	WAIT OIBurnTime.
+	SET cThrottle TO 0.
+}
+
+FUNCTION orbitalInsertionOld {
 
 	RUNONCEPATH("orbMechLib.ks").
 
@@ -52,7 +109,7 @@ DECLARE FUNCTION orbitalInsertion {
 
 			LOCK mAcc TO SHIP:MAXTHRUST/SHIP:MASS.
 			IF (mAcc > 0) {
-				LOCK cThrottle TO MIN(ABS(OIdeltaV)/(MAX(0.0001,mAcc), 1)).
+				LOCK cThrottle TO MIN( ABS(OIdeltaV) / MAX(0.0001, mAcc) , 1).
 			}
 			LOCK THROTTLE TO cThrottle.
 
