@@ -117,7 +117,6 @@ FUNCTION stageDeltaV {
 	IF totalISP > 0 {
 		SET avgISP TO totalThrust/totalISP.
 	}
-
 	RETURN avgISP*9.81*LN(SHIP:MASS/SHIP:DRYMASS).
 }
 
