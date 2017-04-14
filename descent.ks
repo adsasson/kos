@@ -1,15 +1,13 @@
 //LANDING SCRIPT AIRLESS
-// from a given orbital radar altitude to transition altitude, burn to landing
-//pitch as a function of altitude
-//heading as a function of target
-//Target TWR of 0.5
 
-runoncepath("orbitLib.ks").
-runoncepath("orbMechLib.ks").
-runoncepath("shipLib.ks").
+//runoncepath("orbitLib.ks").
+//runoncepath("orbMechLib.ks").
+//runoncepath("shipLib.ks").
+dependsOn("orbitLib.ks").
+dependsOn("orbMechLib.ks").
+dependsOn("shipLib.ks").
 
 SET TERMINAL:WIDTH TO 75.
-
 
 DECLARE FUNCTION descent {
 	DECLARE PARAMETER transitionHeight IS 1000, flag IS "analytic".
@@ -28,8 +26,7 @@ DECLARE FUNCTION descentAnalytic {
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 	//orient first
 	SAS OFF.
-	LOCAL cHeading TO SHIP:SRFRETROGRADE.
-	LOCK cHeading TO SHIP:SRFRETROGRADE.
+	LOCAL LOCK cHeading TO SHIP:SRFRETROGRADE.
 
 	LOCAL cThrottle TO 0.
 	LOCK STEERING TO cHeading.
@@ -38,7 +35,7 @@ DECLARE FUNCTION descentAnalytic {
 	WAIT UNTIL pointTo(cHeading,FALSE,30,1).
 
 	//declarations
-	LOCAL cBody TO SHIP:BODY.
+	LOCAL LOCK cBody TO SHIP:BODY.
 	LOCAL cGrav TO -cBody:MU/(cBody:RADIUS)^2. //grav at datum, down is negative
 
 	LOCAL r0 TO ALT:RADAR. //initial

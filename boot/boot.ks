@@ -20,29 +20,26 @@ GLOBAL kMono TO "MONOPROPELLANT".
 
 GLOBAL libList TO LIST("orbitLib.ks","shipLib.ks","utilLib.ks").
 
-FUNCTION dependsOn {
-  PARAMETER fileName, targetVolume IS 1.
-  SWITCH TO targetVolume.
-
+FUNCTION hasFile {
+	PARAMETER fileName, volumeLabel.
+	SWITCH TO volumeLabel.
 	LOCAL fileList IS LIST().
 	LIST FILES IN fileList.
-  LOCAL hasFile TO FALSE.
-
-  FOR cFile IN fileList { //find file
-    IF cFile:NAME = fileName {
-      SET hasFile TO TRUE.
-      }
-  }
-  IF hasFile = FALSE { //if not, get file
-    download(fileName,targetVolume).
-    PRINT "Downloading dependency.".
-  }
-  RUNONCEPATH(fileName). //run file
+	FOR f in fileList {
+		IF f:NAME = fileName {
+			RETURN TRUE.
+		}
+	}
+	RETURN FALSE.
 }
+FUNCTION dependsOn {
+  PARAMETER fileName, targetVolume IS 1.
 
-FUNCTION updateLibraryFiles {
-  copyLibraryFiles().
-  runLibraryFiles().
+  IF NOT hasFile(fileName,targetVolume) { //if not, get file
+    download(fileName,targetVolume).
+    PRINT "Downloading dependency " + fileName + ".".
+  }
+  RUNONCEPATH(targetVolume + ":" + fileName). //run file
 }
 
 FUNCTION download {
@@ -63,6 +60,11 @@ FUNCTION runLibraryFiles {
   FOR library IN libList {
     RUNONCEPATH(volumeID + ":" + library).
   }
+}
+
+FUNCTION updateLibraryFiles {
+  copyLibraryFiles().
+  runLibraryFiles().
 }
 
 FUNCTION bootMain {

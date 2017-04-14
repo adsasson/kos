@@ -11,6 +11,9 @@ PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
 LOCAL nodeBurnTime TO burnTime(node:DELTAV:MAG,SHIP).
 
 //INSERT WARP LOGIC
+IF warpFlag {
+	SET KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (node:ETA - nodeBurnTime/2 + 60)).
+}
 
 WAIT UNTIL node:ETA <= (nodeBurnTime/2 + 60).
 
