@@ -42,7 +42,7 @@ FUNCTION ascentCurve {
 
 		WAIT 0.
 	}
-
+	SET cHeading TO SHIP:PROGRADE.
 	notify("Target apoapsis reached").
 
 	SET cThrottle TO 0.
@@ -58,7 +58,7 @@ FUNCTION atmosphericAscent {
 		notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + atmoHeight + 1000 + " m").
 		SET targetApo TO atmoHeight + 1000.
 	}
-	ascentCurve(targetHeading,targetApo,goalTWR).
+	ascentCurve(targetHeading,targetApo,atmoHeight,goalTWR).
 }
 
 FUNCTION correctForDrag {
@@ -100,9 +100,8 @@ FUNCTION ascent {
 
 	IF SHIP:BODY:ATM:EXISTS {
 		atmosphericAscent(targetHeading,targetApo,goalTWR).
-		ON SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT {
-			correctForDrag(targetApo).
-		}
+		LOCK STEERING TO SHIP:PROGRADE.
+		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT). 			correctForDrag(targetApo).
 	} ELSE {
 		airlessAscent(targetHeading,targetApo,goalTWR).
 	}

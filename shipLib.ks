@@ -168,7 +168,9 @@ FUNCTION engineStats {
 		LOCAL totalThrust TO 0.
 		LOCAL totalISP TO 0.
 		LOCAL avgISP TO 0.
-		FOR eng IN SHIP:ENGINES. {
+		LOCAL shipEngines TO LIST().
+		LIST ENGINES IN shipEngines.
+		FOR eng IN shipEngines {
 		IF eng:IGNITION {
 				SET totalThrust TO totalThrust + eng:AVAILABLETHRUSTAT(pressure).
 				SET totalISP TO totalISP + (eng:AVAILABLETHRUSTAT(pressure)/

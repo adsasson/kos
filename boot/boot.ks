@@ -33,14 +33,15 @@ FUNCTION hasFile {
 	}
 	RETURN FALSE.
 }
-FUNCTION dependsOn {
-  PARAMETER fileName, targetVolume IS 1.
 
-  IF NOT hasFile(fileName,targetVolume) { //if not, get file
-    download(fileName,targetVolume).
+FUNCTION dependsOn {
+  PARAMETER fileName, volumeID IS 1.
+
+  IF NOT hasFile(fileName,volumeID) { //if not, get file
+    download(fileName,volumeID).
     PRINT "Downloading dependency " + fileName + ".".
   }
-  RUNONCEPATH(targetVolume + ":" + fileName). //run file
+  RUNONCEPATH(volumeID + ":" + fileName). //run file
 }
 
 FUNCTION download {
@@ -50,27 +51,27 @@ FUNCTION download {
 }
 
 FUNCTION updateFiles {
-	PARAMETER fileList, targetVolume IS 1.
-	copyFiles(fileList,targetVolume).
-	runFiles(fileList,targetVolume).
+	PARAMETER fileList, volumeID IS 1.
+	copyFiles(fileList,volumeID).
+	runFiles(fileList,volumeID).
 }
 
 FUNCTION copyFiles {
-	PARAMETER fileList, targetVolume IS 1.
+	PARAMETER fileList, volumeID IS 1.
 	FOR f IN fileList {
-		download(f,targetVolume).
+		download(f,volumeID).
 	}
 }
 
 FUNCTION runFiles {
-	PARAMETER fileList, targetVolume IS 1.
+	PARAMETER fileList, volumeID IS 1.
 	FOR f IN fileList {
 		RUNONCEPATH(volumeID + ":" + f).
   }
 }
 
 FUNCTION deleteFiles {
-	PARAMETER fileList, targetVolume IS 1.
+	PARAMETER fileList, volumeID IS 1.
 	FOR f IN fileList {
 		DELETEPATH(volumeID + ":" + f).
 	}

@@ -35,17 +35,33 @@ FUNCTION orbitalInsertion {
 
 FUNCTION OIBurn {
 	PARAMETER targetAlt.
+	LOCAL etaToBurn TO TIME.
+	IF apsis = SHIP:APOAPSIS {
+		LOCK etaToBurn TO ETA:APOAPSIS.
+	} ELSE {
+		LOCK etaToBurn TO ETA:PERIAPSIS.
+	}
 	LOCAL targetSemiMajorAxis TO (apsis + targetAlt)/2 + SHIP:BODY:RADIUS.
 	LOCAL LOCK OIdeltaV TO deltaV(apsis,
 																SHIP:ORBIT:SEMIMAJORAXIS,
 																targetSemiMajorAxis).
 	LOCAL LOCK OIBurnTime TO burnTime(OIdeltaV).
 
-	LOCAL targetVelVector TO VELOCITYAT(SHIP,TIME + ETA:apsis):ORBIT.
+	LOCAL targetVelVector TO VELOCITYAT(SHIP,TIME + etaToBurn):ORBIT.
 	//if the above doesn't work, get v at apsis by visViva and multiply
 	//by horizontal vector normalized
-	LOCAL currentVelVector TO SHIP:VELOCITY:ORBIT.
+	LOCAL LOCK currentVelVector TO SHIP:VELOCITY:ORBIT.
 	LOCAL LOCK burnVector TO 2*targetVelVector - currentVelVector.
+
+	//DEBUG
+	CLEARVECDRAWS().
+	LOCAL burnArrow TO VECDRAW(V(0,0,0),burnVector,RGB(1,0,0),"BURN",1,TRUE,0.2).
+	LOCAL targetArrow TO VECDRAW(V(0,0,0),targetVelVector,RGB(0,1,0),"TARGET",1,TRUE,0.2).
+	LOCAL velocityArrow TO VECDRAW(V(0,0,0),currentVelVector,RGB(0,0,1),"VELOCITY",1,TRUE,0.2).
+
+	SET burnArrow:SHOW TO TRUE.
+	SET targetArrow:SHOW TO TRUE.
+	SET velocityArrow:SHOW TO TRUE.
 
 	LOCAL cThrottle TO 0.
 	LOCK THROTTLE TO cThrottle.
@@ -53,77 +69,13 @@ FUNCTION OIBurn {
 	LOCK STEERING TO burnVector:DIRECTION.
 	pointTo(burnVector).
 
-	WAIT UNTIL ETA:apsis <= OIBurnTime/2.
+		WAIT UNTIL etaToBurn <= OIBurnTime/2.
+
+
 	SET cThrottle TO 1.
 	stageLogic().
 	WAIT OIBurnTime.
 	SET cThrottle TO 0.
-}
-
-FUNCTION orbitalInsertionOld {
-
-	RUNONCEPATH("orbMechLib.ks").
-
-	//to be used in vacuum, assumes ship has cleared atmo.
-
-	PARAMETER targetPeri IS 0.
-
-	//adjust default periapsis for atmospheric height/terrain height
-		IF SHIP:BODY:ATM:EXISTS {
-			LOCAL atmoHeight TO SHIP:BODY:ATM:HEIGHT.
-			IF targetPeri < atmoHeight {
-				notify("ORBIT WILL NOT CLEAR ATMOSPHERE. ADJUSTING PERIAPSIS TO " +
-								atmoHeight + 1000 + " m").
-				SET targetPeri TO atmoHeight + 1000.
-			}
-		} ELSE {
-			LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
-			IF targetPeri < minFeatureHeight {
-				notify("ORBIT WILL NOT CLEAR MINIMUM SURFACE FEATURE ALTITUDE." +
-							" ADJUSTING PERIAPSIS TO " + minFeatureHeight + " m").
-				SET targetPeri TO minFeatureHeight.
-			}
-		}
-
-		//BURN CALCULATIONS
-		LOCAL targetAlpha TO (SHIP:ORBIT:APOAPSIS + targetPeri)/2 + SHIP:BODY:RADIUS.
-		LOCK OIdeltaV TO deltaV(SHIP:ORBIT:APOAPSIS, SHIP:ORBIT:SEMIMAJORAXIS, targetAlpha).
-		LOCAL OIBurnTime TO burnTime(OIDeltaV,SHIP).
-
-		//DIRECTION VECTORS
-		LOCK progradeVec TO SHIP:PROGRADE:FOREVECTOR.
-		LOCK cPhi TO flightPathAngle().
-		LOCK targetVector TO progradeVec + R(0,-cPhi/2,0).
-		LOCK targetHeading TO targetVector:DIRECTION.
-
-		PRINT "Setting Periapsis to " + targetPeri.
-		PRINT "DeltaV: " + ROUND(OIdeltaV,2) + " m/s".
-		PRINT "Burn Time: " + ROUND(OIBurnTime,2) + " sec".
-
-		LOCK STEERING TO targetHeading.
-
-		IF (SHIP:ORBIT:MEANANOMALYATEPOCH > 0) OR ETA:APOAPSIS > OIBurnTime {
-			notify("WAITING FOR apoapsis.").
-			WAIT UNTIL ETA:APOAPSIS <= OIBurnTime/2.
-		}
-
-			LOCK mAcc TO SHIP:MAXTHRUST/SHIP:MASS.
-			IF (mAcc > 0) {
-				LOCK cThrottle TO MIN( ABS(OIdeltaV) / MAX(0.0001, mAcc) , 1).
-			}
-			LOCK THROTTLE TO cThrottle.
-
-		LOCAL done TO FALSE.
-		UNTIL done {
-			stageLogic().
-				clearscreen.
-				PRINT "DeltaV: " + ROUND(OIdeltaV*COS(cPhi),2) + " m/s" AT (TERMINAL:WIDTH/2,0).
-				IF (ABS(OIdeltaV*COS(cPhi)) < 0.1) {
-				notify("FINALIZING BURN").
-				LOCK THROTTLE TO 0.
-				SET done TO TRUE.
-			}
-		}
 }
 
 //======================================
@@ -198,7 +150,7 @@ DECLARE FUNCTION burnTime {
 
 	LOCAL g0 TO 9.82.
 
-	LOCAL enginesLex TO enginesStats(pressure).
+	LOCAL enginesLex TO engineStats(pressure).
 	LOCAL avgISP TO enginesLex["avgISP"].
 	LOCAL totalThrust TO enginesLex["totalThrust"].
 	LOCAL burn TO 0.
