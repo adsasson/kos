@@ -19,6 +19,7 @@ GLOBAL kOx TO "OXIDIZER".
 GLOBAL kMono TO "MONOPROPELLANT".
 
 GLOBAL libList TO LIST("orbitLib.ks","shipLib.ks","utilLib.ks").
+GLOBAL launchList TO LIST("launch.ks","ascent.ks").
 
 FUNCTION hasFile {
 	PARAMETER fileName, volumeLabel.
@@ -48,27 +49,35 @@ FUNCTION download {
   COPYPATH(sourceVolumeID + ":" + fileName, volumeLabel + ":").
 }
 
-FUNCTION copyLibraryFiles {
-  PARAMETER targetVolume IS 1.
-  FOR library IN libList {
-    download(library,targetVolume).
+FUNCTION updateFiles {
+	PARAMETER fileList, targetVolume IS 1.
+	copyFiles(fileList,targetVolume).
+	runFiles(fileList,targetVolume).
+}
+
+FUNCTION copyFiles {
+	PARAMETER fileList, targetVolume IS 1.
+	FOR f IN fileList {
+		download(f,targetVolume).
+	}
+}
+
+FUNCTION runFiles {
+	PARAMETER fileList, targetVolume IS 1.
+	FOR f IN fileList {
+		RUNONCEPATH(volumeID + ":" + f).
   }
 }
 
-FUNCTION runLibraryFiles {
-  PARAMETER volumeID IS 1.
-  FOR library IN libList {
-    RUNONCEPATH(volumeID + ":" + library).
-  }
+FUNCTION deleteFiles {
+	PARAMETER fileList, targetVolume IS 1.
+	FOR f IN fileList {
+		DELETEPATH(volumeID + ":" + f).
+	}
 }
-
-FUNCTION updateLibraryFiles {
-  copyLibraryFiles().
-  runLibraryFiles().
-}
-
 FUNCTION bootMain {
-  updateLibraryFiles().
+  updateFiles(libList).
+	copyFiles(launchList).
   //update craft specific files.
   //check for automated instructions.
 }

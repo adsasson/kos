@@ -1,7 +1,7 @@
 //orbital maneuver library
 @LAZYGLOBAL OFF.
 dependsOn("shipLib.ks").
-dependsOn("util.ks").
+dependsOn("utilLib.ks").
 
 LOCAL apsis TO SHIP:APOAPSIS.
 LOCAL burnDirection TO SHIP:PROGRADE.
@@ -28,8 +28,8 @@ FUNCTION orbitalInsertion {
 			notify("WARNING: Orbit will not clear minimum surface feature altitude."
 						+ " Adjusting periapsis to " + minFeatureHeight + " m").
 			SET targetAlt TO minFeatureHeight.
+		}
 	}
-
 	OIBurn(targetAlt).
 }
 

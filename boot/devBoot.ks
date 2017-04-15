@@ -1,7 +1,8 @@
 //devBoot
 //should do boot
 //+ load (and run?) test scripts of interest.
-RUNONCEPATH("boot.ks").
+COPYPATH("0:/boot/boot.ks","1:/boot/boot.ks").
+RUNONCEPATH("1:/boot/boot.ks").
 
 LOCAL testList TO LIST(). //put testing files names here.
 
