@@ -18,7 +18,7 @@ FUNCTION getClosestTargetPort {
     LOCAL portDistance TO 999.
     LOCAL portAngle TO 999.
     LOCAL targetPort TO controlPort.
-    LOCAL targetPorts TO TARGET:DOCKINPORTS.
+    LOCAL targetPorts TO TARGET:DOCKINGPORTS.
 
     //make sure ports exist on target vessel.
     IF targetPorts:LENGTH = 0 {
@@ -28,7 +28,7 @@ FUNCTION getClosestTargetPort {
     //iterate over target ports that have same size, find closest port by
     //distance or angle, and set to target port.
     FOR port IN targetPorts {
-      IF port:NODETYPE = portSize {
+      IF (port:STATE = "Ready") AND (port:NODETYPE = portSize) {
         LOCAL cDistance TO (port:NODEPOSITION - controlPort:NODEPOSITION):MAG.
         LOCAL cAng TO VANG(port:PORTFACING:VECTOR,controlPort:PORTFACING:VECTOR).
         IF (cDistance < portDistance) OR (cAng < portAngle) {
@@ -78,9 +78,10 @@ FUNCTION ensureRange {
   PARAMETER targetPort, dockingPort, distance, speed.
 
   //if we are already close to inline with target port
+  LOCAL LOCK distanceOffset TO targetPort:PORTFACING:VECTOR * distance.
   LOCAL LOCK approachVector TO targetPort:NODEPOSITION - dockingPort:NODEPOSITION + distanceOffset.
   IF VANG(targetPort:PORTFACING:VECTOR,approachVector) < 45 {
-    IF ABS(dockingPort:NODEPOSITION - targetPort:NODEPOSITION) > distance/2 {
+    IF ABS(dockingPort:NODEPOSITION:MAG - targetPort:NODEPOSITION:MAG) > distance/2 {
       //we are within a 90 degree range centered on target port and more than
       //half the safe margin distance , so don't mess around with ensuring range.
       RETURN FALSE.

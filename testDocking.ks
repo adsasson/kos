@@ -1,6 +1,6 @@
 runoncepath("testDockingLib").
 
-IF SHIP:HASTARGET {
+IF HASTARGET {
   RCS ON.
   LOCAL ports TO getClosestTargetPort().
   LOCAL dockingPort TO ports["dockingPort"].
