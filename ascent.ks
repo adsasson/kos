@@ -7,7 +7,7 @@ RUNONCEPATH("util.ks").
 RUNONCEPATH("shipLib.ks").
 
 DECLARE FUNCTION ascentInclination {
-	PARAMETER targetInclination IS 0, targetApo IS 100000 goalTWR IS 2.
+	PARAMETER targetInclination IS 0, targetApo IS 100000, goalTWR IS 2.
 	ascent(targetInclination + 90, targetApo, goalTWR).
 }
 
