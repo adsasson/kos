@@ -163,7 +163,7 @@ DECLARE FUNCTION burnTime {
 		notify("ERROR: AVAILABLE THRUST IS 0.").
 	}
 
-	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s" AT (0,TERMINAL:HEIGHT - 1).
+	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + " s" AT (0,TERMINAL:HEIGHT - 1).
 	RETURN burn.
 }
 
