@@ -2,7 +2,8 @@
 
 //ascent
 //orbital insertion
-RUNONCEPATH("1:/boot/boot.ks").
+RUNONCEPATH("utilLib.ks").
+
 dependsOn("ascent.ks").
 dependsOn("orbitLib.ks").
 
