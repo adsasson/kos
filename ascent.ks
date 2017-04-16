@@ -1,9 +1,5 @@
 @LAZYGLOBAL OFF.
-
-//RUNONCEPATH("orbitLib.ks").
-//RUNONCEPATH("utilLib.ks").
-//RUNONCEPATH("shipLib.ks").
-
+RUNONCEPATH("utilLib.ks").
 //atmo vs airless
 
 dependsOn("orbitLib.ks").

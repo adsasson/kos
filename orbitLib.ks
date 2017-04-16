@@ -1,5 +1,7 @@
 //orbital maneuver library
 @LAZYGLOBAL OFF.
+RUNONCEPATH("utilLib.ks").
+
 dependsOn("shipLib.ks").
 dependsOn("utilLib.ks").
 
@@ -35,41 +37,38 @@ FUNCTION orbitalInsertion {
 
 FUNCTION OIBurn {
 	PARAMETER targetAlt.
-	LOCAL etaToBurn TO TIME.
-	IF apsis = SHIP:APOAPSIS {
+	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
+
+	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
 		LOCK etaToBurn TO ETA:APOAPSIS.
-	} ELSE {
+	} ELSE { //parabolic or hyperbolic
 		LOCK etaToBurn TO ETA:PERIAPSIS.
 	}
+
+	LOCAL tau TO etaToBurn + TIME:SECONDS.
+
 	LOCAL targetSemiMajorAxis TO (apsis + targetAlt)/2 + SHIP:BODY:RADIUS.
 	LOCAL LOCK OIdeltaV TO deltaV(apsis,
 																SHIP:ORBIT:SEMIMAJORAXIS,
 																targetSemiMajorAxis).
 	LOCAL LOCK OIBurnTime TO burnTime(OIdeltaV).
 
-	LOCAL targetVelVector TO VELOCITYAT(SHIP,TIME + etaToBurn):ORBIT.
-	//if the above doesn't work, get v at apsis by visViva and multiply
-	//by horizontal vector normalized
-	LOCAL LOCK currentVelVector TO SHIP:VELOCITY:ORBIT.
-	LOCAL LOCK burnVector TO 2*targetVelVector - currentVelVector.
+	LOCAL LOCK r0 TO SHIP:POSITION.
+	LOCAL r1 TO POSITIONAT(SHIP,tau).
+	LOCAL LOCK deltaR TO r1 - r0.
 
-	//DEBUG
-	CLEARVECDRAWS().
-	LOCAL burnArrow TO VECDRAW(V(0,0,0),burnVector,RGB(1,0,0),"BURN",1,TRUE,0.2).
-	LOCAL targetArrow TO VECDRAW(V(0,0,0),targetVelVector,RGB(0,1,0),"TARGET",1,TRUE,0.2).
-	LOCAL velocityArrow TO VECDRAW(V(0,0,0),currentVelVector,RGB(0,0,1),"VELOCITY",1,TRUE,0.2).
-
-	SET burnArrow:SHOW TO TRUE.
-	SET targetArrow:SHOW TO TRUE.
-	SET velocityArrow:SHOW TO TRUE.
+	LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * OIdeltaV.
+	LOCAL LOCK v0 TO SHIP:VELOCITY:ORBIT.
+	LOCAL LOCK burnVector TO deltaR + v1.
 
 	LOCAL cThrottle TO 0.
 	LOCK THROTTLE TO cThrottle.
 
 	LOCK STEERING TO burnVector:DIRECTION.
+
 	pointTo(burnVector).
 
-		WAIT UNTIL etaToBurn <= OIBurnTime/2.
+	WAIT UNTIL etaToBurn <= OIBurnTime/2. {
 
 
 	SET cThrottle TO 1.
@@ -164,7 +163,7 @@ DECLARE FUNCTION burnTime {
 		notify("ERROR: AVAILABLE THRUST IS 0.").
 	}
 
-	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s" AT (TERMINAL:WIDTH/2,0).
+	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + "s" AT (0,TERMINAL:HEIGHT - 1).
 	RETURN burn.
 }
 

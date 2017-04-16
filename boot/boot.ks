@@ -5,7 +5,8 @@
 //should load files necessary for ship profile (eg satellites don't need
 //landing scripts).
 //? check for automated instructions?
-
+COPYPATH("0:utilLib.ks","1:").
+RUNONCEPATH("utilLib.ks").
 
 GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
 																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
@@ -20,35 +21,7 @@ GLOBAL kMono TO "MONOPROPELLANT".
 
 GLOBAL libList TO LIST("orbitLib.ks","shipLib.ks","utilLib.ks").
 GLOBAL launchList TO LIST("launch.ks","ascent.ks").
-
-FUNCTION hasFile {
-	PARAMETER fileName, volumeLabel.
-	SWITCH TO volumeLabel.
-	LOCAL fileList IS LIST().
-	LIST FILES IN fileList.
-	FOR f in fileList {
-		IF f:NAME = fileName {
-			RETURN TRUE.
-		}
-	}
-	RETURN FALSE.
-}
-
-FUNCTION dependsOn {
-  PARAMETER fileName, volumeID IS 1.
-
-  IF NOT hasFile(fileName,volumeID) { //if not, get file
-    download(fileName,volumeID).
-    PRINT "Downloading dependency " + fileName + ".".
-  }
-  RUNONCEPATH(volumeID + ":" + fileName). //run file
-}
-
-FUNCTION download {
-  PARAMETER fileName, volumeLabel, sourceVolumeID IS 0.
-  SWITCH TO volumeLabel.
-  COPYPATH(sourceVolumeID + ":" + fileName, volumeLabel + ":").
-}
+GLOBAL maneuverList TO LIST("executeNode.ks").
 
 FUNCTION updateFiles {
 	PARAMETER fileList, volumeID IS 1.
@@ -79,6 +52,7 @@ FUNCTION deleteFiles {
 FUNCTION bootMain {
   updateFiles(libList).
 	copyFiles(launchList).
+	copyFiles(maneuverList).
   //update craft specific files.
   //check for automated instructions.
 }

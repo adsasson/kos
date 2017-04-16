@@ -1,8 +1,7 @@
 //SHIP UTILITY LIBRARY
 
 @LAZYGLOBAL OFF.
-
-PRINT "shipLib loaded.".
+RUNONCEPATH("utilLib.ks").
 
 FUNCTION stageLogic {
 	WHEN NOT (SHIP:AVAILABLETHRUST > 0) THEN {
