@@ -1,0 +1,106 @@
+//UTILS
+log(verbosity) {
+  switch (verbosity)
+  writeToFile(fileName)
+  annouce(screenLocation)
+  print()
+}
+
+loadDependency(library) {
+  missingDependencies = checkDependency(library)
+  for value in missingDependencies {
+    copyFile(value)
+  }
+  restartOs?
+}
+checkDependency() {
+  for value in dependencies {
+    if value is not present {
+      missingDependencies.add value
+    }
+  }
+  returnMissingDependencies
+}
+enumLib
+
+//SHIP HELPER FUNCTIONS
+stage() {
+  if availableTrust !> 0 {
+    if stage.ready || stage.number > 0{
+      stage
+      log("STAGING" + stage.number)
+      return TRUE
+    } else {
+      return FALSE //staging failed for some reason?
+    }
+  }
+}
+deploy(item) {
+  switch item.type
+  parachute
+  landingGear
+  genericEvent(item.event)
+  log()
+  return success?
+}
+retract(item) {
+  see deploy
+  //make more generic?
+}
+toggle() {
+ if close deploy:retract
+}
+
+//ORBIT
+orbit(inclination,altitude,launchSite)
+  launch(launchAzimuth) {
+    setInitialThrottle()
+    setInitialHeading().
+    countDown().
+  }
+
+  ascend(targetApoapsis, goalTWR, ascentCurve) {
+    getScaleHeight()
+    [ascent loop]
+    correctForDrag().
+    engageDeployables().
+  }
+
+  orbitalInsertion() {
+    insertionBurn() {
+      getManeuverDeltaV().
+      getTimeToBurn().
+      executeNode().
+    }
+  }
+
+
+//LAND
+land(landingSite)
+  deOrbit() {
+    deorbitBurn()
+  }
+  descend() {
+    reverseGravityTurn()
+  }
+  land(altitude) {
+    if (altitude) > 0 {
+      hover
+    }
+  }
+
+//TRANSFER
+transfer(targetOrbit)
+  orbitalExit()
+  orbitalInsertion()
+
+//INTERCEPT
+calculateIntercept(target) //Lambert
+  transfer()
+
+//DOCK
+rendezvous(target)
+  calculateIntercept()
+  approach()
+  orient(target,stationKeeping)
+  dock()
