@@ -49,54 +49,75 @@ FUNCTION retractLandingGear {
 	GEAR OFF.
 }
 
+// FUNCTION extendAntenna {
+// 	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
+// 		IF antenna:HASEVENT("extend antenna") {
+// 			antenna:DOEVENT("extend antenna").
+// 			PRINT "EXTENDING ANTENNA " + antenna:PART:TITLE.
+// 		}
+// 	}
+//  }
+
+// FUNCTION retractAntenna {
+// 	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
+// 		IF antenna:HASEVENT("retract antenna") {
+// 			antenna:DOEVENT("retract antenna").
+// 			PRINT "RETRACTING ANTENNA " + antenna:PART:TITLE.
+// 		}
+// 	}
+//  }
+
+// FUNCTION deployFairings {
+// 	FOR fairing IN SHIP:MODULESNAMED("ModuleProceduralFairing") {
+// 		IF fairing:HASEVENT("deploy") {
+// 			fairing:DOEVENT("deploy").
+// 			PRINT "DEPLOYING FAIRING " + fairing:PART:TITLE.
+// 		}
+// 	}
+// }
 FUNCTION extendAntenna {
-	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
-		IF antenna:HASEVENT("extend antenna") {
-			antenna:DOEVENT("extend antenna").
-			PRINT "EXTENDING ANTENNA " + antenna:PART:TITLE.
-		}
-	}
- }
-
+	moduleDoEvent("ModuleDeployableAntenna","extend antenna").
+	notify("Extending Antenna", "STANDARD").
+}
 FUNCTION retractAntenna {
-	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
-		IF antenna:HASEVENT("retract antenna") {
-			antenna:DOEVENT("retract antenna").
-			PRINT "RETRACTING ANTENNA " + antenna:PART:TITLE.
-		}
-	}
- }
-
+	moduleDoEvent("ModuleDeployableAntenna","retract antenna").
+	notify("Retracting Antenna", "STANDARD").
+}
 FUNCTION deployFairings {
-	FOR fairing IN SHIP:MODULESNAMED("ModuleProceduralFairing") {
-		IF fairing:HASEVENT("deploy") {
-			fairing:DOEVENT("deploy").
-			PRINT "DEPLOYING FAIRING " + fairing:PART:TITLE.
+	moduleDoEvent("ModuleProceduralFairing","deploy").
+	notify("Deploying Fairings", "STANDARD").
+}
+
+FUNCTION moduleDoEvent {
+	PARAMETER moduleName, eventName.
+	FOR module IN SHIP:MODULESNAMED(moduleName) {
+		IF module:HASEVENT(eventName) {
+			module:DOEVENT(eventName).
 		}
 	}
 }
 
-FUNCTION pointTo {
-	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 1.
-
-	IF useRCS {
-		RCS ON.
-	}
-
-	IF goal:ISTYPE("DIRECTION")  {
-		SET goal TO goal:VECTOR.
-	}
-
-	LOCAL timeStart TO TIME.
-	UNTIL ABS(VANG(SHIP:FACING:VECTOR,goal)) < tol {
-		IF (TIME - timeStart) > timeOut {
-			break.
-		}
-		WAIT 0.
-	}.
-
-	RETURN TRUE.
-}
+// FUNCTION pointTo {
+// 	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 1.
+//
+// 	IF useRCS {
+// 		RCS ON.
+// 	}
+//
+// 	IF goal:ISTYPE("DIRECTION")  {
+// 		SET goal TO goal:VECTOR.
+// 	}
+//
+// 	LOCAL timeStart TO TIME.
+// 	UNTIL ABS(VANG(SHIP:FACING:VECTOR,goal)) < tol {
+// 		IF (TIME - timeStart) > timeOut {
+// 			break.
+// 		}
+// 		WAIT 0.
+// 	}.
+//
+// 	RETURN TRUE.
+// }
 
 FUNCTION stageDeltaV {
 	PARAMETER stageNumber is STAGE:NUMBER, pressure IS 0.

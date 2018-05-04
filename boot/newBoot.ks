@@ -14,15 +14,56 @@ GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
 
 //global constants?
 GLOBAL kMu TO SHIP:BODY:MU.
-
 GLOBAL kLiquidFuel TO "LIQUID FUEL".
 GLOBAL kOx TO "OXIDIZER".
 GLOBAL kMono TO "MONOPROPELLANT".
+GLOBAL kCharge TO "ELECTRICCHARGE".
+GLOBAL defaultLogFile TO defaultLogFile.txt.
+GLOBAL defaultsLexicon TO lexicon(
+  "kDefaultVerbosity","VERBOSE").
+)
+
+GLOBAL GFORCELIMIT TO 4.
+FUNCTION setGForceLimit {
+  PARAMETER newLimit.
+  SET GFORCELIMIT TO newLimit.
+  notify("G-FORCE LIMIT SET TO " + GFORCELIMIT).
+}
+GLOBAL currentThrottle TO 0.
+GLOBAL currentHeading TO SHIP:PROGRADE.
+FUNCTION unmanned {
+  IF VESSEL:CREW:EMPTY {
+    RETURN TRUE.
+  } ELSE {
+    RETURN FALSE.
+  }
+}
+//ascent files
+//maneurver files
+//descent files
+//intercept files
+//standard lib files
+
 
 GLOBAL libList TO LIST("orbitLib.ks","shipLib.ks","utilLib.ks").
 GLOBAL launchList TO LIST("launch.ks","ascent.ks").
 GLOBAL maneuverList TO LIST("executeNode.ks").
 
+
+FUNCTION dependsOn {
+	PARAMETER fileName, path IS defaultVolume, archive IS archiveVolume.
+	IF (defaultVolume:EXISTS(fileName)) {
+		RETURN TRUE.
+	} ELSE {
+		IF(archiveVolume:EXISTS(fileName)) {
+			LOCAL pathString TO archiveVolume + ":" + fileName.
+			COPYPATH(pathString,defaultVolume).
+		} ELSE {
+			notify(fileName + " NOT FOUND ON DEFAULT VOLUME OR ARCHIVE VOLUME","STANDARD").
+			RETURN FALSE.
+		}
+	}
+}
 
 FUNCTION updateFiles {
 	PARAMETER fileList, volumeID IS 1.

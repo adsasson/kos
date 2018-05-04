@@ -5,7 +5,33 @@ GLOBAL defaultsLexicon TO lexicon(
   "kDefaultVerbosity","VERBOSE").
 )
 
+GLOBAL GFORCELIMIT TO 4.
+
+// FUNCTION setGForceLimit {
+//   PARAMETER newLimit.
+//   SET GFORCELIMIT TO newLimit.
+//   notify("G-FORCE LIMIT SET TO " + GFORCELIMIT).
+// }
+
+// FUNCTION unmanned {
+//   IF VESSEL:CREW:EMPTY {
+//     RETURN TRUE.
+//   } ELSE {
+//     RETURN FALSE.
+//   }
+// }
+
 FUNCTION launchAzimuth { //THIS DOES NOT CALCULATE A ROTATING AZIMUTH
+  PARAMETER targetInclination IS 0, targetOrbitalVelocity IS 0.
+  LOCAL beta TO getInertialAzimuth(targetInclination).
+
+  IF targetOrbitalVelocity <> 0 {
+    RETURN getRotationalAzimuth(beta,targetOrbitalVelocity).
+  }
+  RETURN beta.
+}
+
+FUNCTION getInertialAzimuth {
   PARAMETER targetInclination IS 0.
 
   LOCAL phi TO SHIP:LATITUDE.
@@ -20,34 +46,44 @@ FUNCTION launchAzimuth { //THIS DOES NOT CALCULATE A ROTATING AZIMUTH
   RETURN 0.
 }
 
-FUNCTION announce {
-  PARAMETER message, delay IS 5, style IS 3, size IS 20, color IS YELLOW, echo IS TRUE.
-  //style 1: upper left, 2:upper center, 3: lower right, 4:lower center.
-  HUDTEXT("kOS: " + message,delay,style,size,color,echo).
+FUNCTION getRotationalAzimuth {
+  PARAMTER inertialAzimuth IS 0, targetOrbitalVelocity IS 0.
+  LOCAL beta TO intertialAzimuth.
+  LOCAL vGroundRotation TO SHIP:GROUNDSPEED.
+  LOCAL vRotX TO (targetOrbitalVelocity*SIN(beta) - vGroundRotation).
+  LOCAL vRotY TO (targetOrbitalVelocity*COS(beta)).
+
+  RETURN ARCTAN(vRotX/vRotY).
+
 }
-
-FUNCTION notify {
-  PARAMETER message, verbosity IS defaultsLexicon["kDefaultVerbosity"].
-
-  LOCAL verbosityLexicon TO lexicon("VERBOSE",3,"STANDARD",2,"MINIMUM",1).
-
-  IF verbosityLexicon(verbosity) > 2 {
-    announce(message).
-  }
-  IF verbosityLexicon(verbosity) > 1 {
-    print(message).
-  }
-
-  log message TO defaultLogFile.
-}
-
-FUNCTION countDown {
-  PARAMETER defaultCount IS 5.
-  announce("Beginning Count Down",1,3,20,YELLOW,FALSE).
-  FROM {local x IS defaultCount.} UNTIL x = 0 STEP {SET x TO x - 1.} DO {
-    announce("T - " + x, 1, 3, 20, YELLOW, FALSE).
-  }
-}
+// FUNCTION announce {
+//   PARAMETER message, delay IS 5, style IS 3, size IS 20, color IS YELLOW, echo IS TRUE.
+//   //style 1: upper left, 2:upper center, 3: lower right, 4:lower center.
+//   HUDTEXT("kOS: " + message,delay,style,size,color,echo).
+// }
+//
+// FUNCTION notify {
+//   PARAMETER message, verbosity IS defaultsLexicon["kDefaultVerbosity"].
+//
+//   LOCAL verbosityLexicon TO lexicon("VERBOSE",3,"STANDARD",2,"MINIMUM",1).
+//
+//   IF verbosityLexicon(verbosity) > 2 {
+//     announce(message).
+//   }
+//   IF verbosityLexicon(verbosity) > 1 {
+//     print(message).
+//   }
+//
+//   log message TO defaultLogFile.
+// }
+//
+// FUNCTION countDown {
+//   PARAMETER defaultCount IS 5.
+//   announce("Beginning Count Down",1,3,20,YELLOW,FALSE).
+//   FROM {local x IS defaultCount.} UNTIL x = 0 STEP {SET x TO x - 1.} DO {
+//     announce("T - " + x, 1, 3, 20, YELLOW, FALSE).
+//   }
+// }
 
 FUNCTION getMaximumTWR {
 	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
@@ -55,27 +91,27 @@ FUNCTION getMaximumTWR {
 	RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
 }
 
-FUNCTION pointTo {
-	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 1.
-
-	IF useRCS {
-		RCS ON.
-	}
-
-	IF goal:ISTYPE("DIRECTION")  {
-		SET goal TO goal:VECTOR.
-	}
-
-	LOCAL timeStart TO TIME.
-	UNTIL ABS(VANG(SHIP:FACING:VECTOR,goal)) < tol {
-		IF (TIME - timeStart) > timeOut {
-			break.
-		}
-		WAIT 0.
-	}.
-
-	RETURN TRUE.
-}
+// FUNCTION pointTo {
+// 	PARAMETER goal, useRCS IS FALSE, timeOut IS 60, tol IS 1.
+//
+// 	IF useRCS {
+// 		RCS ON.
+// 	}
+//
+// 	IF goal:ISTYPE("DIRECTION")  {
+// 		SET goal TO goal:VECTOR.
+// 	}
+//
+// 	LOCAL timeStart TO TIME.
+// 	UNTIL ABS(VANG(SHIP:FACING:VECTOR,goal)) < tol {
+// 		IF (TIME - timeStart) > timeOut {
+// 			break.
+// 		}
+// 		WAIT 0.
+// 	}.
+//
+// 	RETURN TRUE.
+// }
 
 FUNCTION getManeuverDeltaV {
     //v^2 = GM*(2/r-1/a) for inplane orbit changes
@@ -195,6 +231,9 @@ FUNCTION getManueverBurnTime {
   LOCAL maneuverBurnTime TO 0.
 
   IF totalThrust > 0 {
+    IF (NOT unmanned()) AND totalThrust/(SHIP:MASS * g0) > GFORCELIMIT {
+      SET totalThrust TO GFORCELIMIT * SHIP:MASS * g0.
+    }
     SET maneuverBurnTime TO g0 * SHIP:MASS * averageISP * (1 - CONSTANT:E^(-maneuverDeltaV / (g0 * averageISP)))/totalThrust.
   } ELSE {
     notify("ERROR: AVAILABLE THRUST IS 0.").

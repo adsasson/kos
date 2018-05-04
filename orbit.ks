@@ -1,4 +1,6 @@
 @LAZYGLOBAL OFF.
+GLOBAL currentThrottle TO 0.
+GLOBAL currentHeading TO SHIP:PROGRADE.
 
 FUNCTION defaultAscentCurve {
   PARAMETER ratio.
@@ -13,18 +15,16 @@ LOCAL ascentCurves TO lexicon("kDefaultAscentCurve",defaultAscentCurve@,
         "kAlternateAscentCurve",alternateAscentCurve@).
 
 FUNCTION orbit {
-  PARAMETER targetInclination IS 0, targetApoapsis IS 100000, targetPeriapsis IS 100000, goalTWR is 2, unmanned IS FALSE.
+  PARAMETER targetInclination IS 0, targetApoapsis IS 100000, targetPeriapsis IS 100000, goalTWR is 2.
 
   //sanitize input
-
   IF targetApoapsis < targetPeriapsis {
     LOCAL oldValue TO targetPeriapsis.
     SET targetPeriapsis TO targetApoapsis.
     SET targetApoapsis TO oldValue.
   }
-
   IF targetInclination > 360 {
-    SET targetInclination TO targetInclination - 360*MOD(targetInclination,350).
+    SET targetInclination TO targetInclination - 360*MOD(targetInclination,360).
   }
 
   LOCAL launchAzimuth IS launchAzimuth(targetInclination).
@@ -32,26 +32,33 @@ FUNCTION orbit {
   launch(launchAzimuth).
   ascend(targetApoapsis,goalTWR).
   orbitalInsertion(targetPeriapsis,targetEccentricity).
+
   notify("ORBIT REACHED AT" + TIMESPAN:CLOCK).
+
+  RETURN TRUE.
+}
+
+FUNCTION subOrbit {
+  PARAMETER targetInclination IS 0, targetApoapsis IS 100000, goalTWR is 2.
+
+  //sanitize input
+  IF targetInclination > 360 {
+    SET targetInclination TO targetInclination - 360*MOD(targetInclination,360).
+  }
+
+  LOCAL launchAzimuth IS launchAzimuth(targetInclination).
+
+  launch(launchAzimuth).
+  ascend(targetApoapsis,goalTWR).
+
   RETURN TRUE.
 }
 
 FUNCTION launch {
   PARAMETER launchAzimuth IS 0.
+  LOCAL currentPitch TO 0.
 
-  FUNCTION setInitialThrottle {
-    LOCAL currentThrottle TO 0.5.
-    LOCK THROTTLE TO currentThrottle.
-  }
-
-  FUNCTION setInitialHeading {
-      LOCAL currentPitch TO 0.
-      LOCAL currentHeading TO HEADING(launchAzimuth,currentPitch).
-      LOCK STEERING TO currentHeading.
-  }
-
-  setInitialThrottle().
-  setInitialHeading().
+  initializeControls(HEADING(launchAzimuth,currentPitch),0.5).
 
   countDown().
   STAGE.
@@ -60,8 +67,6 @@ FUNCTION launch {
 
 FUNCTION ascend {
   PARAMETER targetApoapsis, goalTWR, ascentCurve IS ascentCurves["kDefaultAscentCurve"].
-
-  LOCAL atmosphere TO SHIP:BODY:ATM:EXISTS.
 
   FUNCTION getScaleHeight {
     IF atmosphere {
@@ -80,17 +85,21 @@ FUNCTION ascend {
       RETURN targetApoapsis.
     }
   }
-
+  LOCAL atmosphere TO SHIP:BODY:ATM:EXISTS.
   LOCAL scaleHeight TO getScaleHeight().
   LOCK ratio TO ROUND((SHIP:ALTITUDE/scaleHeight),2).
   LOCK deltaPitch TO ascentCurve(ratio).
   LOCK maxTWR TO getMaximumTWR().
 
   //ASCENT LOOP
+  IF ((NOT unmanned()) AND (goalTWR > GFORCELIMIT)) {
+    SET goalTWR TO GFORCELIMIT.
+  }
 
   UNTIL SHIP:APOAPSIS >= targetApoapsis {
     stageLogic().
-    IF ((NOT unmanned) OR atmosphere) {
+
+    IF (atmosphere) {
       SET currentThrottle TO MIN(1,MAX(0,goalTWR/maximumTWR)).
     } ELSE { //unmanned and airless, no GForce/thrust restriction
       SET currentThrottle TO 1.
@@ -110,7 +119,6 @@ FUNCTION ascend {
       pointTo(SHIP:PROGRADE).
       SET currentThrottle TO MAX(1,(targetApoapsis - SHIP:APOAPSIS)/targetApoapsis*10). //scale throttle to 1/10 difference between current apoapsis and target.
       WAIT UNTIL (SHIP:APOAPSIS >= targetApoapsis).
-
       SET currentThrottle TO 0.
     }
   }
@@ -123,22 +131,24 @@ FUNCTION ascend {
 }
 
 FUNCTION orbitalInsertion {
-  PARAMETER targetApoapsis IS 100000, targetPeriapsis IS 100000. //manned?
-    LOCAL etaToBurn TO ETA:APOAPSIS
+  PARAMETER targetApoapsis IS 100000, targetPeriapsis IS 100000.
+  LOCAL etaToBurn TO ETA:APOAPSIS
+  LOCAL targetApsis TO targetPeriapsis.
+  LOCAL currentApsis TO SHIP:APOAPSIS.
+  LOCAL tau TO etaToBurn + TIME:SECONDS.
+  LOCAL targetAlpha TO (((targetApoapsis + targetPeriapsis)/2) + SHIP:BODY:RADIUS).
+
+  IF SHIP:ORBIT:ECCENTRICITY > 1 {
+    SET etaToBurn TO ETA:PERIAPSIS.
+    SET targetApsis TO targetApoapsis.
+    SET currentApsis TO SHIP:PERIAPSIS.
+  }
+
   FUNCTION onOrbitBurn {
-    IF SHIP:ORBIT:ECCENTRICITY < 1 {
-      LOCK etaToBurn TO ETA:APOAPSIS.
-    } ELSE {
-      LOCK etaToBurn TO ETA:PERIAPSIS.
-    }
+    LOCAL maneuverDeltaV TO getManeuverDeltaV(currentApsis,SHIP:SEMIMAJORAXIS,targetApsis,targetAlpha).
 
-    LOCAL tau TO etaToBurn + TIME:SECONDS.
-    LOCAL targetAlpha TO (targetApoapsis + SHIP:BODY:RADIUS).
-    LOCAL maneuverDeltaV TO getManeuverDeltaV(SHIP:APOAPSIS,SHIP:SEMIMAJORAXIS,SHIP:APOAPSIS,targetAlpha).
-
-    LOCAL onOrbitBurnManeuverNode TO (tau,0,0,maneuverDeltaV).
+    LOCAL onOrbitBurnManeuverNode TO NODE(tau,0,0,maneuverDeltaV).
     ADD onOrbitBurnManeuverNode.
     executeNode().
-
   }
 }

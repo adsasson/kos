@@ -1,15 +1,16 @@
 # kos
 ### KSP kOS scripts
 
-Project for automating KSP behaviors with kOS. 
+Project for automating KSP behaviors with kOS, in the process of being heavily refactored.
 Currently have:
-  * launch, comprised of ascent, and orbital insertion.
-  * manuever node execution.
-  * initial landing program, needs to be factored into descent (atmo vs no atmo) and touchdown.
-  * general libraries, need to be a bit better organized.
-  
+  * launch, ascent, orbital orbital insertion
+  * generic node execution
+  * partial library of orbital mechanics calculations (e.g. vis viva, Keplerian equations).
+  * some ship statistics calculations
+
 Goals:
   * general improvement of current code.
   * rendezvous, comprised of intercept, closing to target, and docking vs capture.
       * intercept should try to calculate phasing orbit
   * interplanetary maneuvers.
+  * test all the refactored stuff to see if it still works.

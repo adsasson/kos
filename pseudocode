@@ -43,6 +43,26 @@ deploy(item) {
   log()
   return success?
 }
+ITEM TYPES:
+AG1 - AG10
+LIGHTS
+BRAKES
+GEAR
+ABORT
+LEGS (not wheeled gear)
+CHUTES
+CHUTESSAFE
+PANELS
+RADIATORS
+LADDERS
+BAYS
+DEPLOYDRILLS
+DRILLS
+FUELCELLS
+ISRU
+INTAKES
+**antennas and fairings still need to be done manually.
+
 retract(item) {
   see deploy
   //make more generic?

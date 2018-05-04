@@ -1,85 +1,107 @@
-@LAZYGLOBAL OFF.
-RUNONCEPATH("utilLib.ks").
+FUNCTION executeNode {
+  PARAMETER warpFlag IS FALSE.
+  LOCAL done TO FALSE.
+  LOCAL nodePrograde TO SHIP:PROGRADE. //placeholder initialization.
+  LOCAL nodeBurnTime TO 0. //placeholder initialization.
 
-dependsOn("orbitLib.ks").
-dependsOn("shipLib.ks").
+  initializeNode().
+  initializeControls(nodePrograde,0).
 
-DECLARE PARAMETER warpFlag IS FALSE.
+  doNodeBurn ().
 
-LOCAL node TO NEXTNODE.
-PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
-
-LOCAL nodeBurnTime TO burnTime(node:DELTAV:MAG,SHIP).
-
-//INSERT WARP LOGIC
-IF warpFlag {
-	KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (node:ETA - nodeBurnTime/2 + 60)).
+  deInitializeControls().
+  deInitializeNode().
+}
+FUNCTION initializeNode {
+  LOCAL node TO NEXTNODE.
+  SET nodePrograde TO node:DELTAV.
+  SET nodeBurnTime TO getManueverBurnTime(node:DELTAV:MAG).
 }
 
-WAIT UNTIL node:ETA <= (nodeBurnTime/2 + 60).
+FUNCTION initializeControls {
+  PARAMETER currentHeading, currentThrottle.
 
-SAS OFF.
-LOCAL nodePrograde TO node:DELTAV.
-LOCK STEERING TO nodePrograde.
+  LOCK STEERING TO currentHeading.
+  LOCK THROTTLE TO currentThrottle.
 
-notify("Orienting to node").
-pointTo(nodePrograde).
+  pointTo(currentHeading).
 
-WAIT UNTIL node:ETA <= (nodeBurnTime/2).
-
-LOCAL currentThrottle TO 0.
-LOCK THROTTLE TO currentThrottle.
-
-LOCAL done TO FALSE.
-
-//INITIAL DELTAV
-LOCAL deltaV0 TO node:DELTAV.
-
-UNTIL DONE {
-
-	stageLogic().
-
-	//RECALCULATE CURRENT MAX_ACCELERATION, AS IT CHANGES WHILE
-	//WE BURN THROUGH FUEL
-	LOCAL maxAcc TO SHIP:MAXTHRUST/SHIP:MASS.
-
-	//debug escape
-	IF maxAcc = 0 {
-		notify("ERROR: No available thrust.").
-	} ELSE {
-		//THROTTLE IS 100% UNTIL THERE IS LESS THAN 1 SECOND OF TIME LEFT TO BURN
-		//WHEN THERE IS LESS THAN 1 SECOND - DECREASE THE THROTTLE LINEARLY
-		SET currentThrottle TO MIN(node:DELTAV:MAG/maxAcc, 1).
-	}
-
-	//HERE'S THE TRICKY PART, WE NEED TO CUT THE THROTTLE AS SOON AS OUR
-	//ND:DELTAV AND INITIAL DELTAV START FACING OPPOSITE DIRECTIONS
-	//THIS CHECK IS DONE VIA CHECKING THE DOT PRODUCT OF THOSE 2 VECTORS
-	IF VDOT(deltaV0, node:DELTAV) < 0 {
-		PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0, node:DELTAV),1).
-		SET currentThrottle TO 0.
-		BREAK.
-	}
-
-	//WE HAVE VERY LITTLE LEFT TO BURN, LESS THEN 0.1M/S
-	IF node:DELTAV:MAG < 0.1 {
-		PRINT "FINALIZING BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0,node:DELTAV),1).
-		//WE BURN SLOWLY UNTIL OUR NODE VECTOR STARTS TO DRIFT SIGNIFICANTLY FROM INITIAL VECTOR
-		//THIS USUALLY MEANS WE ARE ON POINT
-		WAIT UNTIL VDOT(deltaV0, node:DELTAV) < 0.5.
-
-		SET currentThrottle TO 0.
-		PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0,node:DELTAV),1).
-		SET done TO TRUE.
-	}
 }
 
-UNLOCK STEERING.
-UNLOCK THROTTLE.
-WAIT 1.
+FUNCTION deInitializeNode {
+  REMOVE node.
+}
 
-//WE NO LONGER NEED THE MANEUVER NODE
-REMOVE node.
+FUNCTION deInitializeControls {
+  UNLOCK THROTTLE.
+  SET THROTTLE TO 0.
+  UNLOCK STEERING.
+  SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+}
 
-//SET THROTTLE TO 0 JUST IN CASE.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+
+FUNCTION doWarp {
+  PARAMTER warpTime.
+  KUNIVERSE:TIMEWARP:WARPTO(warpTime)
+}
+
+FUNCTION waitForBurn {
+  IF warpFlag {
+    doWarp(TIME:SECONDS + (node:ETA + nodeBurnTime/2 + 60)).
+  }
+  WAIT UNTIL node:ETA <= (nodeBurnTime/2).
+}
+
+FUNCTION doNodeBurn {
+  LOCAL done TO FALSE.
+  LOCAL deltaV0 TO node:DELTA.
+  LOCAL maxAcceleration TO SHIP:MAXTHRUST/SHIP:MASS.
+  LOCK nodeBurnVectorDotProduct TO VDOT(deltaV0,node:DELTAV).
+
+
+  FUNCTION beginNodeBurn {
+
+    IF maxAcceleration > 0 {
+      IF unmanned() {
+        SET currentThrottle TO MIN(node:DELTAV:MAG/maxAcceleration,1).
+      } ELSE {
+        SET currentThrottle TO MIN(MIN(node:DELTAV:MAG/maxAcceleration,node:DELTAV:MAG/(GFORCELIMIT*9.82)),1).
+      }
+    } ELSE {
+      notify("ERROR: NO AVAILABLE THRUST").
+    }
+  }
+  FUNCTION checkNodeBurn {
+
+    IF nodeBurnVectorDotProduct < 0 {
+      notify("END BURN, remaining deltaV " + ROUND(node:DELTAV:MAG,1) + " m/s, VDOT: " + ROUND(nodeBurnVectorDotProduct,1),"STANDARD").
+      SET currentThrottle TO 0.
+      RETURN TRUE.
+    }
+    RETURN FALSE.
+  }
+  FUNCTION endNodeBurn {
+    FUNCTION trimBurn {
+      IF node:DELTAV:MAG < 0.1 {
+        UNTIL nodeBurnVectorDotProduct < 0.5 {
+          SET currentThrottle TO MIN(node:DELTAV:MAG/maxAcceleration,0.1).
+        }
+      }
+    }
+
+    trimBurn().
+
+    SET currentThrottle TO 0.
+    notify("END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(nodeBurnVectorDotProduct),1),"STANDARD").
+  }
+
+  waitForBurn().
+
+  LOCK done TO checkNodeBurn().
+
+  UNTIL done {
+    SET maxAcceleration TO SHIP:MAXTHRUST/SHIP:MASS.
+    beginNodeBurn().
+  }
+  endNodeBurn().
+}
