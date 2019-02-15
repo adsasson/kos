@@ -1,27 +1,33 @@
-//boot
-//should update files to most current version
-//should declare relevant globals
-//should run library files
-//should load files necessary for ship profile (eg satellites don't need
-//landing scripts).
-//? check for automated instructions?
-COPYPATH("0:utilLib.ks","1:").
-RUNONCEPATH("utilLib.ks").
+@lazyglobal off
 
-GLOBAL surfaceFeature TO LEXICON("Mun",4000,"Minmus",6250,"Ike",13500,"Gilly",
-																7500,"Dres",6500,"Moho",7500,"Eeloo",4500,"Bop",
-																23000,"Pol",6000,"Tylo",13500,"Vall",9000).
+//basic file handling that the rest of the system depends on
+function hasFile {
+    parameter fileName, volumeLabel.
+    switch to volumeLabel.
+    local fileList is list().
+    list files in fileList.
+    for aFile in fileList {
+        if aFile:NAME = fileName {
+            return true.
+        }
+    }
+    return false.
+}
 
-//global constants?
-GLOBAL kMu TO SHIP:BODY:MU.
+function dependsOn {
+    parameter fileName, volumeID is 1.
+    if not hasFile(fileName, volumeID) {
+        download(fileName,volumeID).
+        print "Downloading dependency " + fileName + "."
+    }
+    runoncepath(volumeID + ":" + fileName).
+}
 
-GLOBAL kLiquidFuel TO "LIQUID FUEL".
-GLOBAL kOx TO "OXIDIZER".
-GLOBAL kMono TO "MONOPROPELLANT".
-
-GLOBAL libList TO LIST("orbitLib.ks","shipLib.ks","utilLib.ks").
-GLOBAL launchList TO LIST("launch.ks","ascent.ks").
-GLOBAL maneuverList TO LIST("executeNode.ks").
+function download {
+    parameter fileName, volumeLabel, sourceVolumeID IS 0.
+    switch to volumeLabel.
+    copypath(sourceVolumeID + ":" + fileName, volumeLabel + ":")
+}
 
 FUNCTION updateFiles {
 	PARAMETER fileList, volumeID IS 1.
@@ -49,14 +55,22 @@ FUNCTION deleteFiles {
 		DELETEPATH(volumeID + ":" + f).
 	}
 }
-FUNCTION bootMain {
-  updateFiles(libList).
-	copyFiles(launchList).
-	copyFiles(maneuverList).
-  //update craft specific files.
-  //check for automated instructions.
+
+FUNCTION notify {
+  PARAMETER message, prefix is "kOS: ", location IS lowerRight.
+  local locationValue IS 3.
+
+  IF location = upperLeft {
+      locationValue = 1.
+  } else if location = upperCenter {
+      locationValue = 2.
+  } else if location = lowerRight {
+      locationValue = 3.
+  } else if location = lowerCenter {
+      locationValue = 4.
+  } else {
+      print "error: function: notify: unrecognized location".
+      return
+  }
+  HUDTEXT(prefix + message, 5, locationValue, 20, YELLOW, TRUE).
 }
-
-
-
-bootMain().
