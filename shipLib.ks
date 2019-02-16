@@ -31,7 +31,12 @@ FUNCTION deployFairings {
 FUNCTION extendAntenna {
   performModuleAction("ModuleDeployableAntenna","extend antenna").
  }
- 
+
+ FUNCTION maxTWR {
+ 	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
+ 	//gravity for altitude
+ 	RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
+ }
 
 FUNCTION engageDeployables {
 	PRINT "DEPLOYING".

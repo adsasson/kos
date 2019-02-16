@@ -1,11 +1,11 @@
-@lazyglobal off
+@LAZYGLOBAL OFF.
 //global constants
 
-global kMu to ship:body:mu.
-global kLiquidFuel to "LIQUIDFUEL".
-global kOx to "OXIDIZER".
-global kMono to "MONOPROPELLANT"
-global surfaceFeature to lexicon(
+GLOBAL kMu TO SHIP:BODY:MU.
+GLOBAL kLiquidFuel TO "LIQUIDFUEL".
+GLOBAL kOx TO "OXIDIZER".
+GLOBAL kMono TO "MONOPROPELLANT".
+GLOBAL surfaceFeature TO LEXICON(
       "Mun", 4000,
       "Minmus", 6250,
       "Ike", 13500,
@@ -17,4 +17,4 @@ global surfaceFeature to lexicon(
       "Pol", 6000,
       "Tylo", 13500,
       "Vall", 9000
-)
+).

@@ -1,71 +1,25 @@
 @LAZYGLOBAL OFF.
 
-//ascend
-//orbital insertion
-
-
-// DECLARE PARAMETER aHeading IS 90, anApoapsis IS 100000, aPeriapsis IS 0, orbitInsert IS true, goalTWR IS 2.
-//
-// //SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
-// //initialize controls
-// //sanitize input
-// IF anApoapsis < aPeriapsis {
-// 	LOCAL oldValue TO aPeriapsis.
-// 	SET aPeriapsis TO anApoapsis.
-// 	SET anApoapsis TO oldValue.
-// }
-// IF aHeading > 360 {
-// 	SET aHeading TO aHeading - 360*MOD(aHeading,360).
-// }
-//
-// ignition().
-// ascend(aHeading, anApoapsis, goalTWR).
-// if orbitInsert {
-// 	orbitalInsertion(aPeriapsis).
-// } else {
-// 	//handle suborbital trajectory
-// }
-
-
-
-
-LOCAL targetHeading IS 90.
-LOCAL targetApoapsis IS 100000.
-LOCAL targetPeriapsis IS 100000.
-LOCAL scaleHeight IS 100000.
-LOCAL goalTWR IS 2.
-LOCAL staging TO TRUE.
+PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, scaleHeight IS 100000, goalTWR IS 2, staging TO TRUE.
 
 runoncepath("1:/boot/devboot.ks").
 dependsOn("shipLib.ks").
 WAIT 1.
 dependsOn("navigationLib.ks").
 WAIT 1.
+dependsOn("constants.ks").
+WAIT 1.
 
-FUNCTION maxTWR {
-	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
-	//gravity for altitude
-	RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
-}
+FUNCTION sanitizeInput {
+	IF targetPeriapsis > targetApoapsis {
+		LOCAL tempValue IS targetPeriapsis.
+		SET targetPeriapsis TO targetApoapsis.
+		SET targetApoapsis TO tempValue.
+	}
 
-FUNCTION timeToImpact {
-	PARAMETER v0, distance, accel.
-	RETURN MAX((-v0 - SQRT(v0^2 - 2*accel*distance))/accel,
-						 (-v0 + SQRT(v0^2 - 2*accel*distance))/accel).
-}
-
-//orbit
-//ignite
-//ascend
-	//performAscentProfile
-//onOrbitBurn
-
-FUNCTION test {
-	initializeControls().
-	SET lockedCompassHeading TO targetHeading.
-	ignition().
-	ascend().
-
+	IF targetHeading > 360 {
+		SET targetHeading TO targetHeading - 360*MOD(aHeading,360).
+	}
 }
 
 FUNCTION ignition {
@@ -74,8 +28,6 @@ FUNCTION ignition {
 	countdown().
 	stage.
 }
-
-
 
 FUNCTION countdown {
 	PARAMETER countNumber IS 3.
@@ -86,27 +38,23 @@ FUNCTION countdown {
 }
 
 FUNCTION ascend {
-	PARAMETER shouldStage IS TRUE.
-
-	SET staging TO shouldStage.
-
-
+	PARAMETER tolerance IS 0.1
 	IF SHIP:BODY:ATM:EXISTS {
-		atmosphericAscent().
+		atmosphericAscent(tolerance).
 		LOCK STEERING TO SHIP:PROGRADE.
 		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
 		correctForDrag().
 	} ELSE {
-		airlessAscent().
+		airlessAscent(tolerance).
 	}
-	engageDeployables().
 }
 
 FUNCTION atmosphericAscent {
+	PARAMETER tolerance TO 0.1.
 	LOCAL atmosphereHeight TO SHIP:BODY:ATM:HEIGHT.
 
 	IF targetApoapsis < atmosphereHeight {
-		SET targetApoapsis TO atmosphereHeight * 1.1.
+		SET targetApoapsis TO atmosphereHeight * (1 + tolerance).
 		notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + targetApoapsis + " meters.").
 	}
 
@@ -124,7 +72,9 @@ FUNCTION ascentCurve {
 
 	UNTIL SHIP:APOAPSIS >= targetApoapsis {
 
-		stageLogic().
+		IF staging {
+			stageLogic().
+		}
 
 		IF SHIP:BODY:ATM:EXISTS {
 
@@ -145,13 +95,34 @@ FUNCTION correctForDrag {
 		notify("Correcting apoapsis for atmospheric drag.").
 		LOCK STEERING TO SHIP:PROGRADE.
 		waitForAlignmentTo(SHIP:PROGRADE).
-		SET localThrottle TO MAX(1,(targetApoapsis - SHIP:APOAPSIS)/targetApoapsis * 10).
+		SET lockedThrottle TO MAX(1,(targetApoapsis - SHIP:APOAPSIS)/targetApoapsis * 10).
 
 		WAIT UNTIL (SHIP:APOAPSIS >= targetApoapsis).
 
 		SET lockedThrottle TO 0.
 	}
 }
-//ignition().
+
+FUNCTION airlessAscent {
+	PARAMETER tolerance TO 0.1
+	LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
+
+	//check inputs
+	IF targetApoapsis < minFeatureHeight {
+		SET targetApoapsis TO minFeatureHeight * (1 + tolerance).
+		notify("WARNING: Orbit will not clear minimum surface feature altitude. Adjusting apoapsis to " + targetApoapsis + " m").
+	}
+	ascentCurve().
+}
+
+
+FUNCTION launchProgram {
+	initializeControls().
+	SET lockedCompassHeading TO targetHeading.
+	ignition().
+	ascend().
+	engageDeployables().
+}
+
 SET TERMINAL:HEIGHT TO 100.
-test().
+launchProgram().
