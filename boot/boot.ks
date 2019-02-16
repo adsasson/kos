@@ -1,24 +1,24 @@
-@lazyglobal off
+@lazyglobal off.
 
 //basic file handling that the rest of the system depends on
 function hasFile {
-    parameter fileName, volumeLabel.
-    switch to volumeLabel.
-    local fileList is list().
-    list files in fileList.
-    for aFile in fileList {
-        if aFile:NAME = fileName {
-            return true.
+    PARAMETER fileName, volumeLabel.
+    SWITCH TO volumeLabel.
+    LOCAL fileList IS LIST().
+    LIST FILES IN fileList.
+    FOR aFile IN fileList {
+        IF aFile:NAME = fileName {
+            RETURN TRUE.
         }
     }
-    return false.
+    return FALSE.
 }
 
 function dependsOn {
     parameter fileName, volumeID is 1.
     if not hasFile(fileName, volumeID) {
         download(fileName,volumeID).
-        print "Downloading dependency " + fileName + "."
+        print "Downloading dependency " + fileName + ".".
     }
     runoncepath(volumeID + ":" + fileName).
 }
@@ -26,7 +26,7 @@ function dependsOn {
 function download {
     parameter fileName, volumeLabel, sourceVolumeID IS 0.
     switch to volumeLabel.
-    copypath(sourceVolumeID + ":" + fileName, volumeLabel + ":")
+    copypath(sourceVolumeID + ":" + fileName, volumeLabel + ":").
 }
 
 FUNCTION updateFiles {
@@ -57,20 +57,20 @@ FUNCTION deleteFiles {
 }
 
 FUNCTION notify {
-  PARAMETER message, prefix is "kOS: ", location IS lowerRight.
-  local locationValue IS 3.
+  PARAMETER message, prefix is "kOS: ", location IS "lowerRight".
+  LOCAL locationValue IS 3.
 
-  IF location = upperLeft {
-      locationValue = 1.
-  } else if location = upperCenter {
-      locationValue = 2.
-  } else if location = lowerRight {
-      locationValue = 3.
-  } else if location = lowerCenter {
-      locationValue = 4.
-  } else {
-      print "error: function: notify: unrecognized location".
-      return
+  IF location = "upperLeft" {
+      SET locationValue TO 1.
+  } ELSE IF location = "upperCenter" {
+      SET locationValue TO 2.
+  } ELSE IF location = "lowerRight" {
+      SET locationValue TO 3.
+  } ELSE IF location = "lowerCenter" {
+      SET locationValue TO 4.
+  } ELSE {
+      PRINT "error: function: notify: unrecognized location".
+      RETURN.
   }
   HUDTEXT(prefix + message, 5, locationValue, 20, YELLOW, TRUE).
 }
