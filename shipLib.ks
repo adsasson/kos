@@ -47,6 +47,18 @@ FUNCTION retractLandingGear {
 	GEAR OFF.
 }
 
+FUNCTION performModuleAction {
+	PARAMETER moduleName, moduleAction.
+	FOR module IN SHIP:MODULESNAMED(moduleName) {
+		IF module:HASEVENT(moduleAction) {
+			module:DOEVENT(moduleAction).
+			PRINT "PERFORMING EVENT: " + moduleAction + " WITH PART " + module:PART:TITLE.
+		} ELSE {
+			PRINT "Error: " + moduleName + " does not have event " + moduleAction.
+		}
+	}
+}
+
 FUNCTION extendAntenna {
 	FOR antenna IN SHIP:MODULESNAMED("ModuleDeployableAntenna") {
 		IF antenna:HASEVENT("extend antenna") {
