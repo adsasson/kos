@@ -1,9 +1,8 @@
 @LAZYGLOBAL OFF.
 
-//ascent
+//ascend
 //orbital insertion
-dependsOn("ascent.ks").
-dependsOn("orbitLib.ks").
+
 
 DECLARE PARAMETER aHeading IS 90, anApoapsis IS 100000, aPeriapsis IS 0, orbitInsert IS true, goalTWR IS 2.
 
@@ -19,7 +18,8 @@ IF aHeading > 360 {
 	SET aHeading TO aHeading - 360*MOD(aHeading,360).
 }
 
-ascend(aHeading,anApoapsis,goalTWR).
+ignition().
+ascend(aHeading, anApoapsis, goalTWR).
 if orbitInsert {
 	orbitalInsertion(aPeriapsis).
 } else {
