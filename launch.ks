@@ -25,6 +25,8 @@
 // } else {
 // 	//handle suborbital trajectory
 // }
+
+
 GLOBAL lockedThrottle IS 0.
 GLOBAL lockedPitch IS 90.
 GLOBAL lockedCompassHeading IS 90.
@@ -37,8 +39,8 @@ LOCAL goalTWR IS 2.
 LOCAL staging TO TRUE.
 
 runoncepath("1:/boot/devboot.ks").
-
-
+dependsOn("shipLib.ks").
+WAIT 1.
 FUNCTION maxTWR {
 	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
 	//gravity for altitude
@@ -56,31 +58,7 @@ FUNCTION timeToImpact {
 //ascend
 	//performAscentProfile
 //onOrbitBurn
-FUNCTION stageLogic {
-	//LOCAL engineList TO SHIP:ENGINES.
-	LOCAL stageFlag IS TRUE.
 
-	LOCAL engineList TO BUILDLIST("engines").
-	UNTIL  (NOT stageFlag) {
-		PRINT "Stage: " + STAGE:NUMBER AT (0,0).
-		FOR engine IN engineList {
-			IF engine:FLAMEOUT OR (NOT(SHIP:AVAILABLETHRUST > 0)) {
-				STAGE.
-				PRINT "STAGING!" AT (0,0).
-				IF STAGE:NUMBER = 0 {
-					SET stageFlag TO FALSE.
-					RETURN.
-				}
-				UNTIL STAGE:READY {
-					WAIT 0.
-				}
-				SET engineList TO BUILDLIST("engines").
-				CLEARSCREEN.
-			}
-		}
-	}
-
-}
 FUNCTION test {
 	initializeControls().
 	ignition().
@@ -134,6 +112,7 @@ FUNCTION ascend {
 
 FUNCTION atmosphericAscent {
 	LOCAL atmosphereHeight TO SHIP:BODY:ATM:HEIGHT.
+
 	IF targetApoapsis < atmosphereHeight {
 		SET targetApoapsis TO atmosphereHeight * 1.1.
 		notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + targetApoapsis + " meters.").
@@ -144,21 +123,27 @@ FUNCTION atmosphericAscent {
 
 FUNCTION ascentCurve {
 	PARAMETER atmosphereHeight.
-	LOCAL LOCK maxTWR TO maxTWR().
+	LOCAL LOCK maximumTWR TO maxTWR().
 	//normalize altitude to scale height.
 	LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/scaleHeight),2).
 
 	LOCK deltaPitch TO 90 * SQRT(normalizedAltitude).
+	clearscreen.
+	PRINT "Entered ascentCurve Function".
+
 
 	UNTIL SHIP:APOAPSIS >= targetApoapsis {
+		PRINT "ENTERED TARGET APOAPSIS LOOP" AT (0,1).
 		stageLogic().
+		PRINT ("DO I GET PAST HERE?") AT (0,5).
 		IF SHIP:BODY:ATM:EXISTS {
-			IF (maxTWR > 0) SET lockedThrottle TO MIN(1,MAX(0,goalTWR/maxTWR)).
+			PRINT "CHECKED ATMO" AT (0,2).
+			IF (maximumTWR > 0) SET lockedThrottle TO MIN(1,MAX(0,goalTWR/maximumTWR)).
 		} ELSE {
 			SET lockedThrottle TO 1.
 		}
 		SET lockedPitch TO 90 - (MIN(90,deltaPitch)).
-		PRINT "LOCKED PITCH: " + lockedPitch AT (0,0).
+		PRINT "LOCKED PITCH: " + lockedPitch AT (0,11).
 		WAIT 0.
 	}
 	LOCK STEERING TO SHIP:PROGRADE.
@@ -167,4 +152,5 @@ FUNCTION ascentCurve {
 }
 
 //ignition().
+SET TERMINAL:HEIGHT TO 200.
 test().
