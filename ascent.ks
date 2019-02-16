@@ -89,7 +89,9 @@ FUNCTION airlessAscent {
 FUNCTION ascend {
 	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2, staging IS true.
 
-	SET stagingFlag TO staging.
+	if staging {
+		staging.
+	}
 
 	IF SHIP:BODY:ATM:EXISTS {
 		atmosphericAscent(targetHeading,targetApo,goalTWR).
