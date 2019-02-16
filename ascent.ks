@@ -1,9 +1,4 @@
 @LAZYGLOBAL OFF.
-RUNONCEPATH("utilLib.ks").
-//atmo vs airless
-
-dependsOn("orbitLib.ks").
-dependsOn("shipLib.ks").
 
 FUNCTION ascentCurve {
 	PARAMETER targetHeading IS 90, targetApo IS 100000, scaleHeight IS 100000, goalTWR IS 2.
@@ -91,9 +86,13 @@ FUNCTION airlessAscent {
 	ascentCurve(targetHeading,targetApo).
 }
 
-FUNCTION ascent {
-	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2.
+FUNCTION ascend {
+	PARAMETER targetHeading IS 90, targetApo IS 100000, goalTWR IS 2, staging IS true.
 
+	if staging {
+		stagingLogic().
+	}
+	
 	IF SHIP:BODY:ATM:EXISTS {
 		atmosphericAscent(targetHeading,targetApo,goalTWR).
 		LOCK STEERING TO SHIP:PROGRADE.

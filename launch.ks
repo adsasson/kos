@@ -2,23 +2,26 @@
 
 //ascent
 //orbital insertion
-RUNONCEPATH("utilLib.ks").
-
 dependsOn("ascent.ks").
 dependsOn("orbitLib.ks").
 
-DECLARE PARAMETER cHeading IS 90, cApo IS 100000, cPeri IS 0, goalTWR IS 2.
+DECLARE PARAMETER aHeading IS 90, anApoapsis IS 100000, aPeriapsis IS 0, orbitInsert IS true, goalTWR IS 2.
 
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+//SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+//initialize controls
 //sanitize input
-IF cApo < cPeri {
-	LOCAL oldValue TO cPeri.
-	SET cPeri TO cApo.
-	SET cApo TO oldValue.
+IF anApoapsis < aPeriapsis {
+	LOCAL oldValue TO aPeriapsis.
+	SET aPeriapsis TO anApoapsis.
+	SET anApoapsis TO oldValue.
 }
-IF cHeading > 360 {
-	SET cHeading TO cHeading - 360*MOD(cHeading,360).
+IF aHeading > 360 {
+	SET aHeading TO aHeading - 360*MOD(aHeading,360).
 }
 
-ascent(cHeading,cApo,goalTWR).
-orbitalInsertion(cPeri).
+ascend(aHeading,anApoapsis,goalTWR).
+if orbitInsert {
+	orbitalInsertion(aPeriapsis).
+} else {
+	//handle suborbital trajectory
+}
