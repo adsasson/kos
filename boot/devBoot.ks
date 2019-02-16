@@ -14,13 +14,14 @@ function hasFile {
     return FALSE.
 }
 
-function dependsOn {
-    parameter fileName, volumeID is 1.
-    if not hasFile(fileName, volumeID) {
+FUNCTION dependsOn {
+    PARAMETER fileName, volumeID is 1.
+    IF not hasFile(fileName, volumeID) {
         download(fileName,volumeID).
-        print "Downloading dependency " + fileName + ".".
+        PRINT "Downloading dependency " + fileName + ".".
     }
-    runoncepath(volumeID + ":" + fileName).
+    PRINT "Running dependency: " + fileName + ".".
+    RUNONCEPATH(volumeID + ":" + fileName).
 }
 
 function download {

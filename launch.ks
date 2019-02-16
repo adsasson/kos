@@ -27,9 +27,7 @@
 // }
 
 
-GLOBAL lockedThrottle IS 0.
-GLOBAL lockedPitch IS 90.
-GLOBAL lockedCompassHeading IS 90.
+
 
 LOCAL targetHeading IS 90.
 LOCAL targetApoapsis IS 100000.
@@ -41,6 +39,9 @@ LOCAL staging TO TRUE.
 runoncepath("1:/boot/devboot.ks").
 dependsOn("shipLib.ks").
 WAIT 1.
+dependsOn("navigationLib.ks").
+WAIT 1.
+
 FUNCTION maxTWR {
 	LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
 	//gravity for altitude
@@ -61,6 +62,7 @@ FUNCTION timeToImpact {
 
 FUNCTION test {
 	initializeControls().
+	SET lockedCompassHeading TO targetHeading.
 	ignition().
 	ascend().
 
@@ -73,18 +75,7 @@ FUNCTION ignition {
 	stage.
 }
 
-FUNCTION initializeControls {
-	SAS OFF.
-	LOCK THROTTLE TO lockedThrottle.
-	SET lockedCompassHeading TO targetHeading.
-	LOCK STEERING TO HEADING(lockedCompassHeading, lockedPitch).
-}
 
-FUNCTION deinitializeControls {
-	SET lockedThrottle TO 0.
-	UNLOCK ALL.
-	SAS ON.
-}
 
 FUNCTION countdown {
 	PARAMETER countNumber IS 3.
@@ -103,11 +94,12 @@ FUNCTION ascend {
 	IF SHIP:BODY:ATM:EXISTS {
 		atmosphericAscent().
 		LOCK STEERING TO SHIP:PROGRADE.
-		//correctForDrag().
+		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
+		correctForDrag().
 	} ELSE {
 		airlessAscent().
 	}
-	//engageDeployables().
+	engageDeployables().
 }
 
 FUNCTION atmosphericAscent {
@@ -129,21 +121,18 @@ FUNCTION ascentCurve {
 
 	LOCK deltaPitch TO 90 * SQRT(normalizedAltitude).
 	clearscreen.
-	PRINT "Entered ascentCurve Function".
-
 
 	UNTIL SHIP:APOAPSIS >= targetApoapsis {
-		PRINT "ENTERED TARGET APOAPSIS LOOP" AT (0,1).
+
 		stageLogic().
-		PRINT ("DO I GET PAST HERE?") AT (0,5).
+
 		IF SHIP:BODY:ATM:EXISTS {
-			PRINT "CHECKED ATMO" AT (0,2).
+
 			IF (maximumTWR > 0) SET lockedThrottle TO MIN(1,MAX(0,goalTWR/maximumTWR)).
 		} ELSE {
 			SET lockedThrottle TO 1.
 		}
 		SET lockedPitch TO 90 - (MIN(90,deltaPitch)).
-		PRINT "LOCKED PITCH: " + lockedPitch AT (0,11).
 		WAIT 0.
 	}
 	LOCK STEERING TO SHIP:PROGRADE.
@@ -151,6 +140,18 @@ FUNCTION ascentCurve {
 	SET lockedThrottle TO 0.
 }
 
+FUNCTION correctForDrag {
+	IF (SHIP:APOAPSIS < targetApoapsis) {
+		notify("Correcting apoapsis for atmospheric drag.").
+		LOCK STEERING TO SHIP:PROGRADE.
+		waitForAlignmentTo(SHIP:PROGRADE).
+		SET localThrottle TO MAX(1,(targetApoapsis - SHIP:APOAPSIS)/targetApoapsis * 10).
+
+		WAIT UNTIL (SHIP:APOAPSIS >= targetApoapsis).
+
+		SET lockedThrottle TO 0.
+	}
+}
 //ignition().
-SET TERMINAL:HEIGHT TO 200.
+SET TERMINAL:HEIGHT TO 100.
 test().

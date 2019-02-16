@@ -1,35 +1,10 @@
 @LAZYGLOBAL OFF.
 
-// FUNCTION stageLogic {
-// 	//LOCAL engineList TO SHIP:ENGINES.
-// 	LOCAL stageFlag IS TRUE.
-// 	//LOCAL endOfLine IS TERMINAL.WIDTH - 10.
-//
-// 	LOCAL engineList TO BUILDLIST("engines").
-// 	UNTIL  (NOT stageFlag) {
-// 		PRINT "Stage: " + STAGE:NUMBER AT (0,1).
-// 		FOR engine IN engineList {
-// 			IF engine:FLAMEOUT OR (NOT(SHIP:AVAILABLETHRUST > 0)) {
-// 				STAGE.
-// 				PRINT "STAGING!" AT (0,1).
-// 				IF STAGE:NUMBER = 0 {
-// 					SET stageFlag TO FALSE.
-// 					RETURN.
-// 				}
-// 				UNTIL STAGE:READY {
-// 					WAIT 0.
-// 				}
-// 				SET engineList TO BUILDLIST("engines").
-// 				CLEARSCREEN.
-// 			}
-// 		}
-// 	}
-//
-// }
+
 
 FUNCTION stageLogic {
   WHEN NOT (SHIP:AVAILABLETHRUST > 0) THEN {
-    PRINT "ACTIVATING STAGE " + STAGE:NUMBER.
+    PRINT "ACTIVATING STAGE " + STAGE:NUMBER AT (0,0).
     STAGE.
     IF STAGE:NUMBER > 0 {
       RETURN TRUE.
@@ -37,4 +12,34 @@ FUNCTION stageLogic {
       RETURN FALSE.
     }
   }
+}
+
+FUNCTION performModuleAction {
+	PARAMETER moduleName, moduleAction.
+	FOR module IN SHIP:MODULESNAMED(moduleName) {
+		IF module:HASEVENT(moduleAction) {
+			module:DOEVENT(moduleAction).
+			PRINT "PERFORMING EVENT: " + moduleAction + " WITH PART " + module:PART:TITLE.
+		} ELSE {
+			PRINT "Error: " + moduleName + " does not have event " + moduleAction.
+		}
+	}
+}
+FUNCTION deployFairings {
+  performModuleAction("ModuleProceduralFairing","deploy").
+}
+FUNCTION extendAntenna {
+  performModuleAction("ModuleDeployableAntenna","extend antenna").
+ }
+ 
+
+FUNCTION engageDeployables {
+	PRINT "DEPLOYING".
+	deployFairings().
+	WAIT 1.
+	PANELS ON.
+	PRINT "DEPLOYING SOLAR PANELS".
+	RADIATORS ON.
+	PRINT "DELPOYING RADIATIORS".
+	extendAntenna().
 }
