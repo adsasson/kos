@@ -20,7 +20,7 @@ FUNCTION performModuleAction {
   FOR module IN SHIP:MODULESNAMED(moduleName) {
     IF module:HASEVENT(moduleAction) {
       module:DOEVENT(moduleAction).
-      PRINT "PERFORMING EVENT: " + moduleAction + " WITH PART " + module:PART:TITLE.
+      IF verbose PRINT "PERFORMING EVENT: " + moduleAction + " WITH PART " + module:PART:TITLE.
     } ELSE {
       PRINT "Error: " + moduleName + " does not have event " + moduleAction.
     }
@@ -57,13 +57,15 @@ FUNCTION engineStats {
   FOR engine IN shipEngines {
     IF engine:IGNITION {
       SET totalThrust TO totalThrust + engine:AVAILABLETHRUSTAT(pressure).
+      PRINT "Debug: total thrust: " + totalThrust AT (0,0).
+      PRINT "Debug: AVAILABLETHRUSTAT: " + engine:AVAILABLETHRUSTAT(pressure) AT (0,1).
       SET totalISP TO totalISP + (engine:AVAILABLETHRUSTAT(pressure)/engine:ISPAT(pressure)).
     }
+  }
     IF totalISP > 0 {
       SET avgISP TO totalThrust/totalISP.
     }
     RETURN LEXICON("totalISP",totalISP,"totalThrust",totalThrust,"avgISP",avgISP).
-  }
 }
 
 //===================================================================
@@ -72,25 +74,36 @@ FUNCTION maxTWR {
   //gravity for altitude
   RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
 }
+//burn time.
 
+// Base formulas:
+// deltav = integral F / (m0 - consumptionRate * t) dt
+// consumptionRate = F / (Isp * g)
+// integral deltav = integral F / (m0 - (F * t / g * Isp)) dt
+
+// Integrate:
+// integral F / (m0 - (F * t / g * Isp)) dt = -g * Isp * log(g * m0 * Isp - F * t)
+// F(t) - F(0) = known ?v
+// Expand, simplify, and solve for t
+// credit: gisikw, reddit.
 FUNCTION burnTime {
   PARAMETER burnDV, pressure IS 0.
 
   LOCAL totalFuelMass IS SHIP:MASS - SHIP:DRYMASS.
 
-  //LOCAL g0 TO 9.82.
+  LOCAL g0 TO 9.82.
 
   LOCAL enginesLex TO engineStats(pressure).
   LOCAL avgISP TO enginesLex["avgISP"].
   LOCAL totalThrust TO enginesLex["totalThrust"].
   LOCAL burn TO 0.
 
-  //check for div by 0.
+  //check for div by 0..
   IF totalThrust > 0 {
-    SET burn TO CONSTANT:G0 * SHIP:MASS * avgISP *
-    (1 - CONSTANT:E^(-burnDV / (CONSTANT:G0 * avgISP))) /totalThrust.
+    SET burn TO g0 * SHIP:MASS * avgISP *
+    (1 - CONSTANT:E^(-burnDV / (g0 * avgISP))) /totalThrust.
   } ELSE {
-    notify("ERROR: AVAILABLE THRUST IS 0.",5,"upperCenter",20,RED,TRUE).
+    notifyError("AVAILABLE THRUST IS 0.").
   }
   //notify("BURN TIME FOR " + ROUND(burnDV,2) + "m/s: " + ROUND(burn,2) + " s").
   RETURN burn.
