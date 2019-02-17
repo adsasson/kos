@@ -1,5 +1,8 @@
 @lazyglobal off.
 
+GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
+print bootfile.
+
 //basic file handling that the rest of the system depends on
 function hasFile {
     PARAMETER fileName, volumeLabel.
@@ -86,4 +89,5 @@ FUNCTION downloadTestFiles {
     download(testFile,targetVolume).
   }
 }
+
 downloadTestFiles().

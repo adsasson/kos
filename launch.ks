@@ -1,8 +1,8 @@
 @LAZYGLOBAL OFF.
+RUNONCEPATH(bootfile).
 
 PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, scaleHeight IS 100000, goalTWR IS 2, staging TO TRUE.
 
-runoncepath("1:/boot/devboot.ks").
 dependsOn("shipLib.ks").
 WAIT 1.
 dependsOn("navigationLib.ks").

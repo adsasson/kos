@@ -1,5 +1,7 @@
 @lazyglobal off.
 
+GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
+
 //basic file handling that the rest of the system depends on
 function hasFile {
     PARAMETER fileName, volumeLabel.
@@ -24,10 +26,10 @@ FUNCTION dependsOn {
     RUNONCEPATH(volumeID + ":" + fileName).
 }
 
-function download {
-    parameter fileName, volumeLabel, sourceVolumeID IS 0.
-    switch to volumeLabel.
-    copypath(sourceVolumeID + ":" + fileName, volumeLabel + ":").
+FUNCTION download {
+    PARAMETER fileName, volumeLabel, sourceVolumeID IS 0.
+    SWITCH TO volumeLabel.
+    COPYPATH(sourceVolumeID + ":" + fileName, volumeLabel + ":").
 }
 
 FUNCTION updateFiles {
