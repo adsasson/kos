@@ -3,15 +3,18 @@
 RUNONCEPATH(bootfile).
 
 dependsOn("orbitalMechanicsLib.ks").
-WAIT 0.5.
-dependsOn("shipLib.ks").
-WAIT 0.5.
-dependsOn("navigationLib.ks").
-WAIT 0.5.
-dependsOn("constants.ks").
-WAIT 0.5.
 
-PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, staging TO TRUE.
+dependsOn("shipLib.ks").
+
+dependsOn("navigationLib.ks").
+
+dependsOn("constants.ks").
+
+
+LOCAL targetHeading IS 90.
+LOCAL targetApoapsis IS 100000.
+LOCAL targetPeriapsis IS 100000.
+LOCAL staging TO TRUE.
 
 LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
@@ -76,62 +79,24 @@ FUNCTION onOrbitBurn {
 	LOCK STEERING TO burnVector:DIRECTION.
 
 	waitForAlignmentTo(burnVector).
+	print "Debug burn time: " + orbitalInsertionBurnTime.
+	print "Debug tau time: " + tau.
+	print "Debug eta time: " + etaToBurn.
 
-	LOCAL startTime IS tau - orbitalInsertionBurnTime/2.
-	performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
-// 	WAIT UNTIL etaToBurn <= OIBurnTime/2. {
-//
-//
-// 	SET lockedThrottle TO 1.
-// 	stageLogic().
-// 	WAIT orbitalInsertionBurnTime.
-// 	SET lockedThrottle TO 0.
-// }
+	LOCAL startTime IS etaToBurn - orbitalInsertionBurnTime/2.
+	//performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
+
+	WAIT UNTIL etaToBurn <= orbitalInsertionBurnTime/2. {
+
+
+		SET lockedThrottle TO 1.
+		stageLogic().
+		WAIT orbitalInsertionBurnTime.
+		SET lockedThrottle TO 0.
+	}
+}
 
 //======================================
-
-
-
-DECLARE FUNCTION deltaVgeneral {
-
-	//v^2= GM*(2/r-1/a)
-	PARAMETER alt1 IS SHIP:ALTITUDE,
-						alt2 IS SHIP:ALTITUDE,
-						alpha1 IS SHIP:ORBIT:SEMIMAJORAXIS,
-						alpha2 IS SHIP:ORBIT:SEMIMAJORAXIS,
-						cBody IS SHIP:BODY.
-
-	LOCAL r1 TO cBody:RADIUS + alt1.
-	LOCAL r2 TO cBody:RADIUS + alt2.
-	LOCAL mu TO cBody:MU.
-	LOCAL vel1 TO 0.
-	LOCAL vel2 TO 0.
-
-	IF (alpha1 > 0) {
-		SET vel1 TO SQRT(mu*(2/r1 - 1/alpha1)).
-	}
-	IF (alpha2 > 0) {
-		SET vel2 TO SQRT(mu*(2/r2 - 1/alpha2)).
-	}
-
-	return ABS(vel1 - vel2).
-}
-//===============================================
-//burn time.
-
-// Base formulas:
-// deltav = integral F / (m0 - consumptionRate * t) dt
-// consumptionRate = F / (Isp * g)
-// integral deltav = integral F / (m0 - (F * t / g * Isp)) dt
-
-// Integrate:
-// integral F / (m0 - (F * t / g * Isp)) dt = -g * Isp * log(g * m0 * Isp - F * t)
-// F(t) - F(0) = known ?v
-// Expand, simplify, and solve for t
-// credit: gisikw, reddit.
-
-//parameters SHIP, deltaV.
-
 
 
 DECLARE FUNCTION killRelativeVelocity {
@@ -191,6 +156,13 @@ DECLARE FUNCTION killRelativeVelocity {
 }
 
 FUNCTION orbitalInsertion {
+	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramStaging TO TRUE.
+
+	SET targetHeading TO paramHeading.
+	SET targetApoapsis TO paramApoapsis.
+	SET targetPeriapsis TO paramPeriapsis.
+	SET staging TO paramStaging.
+
 	initializeControls().
 	correctForEccentricity().
 	checkPeriapsisMinimumValue().

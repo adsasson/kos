@@ -43,6 +43,7 @@ FUNCTION performBurn {
 	PARAMETER burnVector, burnStartTime, burnEndTime, targetThrottle IS 1.
 	waitForAlignmentTo(burnVector).
 	WAIT UNTIL burnStartTime.
+	print "debug waiting for burn".
 	SET lockedThrottle TO targetThrottle.
 	WAIT UNTIL burnEndTime.
 	SET lockedThrottle TO 0.
