@@ -38,7 +38,7 @@ FUNCTION countdown {
 }
 
 FUNCTION ascend {
-	PARAMETER tolerance IS 0.1
+	PARAMETER tolerance IS 0.1.
 	IF SHIP:BODY:ATM:EXISTS {
 		atmosphericAscent(tolerance).
 		LOCK STEERING TO SHIP:PROGRADE.
@@ -104,7 +104,7 @@ FUNCTION correctForDrag {
 }
 
 FUNCTION airlessAscent {
-	PARAMETER tolerance TO 0.1
+	PARAMETER tolerance TO 0.1.
 	LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
 
 	//check inputs
@@ -117,6 +117,7 @@ FUNCTION airlessAscent {
 
 
 FUNCTION launchProgram {
+	sanitizeInput().
 	initializeControls().
 	SET lockedCompassHeading TO targetHeading.
 	ignition().
@@ -124,5 +125,4 @@ FUNCTION launchProgram {
 	engageDeployables().
 }
 
-SET TERMINAL:HEIGHT TO 100.
 launchProgram().
