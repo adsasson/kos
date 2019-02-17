@@ -1,14 +1,20 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, scaleHeight IS 100000, goalTWR IS 2, staging TO TRUE.
-
 dependsOn("shipLib.ks").
-WAIT 0.5.
+
 dependsOn("navigationLib.ks").
-WAIT 0.5.
+
 dependsOn("constants.ks").
-WAIT 0.5.
+
+
+
+LOCAL targetHeading IS 90.
+LOCAL targetApoapsis IS 100000.
+LOCAL targetPeriapsis IS 100000.
+LOCAL scaleHeight IS 100000.
+LOCAL goalTWR IS 2.
+LOCAL staging TO TRUE.
 
 FUNCTION sanitizeInput {
 	IF targetPeriapsis > targetApoapsis {
@@ -117,6 +123,15 @@ FUNCTION airlessAscent {
 
 
 FUNCTION launchProgram {
+	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramScaleHeight IS 100000, paramGoalTWR IS 2, paramStaging TO TRUE.
+
+	SET targetHeading TO paramHeading.
+	SET targetApoapsis TO paramApoapsis.
+	SET targetPeriapsis TO paramPeriapsis.
+	SET staging TO paramStaging.
+	SET scaleHeight TO paramScaleHeight.
+	SET goalTWR TO paramGoalTWR.
+
 	sanitizeInput().
 	initializeControls().
 	SET lockedCompassHeading TO targetHeading.
