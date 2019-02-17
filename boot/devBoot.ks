@@ -1,7 +1,6 @@
-@lazyglobal off.
+@LAZYGLOBAL OFF.
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
-print bootfile.
 
 //basic file handling that the rest of the system depends on
 function hasFile {
@@ -82,6 +81,7 @@ FUNCTION notify {
 LOCAL testList TO LIST(). //put testing files names here.
 
 testList:ADD(launch.ks).
+testList:ADD(orbitLib.ks).
 
 FUNCTION downloadTestFiles {
   PARAMETER targetVolume IS 1.

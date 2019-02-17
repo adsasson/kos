@@ -1,107 +1,96 @@
 //orbital maneuver library
 @LAZYGLOBAL OFF.
-RUNONCEPATH("utilLib.ks").
+RUNONCEPATH(bootfile).
 
+dependsOn("orbitalMechanicsLib.ks").
+WAIT 0.5.
 dependsOn("shipLib.ks").
-dependsOn("utilLib.ks").
+WAIT 0.5.
+dependsOn("navigationLib.ks").
+WAIT 0.5.
+dependsOn("constants.ks").
+WAIT 0.5.
 
+PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, staging TO TRUE.
+
+LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
 LOCAL burnDirection TO SHIP:PROGRADE.
 
-IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
-	SET apsis TO SHIP:APOAPSIS.
-	SET burnDirection TO SHIP:PROGRADE.
-} ELSE { //parabolic or hyperbolic
-	SET apsis TO SHIP:PERIAPSIS.
-	SET burnDirection TO SHIP:RETROGRADE.
+FUNCTION correctForEccentricity {
+	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
+		SET apsis TO SHIP:APOAPSIS.
+		SET burnDirection TO SHIP:PROGRADE.
+	} ELSE { //parabolic or hyperbolic
+		SET apsis TO SHIP:PERIAPSIS.
+		SET burnDirection TO SHIP:RETROGRADE.
+		SET targetApsisHeight TO targetPeriapsis.
+	}
 }
+//TODO: functions to check that burn apsis is above atmosphere or minimum feature HEIGHT,
+//then correct burn time and burn point if too low. Which leads to the idea of:
+//TODO: aerobrake function for atmospheric bodies.
 
-FUNCTION orbitalInsertion {
-	PARAMETER targetAlt IS 0.
-	IF SHIP:BODY:ATM:EXISTS {
-		IF targetAlt < SHIP:BODY:ATM:HEIGHT {
-			SET targetAlt TO SHIP:BODY:ATM:HEIGHT + 1000.
+
+FUNCTION checkPeriapsisMinimumValue {
+	PARAMETER tolerance IS 0.1.
+		IF SHIP:BODY:ATM:EXISTS {
+		IF targetPeriapsis < SHIP:BODY:ATM:HEIGHT {
+			SET targetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
 			notify("WARNING: Orbit will not clear atmosphere. " +
-							"Adjusting periapsis to " +	targetAlt + " m").
+							"Adjusting periapsis to " +	targetPeriapsis + " m").
 		}
 	} ELSE {
 		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
-		IF targetAlt < minFeatureHeight {
+		IF targetPeriapsis < minFeatureHeight {
+			SET targetAlt TO minFeatureHeight * (1 + tolerance).
 			notify("WARNING: Orbit will not clear minimum surface feature altitude."
-						+ " Adjusting periapsis to " + minFeatureHeight + " m").
-			SET targetAlt TO minFeatureHeight.
+						+ " Adjusting periapsis to " + targetPeriapsis + " m").
 		}
 	}
-	OIBurn(targetAlt).
 }
 
-FUNCTION OIBurn {
-	PARAMETER targetAlt.
+FUNCTION onOrbitBurn {
+
 	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
 
-	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
-		LOCK etaToBurn TO ETA:APOAPSIS.
-	} ELSE { //parabolic or hyperbolic
+	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
+		//parabolic or hyperbolic
 		LOCK etaToBurn TO ETA:PERIAPSIS.
 	}
 
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
 
-	LOCAL targetSemiMajorAxis TO (apsis + targetAlt)/2 + SHIP:BODY:RADIUS.
-	LOCAL LOCK OIdeltaV TO deltaV(apsis,
-																SHIP:ORBIT:SEMIMAJORAXIS,
-																targetSemiMajorAxis).
-	LOCAL LOCK OIBurnTime TO burnTime(OIdeltaV).
+	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
+	LOCAL LOCK orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
+	LOCAL LOCK orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV).
 
 	LOCAL LOCK r0 TO SHIP:POSITION.
 	LOCAL r1 TO POSITIONAT(SHIP,tau).
 	LOCAL LOCK deltaR TO r1 - r0.
 
-	LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * OIdeltaV.
+	LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * orbitalInsertionBurnDV.
 	LOCAL LOCK v0 TO SHIP:VELOCITY:ORBIT.
 	LOCAL LOCK burnVector TO deltaR + v1.
 
-	LOCAL cThrottle TO 0.
-	LOCK THROTTLE TO cThrottle.
-
 	LOCK STEERING TO burnVector:DIRECTION.
 
-	pointTo(burnVector).
+	waitForAlignmentTo(burnVector).
 
-	WAIT UNTIL etaToBurn <= OIBurnTime/2. {
-
-
-	SET cThrottle TO 1.
-	stageLogic().
-	WAIT OIBurnTime.
-	SET cThrottle TO 0.
-}
+	LOCAL startTime IS tau - orbitalInsertionBurnTime/2.
+	performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
+// 	WAIT UNTIL etaToBurn <= OIBurnTime/2. {
+//
+//
+// 	SET lockedThrottle TO 1.
+// 	stageLogic().
+// 	WAIT orbitalInsertionBurnTime.
+// 	SET lockedThrottle TO 0.
+// }
 
 //======================================
 
-DECLARE FUNCTION deltaV {
 
-	//v^2= GM*(2/r-1/a)
-	PARAMETER burnPoint,
-						alpha1 IS SHIP:BODY:RADIUS,
-						alpha2 IS SHIP:BODY:RADIUS,
-						cBody IS SHIP:BODY.
-
-	LOCAL r0 TO cBody:RADIUS + burnPoint.
-
-	LOCAL mu TO cBody:MU.
-	LOCAL vel1 TO 0.
-	LOCAL vel2 TO 0.
-
-	IF (alpha1 > 0) {
-		SET vel1 TO SQRT(mu*(2/r0 - 1/alpha1)).
-	}
-	IF (alpha2 > 0) {
-		SET vel2 TO SQRT(mu*(2/r0 - 1/alpha2)).
-	}
-
-	return ABS(vel1 - vel2).
-}
 
 DECLARE FUNCTION deltaVgeneral {
 
@@ -142,30 +131,7 @@ DECLARE FUNCTION deltaVgeneral {
 // credit: gisikw, reddit.
 
 //parameters SHIP, deltaV.
-DECLARE FUNCTION burnTime {
-	DECLARE PARAMETER currentDeltaV, currentShip IS SHIP, pressure is 0.
 
-	LOCAL totalFuelMass TO SHIP:MASS - SHIP:DRYMASS.
-
-	LOCAL g0 TO 9.82.
-
-	LOCAL enginesLex TO engineStats(pressure).
-	LOCAL avgISP TO enginesLex["avgISP"].
-	LOCAL totalThrust TO enginesLex["totalThrust"].
-	LOCAL burn TO 0.
-
-	//check for div by 0.
-	IF totalThrust > 0 {
-		SET burn TO g0 * SHIP:MASS * avgISP *
-		(1-CONSTANT:E^(-currentDeltaV / (g0 * avgISP)))
-		/totalThrust.
-	} ELSE {
-		notify("ERROR: AVAILABLE THRUST IS 0.").
-	}
-
-	PRINT "BURN TIME FOR " + ROUND(currentDeltaV,2) + "m/s: " + ROUND(burn,2) + " s" AT (0,TERMINAL:HEIGHT - 1).
-	RETURN burn.
-}
 
 
 DECLARE FUNCTION killRelativeVelocity {
@@ -222,4 +188,11 @@ DECLARE FUNCTION killRelativeVelocity {
 		notify("No target selected.").
 	}
 
+}
+
+FUNCTION orbitalInsertion {
+	initializeControls().
+	correctForEccentricity().
+	checkPeriapsisMinimumValue().
+	onOrbitBurn().
 }

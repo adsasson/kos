@@ -39,6 +39,14 @@ FUNCTION waitForAlignmentTo {
   RCS OFF.
 	RETURN TRUE.
 }
+FUNCTION performBurn {
+	PARAMETER burnVector, burnStartTime, burnEndTime, targetThrottle IS 1.
+	waitForAlignmentTo(burnVector).
+	WAIT UNTIL burnStartTime.
+	SET lockedThrottle TO targetThrottle.
+	WAIT UNTIL burnEndTime.
+	SET lockedThrottle TO 0.
+}
 
 FUNCTION timeToImpact {
 	PARAMETER v0, distance, accel.
