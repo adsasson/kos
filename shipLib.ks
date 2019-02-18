@@ -116,7 +116,7 @@ FUNCTION stageEngineStats {
   RETURN LEXICON("stageTotalISP",totalISP,"stageTotalThrust",totalThrust,"stageAvgISP",avgISP,"stage",stageNumber).
 }
 
-FUNCTION stageMass {
+FUNCTION stageMassStats {
   PARAMETER stageNumber IS STAGE:NUMBER.
   LOCAL totalMass TO 0.
   LOCAL totalDryMass TO 0.
@@ -159,35 +159,59 @@ FUNCTION burnTime { //by stage
   PARAMETER burnDV, pressure IS 0.
   LOCAL g0 TO 9.82.
 
+  //starting values for burn time, deltav, and mass counters
   LOCAL shipMass TO SHIP:MASS.
   LOCAL shipDryMass TO SHIP:DRYMASS.
-  LOCAL runningBurnTime TO 0.
-  LOCAL runningBurnDV TO burnDV.
+  LOCAL currentBurnTime TO 0.
+  LOCAL currentBurnDV TO burnDV.
 
-  //iterate over stages to get engine stats and stage mass.
-  FROM {LOCAL stageNumber IS STAGE:NUMBER.} UNTIL STAGE = 0 STEP {SET stageNumber TO stageNumber -1.} DO {
+  //iterate over stages to calculate stage deltaV and burnTime for stage.
+  FROM {LOCAL stageNumber IS STAGE:NUMBER.} 
+    UNTIL STAGE = 0 
+    STEP {SET stageNumber TO stageNumber -1.} 
+  DO {
     LOCAL indexedStageEngineStats TO stageEngineStats(stageNumber,pressure).
-    LOCAL indexedStageMass TO stageMass(stageNumber).
+    LOCAL indexedStageMass TO stageMassStats(stageNumber).
 
-    //get stage delta V
-    LOCAL indexedStageDeltaV IS  indexedStageEngineStats["stageAvgISP"] * g0 * LN(shipMass/shipDryMass).
+    LOCAL stageTotalThrust IS indexedStageEngineStats["stageTotalThrust"].
+    LOCAL stageAvgISP IS indexedStageEngineStats["stageAvgISP"].
+    LOCAL stageDryMass IS indexedStageMass["stageDryMass"].
+    LOCAL stageMass IS indexedStageMass["stageMass"].
+    LOCAL stageBurnTime IS 0.
 
     //get burn time for Stage for remaining deltaV
-    IF indexedStageEngineStats["stageTotalThrust"] > 0 {
-      SET runningBurnTime TO runningBurnTime + g0 * shipMass * indexedStageEngineStats["stageAvgISP"] *
-      (1 - CONSTANT:E^(-runningBurnDV / (g0 * indexedStageEngineStats["stageAvgISP"]))) /indexedStageEngineStats["stageTotalThrust"].
-    } ELSE {
-      notifyError("AVAILABLE THRUST IS 0.").
-    }
-    //decrement ship mass by stage mass
-    SET shipMass TO shipMass - indexedStageMass["stageMass"].
-    SET shipDryMass TO shipDryMass - indexedStageMass["stageDryMass"].
-    //decrement deltaV counter.
-    SET runningBurnDV TO runningBurnDV - indexedStageDeltaV.
-    IF runningBurnDV <= 0 BREAK.
-  }
-  IF runningBurnDV > 0 notifyError("insufficient deltaV in ship for burn").
+    IF stageTotalThrust > 0 {
+      SET stageBurnTime TO g0 * shipMass * stageAveISP *
+      (1 - CONSTANT:E^(-currentBurnDV / (g0 * stageAveISP)))/stageTotalThrust.
+    } 
 
-  RETURN runningBurnTime.
+    //get stage delta V
+    LOCAL stageDeltaV IS stageAveISP * g0 * LN(shipMass/shipDryMass).
+
+
+    //increment total burn time by stage burn time
+    SET currentBurnTime TO currentBurnTime + stageBurnTime.
+
+    //decrement ship mass by stage mass
+    SET shipMass TO shipMass - stageMass.
+    SET shipDryMass TO shipDryMass - stageDryMass.
+
+    //decrement deltaV counter.
+    SET currentBurnDV TO currentBurnDV - stageDeltaV.
+
+    IF verbose {
+      print "Stage DeltaV: " + ROUND(stageDeltaV,2) + " " +
+            "Stage Total Mass: " + ROUND(stageMass,2) + " " +
+            "Stage Dry Mass: " + ROUND(stageDryMass,2) AT (0,(1+stageNumber)).
+    }
+    
+    //if burnDV counter is >= 0, then we have calculated enough to complete burn
+    IF currentBurnDV <= 0 BREAK.
+  }
+  //if we have looped through all stages, and there still is deltaV left on the burn counter
+  //we don't have enough fuel to complete burn
+  IF currentBurnDV > 0 notifyError("Insufficient deltaV in ship for burn").
+
+  RETURN currentBurnTime.
 }
 

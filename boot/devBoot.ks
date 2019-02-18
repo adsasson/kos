@@ -1,7 +1,7 @@
 @LAZYGLOBAL OFF.
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
-GLOBAL verbose IS FALSE.
+GLOBAL verbose IS TRUE.
 
 //basic file handling that the rest of the system depends on
 FUNCTION hasFile {

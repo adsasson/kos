@@ -14,7 +14,8 @@ dependsOn("constants.ks").
 LOCAL targetHeading IS 90.
 LOCAL targetApoapsis IS 100000.
 LOCAL targetPeriapsis IS 100000.
-LOCAL staging TO TRUE.
+LOCAL staging IS TRUE.
+LOCAL useNode IS FALSE.
 
 LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
@@ -87,19 +88,32 @@ FUNCTION onOrbitBurn {
 	//performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
 
 	WAIT UNTIL etaToBurn <= orbitalInsertionBurnTime/2. {
-
-
 		SET lockedThrottle TO 1.
 		stageLogic().
 		WAIT orbitalInsertionBurnTime.
 		SET lockedThrottle TO 0.
 	}
 }
+FUNCTION createOnOrbitManeuverNode {
+	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
+
+	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
+		//parabolic or hyperbolic
+		LOCK etaToBurn TO ETA:PERIAPSIS.
+	}
+
+	LOCAL tau TO etaToBurn + TIME:SECONDS.
+
+	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
+	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
+
+	LOCAL onOrbitNode IS NODE(TIME:SECONDS + tau, 0, 0, orbitalInsertionBurnDV).
+}
 
 //======================================
 
 
-DECLARE FUNCTION killRelativeVelocity {
+FUNCTION killRelativeVelocity {
 	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
 	IF HASTARGET {
 		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
@@ -163,8 +177,20 @@ FUNCTION orbitalInsertion {
 	SET targetPeriapsis TO paramPeriapsis.
 	SET staging TO paramStaging.
 
+	IF useNode IS TRUE {
+		dependsOn("executeNode.ks").
+		WAIT 0.5.
+	}
+
 	initializeControls().
 	correctForEccentricity().
 	checkPeriapsisMinimumValue().
-	onOrbitBurn().
+	IF useNode IS FALSE {
+		onOrbitBurn().
+	} ELSE {
+		LOCAL burnNode IS createOnOrbitManeuverNode().
+		ADD burnNode.
+		run executeNode.ks.
+	}
+	
 }
