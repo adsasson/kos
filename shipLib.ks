@@ -52,6 +52,7 @@ FUNCTION engineStats {
   LOCAL totalThrust TO 0.
   LOCAL totalISP TO 0.
   LOCAL avgISP TO 0.
+
   LOCAL shipEngines TO LIST().
   LIST ENGINES IN shipEngines.
   FOR engine IN shipEngines {
@@ -167,11 +168,10 @@ FUNCTION burnTime { //by stage
   FROM {LOCAL stageNumber IS STAGE:NUMBER.} UNTIL STAGE = 0 STEP {SET stageNumber TO stageNumber -1.} DO {
     LOCAL indexedStageEngineStats TO stageEngineStats(stageNumber,pressure).
     LOCAL indexedStageMass TO stageMass(stageNumber).
-    SET shipMass TO shipMass - indexedStageMass["stageMass"].
-    SET shipDryMass TO shipDryMass - indexedStageMass["stageDryMass"].
 
     //get stage delta V
     LOCAL indexedStageDeltaV IS  indexedStageEngineStats["stageAvgISP"] * g0 * LN(shipMass/shipDryMass).
+
     //get burn time for Stage for remaining deltaV
     IF indexedStageEngineStats["stageTotalThrust"] > 0 {
       SET runningBurnTime TO runningBurnTime + g0 * shipMass * indexedStageEngineStats["stageAvgISP"] *
@@ -179,11 +179,15 @@ FUNCTION burnTime { //by stage
     } ELSE {
       notifyError("AVAILABLE THRUST IS 0.").
     }
+    //decrement ship mass by stage mass
+    SET shipMass TO shipMass - indexedStageMass["stageMass"].
+    SET shipDryMass TO shipDryMass - indexedStageMass["stageDryMass"].
     //decrement deltaV counter.
     SET runningBurnDV TO runningBurnDV - indexedStageDeltaV.
     IF runningBurnDV <= 0 BREAK.
   }
   IF runningBurnDV > 0 notifyError("insufficient deltaV in ship for burn").
+  
   RETURN runningBurnTime.
 }
 
