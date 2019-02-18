@@ -88,7 +88,7 @@ FUNCTION notifyError {
 LOCAL testList TO LIST(). //put testing files names here.
 
 testList:ADD(orbitProgram.ks).
-testList:ADD(test.ks).
+testList:ADD(recoverTest.ks).
 
 FUNCTION downloadTestFiles {
   PARAMETER targetVolume IS 1.

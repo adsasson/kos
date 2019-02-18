@@ -175,7 +175,7 @@ FUNCTION burnTime { //by stage
     //get burn time for Stage for remaining deltaV
     IF indexedStageEngineStats["stageTotalThrust"] > 0 {
       SET runningBurnTime TO runningBurnTime + g0 * shipMass * indexedStageEngineStats["stageAvgISP"] *
-      (1 - CONSTANT:E^(-runningBurnDV / (g0 * avgISP))) /totalThrust.
+      (1 - CONSTANT:E^(-runningBurnDV / (g0 * indexedStageEngineStats["stageAvgISP"]))) /indexedStageEngineStats["stageTotalThrust"].
     } ELSE {
       notifyError("AVAILABLE THRUST IS 0.").
     }
