@@ -1,55 +1,51 @@
 @LAZYGLOBAL OFF.
-RUNONCEPATH("utilLib.ks").
+RUNONCEPATH(bootfile).
 
-dependsOn("orbitLib.ks").
 dependsOn("shipLib.ks").
+dependsOn("navigationLib.ks")
 
-DECLARE PARAMETER warpFlag IS FALSE.
+PARAMETER warpFlag IS FALSE, timeBuffer IS 60.
 
 LOCAL node TO NEXTNODE.
-PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+LOCAL nodeBurnTime IS burnTime(node:DELTAV:MAG).
+LOCAL nodePrograde IS node:DELTAV.
 
-LOCAL nodeBurnTime TO burnTime(node:DELTAV:MAG,SHIP).
 
-//INSERT WARP LOGIC
-IF warpFlag {
+IF verbose PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+
+FUNCTION waitUntilNode {
+	IF warpFlag {
 	KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (node:ETA - nodeBurnTime/2 + 60)).
 }
-
-WAIT UNTIL node:ETA <= (nodeBurnTime/2 + 60).
-
-SAS OFF.
-LOCAL nodePrograde TO node:DELTAV.
+	WAIT UNTIL node:ETA <= (nodeBurnTime/2 + timeBuffer)
 LOCK STEERING TO nodePrograde.
 
 notify("Orienting to node").
-pointTo(nodePrograde).
+waitForAlignmentTo(nodePrograde).
 
 WAIT UNTIL node:ETA <= (nodeBurnTime/2).
+}
 
-LOCAL currentThrottle TO 0.
-LOCK THROTTLE TO currentThrottle.
-
+FUNCTION maneuverNodeBurn {
 LOCAL done TO FALSE.
 
 //INITIAL DELTAV
 LOCAL deltaV0 TO node:DELTAV.
-
 UNTIL DONE {
 
 	stageLogic().
 
 	//RECALCULATE CURRENT MAX_ACCELERATION, AS IT CHANGES WHILE
 	//WE BURN THROUGH FUEL
-	LOCAL maxAcc TO SHIP:MAXTHRUST/SHIP:MASS.
+	LOCAL maxAcceleration TO SHIP:MAXTHRUST/SHIP:MASS.
 
 	//debug escape
-	IF maxAcc = 0 {
-		notify("ERROR: No available thrust.").
+	IF maxAcceleration = 0 {
+		notifyError("No available thrust.").
 	} ELSE {
 		//THROTTLE IS 100% UNTIL THERE IS LESS THAN 1 SECOND OF TIME LEFT TO BURN
 		//WHEN THERE IS LESS THAN 1 SECOND - DECREASE THE THROTTLE LINEARLY
-		SET currentThrottle TO MIN(node:DELTAV:MAG/maxAcc, 1).
+		SET lockedThrottle TO MIN(node:DELTAV:MAG/maxAcceleration, 1).
 	}
 
 	//HERE'S THE TRICKY PART, WE NEED TO CUT THE THROTTLE AS SOON AS OUR
@@ -57,7 +53,7 @@ UNTIL DONE {
 	//THIS CHECK IS DONE VIA CHECKING THE DOT PRODUCT OF THOSE 2 VECTORS
 	IF VDOT(deltaV0, node:DELTAV) < 0 {
 		PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0, node:DELTAV),1).
-		SET currentThrottle TO 0.
+		SET lockedThrottle TO 0.
 		BREAK.
 	}
 
@@ -68,18 +64,23 @@ UNTIL DONE {
 		//THIS USUALLY MEANS WE ARE ON POINT
 		WAIT UNTIL VDOT(deltaV0, node:DELTAV) < 0.5.
 
-		SET currentThrottle TO 0.
+		SET lockedThrottle TO 0.
 		PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0,node:DELTAV),1).
 		SET done TO TRUE.
+		WAIT 1.
 	}
 }
 
-UNLOCK STEERING.
-UNLOCK THROTTLE.
-WAIT 1.
+}
 
-//WE NO LONGER NEED THE MANEUVER NODE
-REMOVE node.
 
-//SET THROTTLE TO 0 JUST IN CASE.
-SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+
+
+FUNCTION executeNode {
+	initializeControls().
+	waitUntilNode(warpFlag).
+	maneuverNodeBurn().
+	REMOVE node.
+	deinitializeControls().
+
+}

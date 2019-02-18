@@ -4,7 +4,7 @@ GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
 GLOBAL verbose IS FALSE.
 
 //basic file handling that the rest of the system depends on
-function hasFile {
+FUNCTION hasFile {
     PARAMETER fileName, volumeLabel.
     SWITCH TO volumeLabel.
     LOCAL fileList IS LIST().

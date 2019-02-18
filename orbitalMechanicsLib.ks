@@ -190,9 +190,7 @@ FUNCTION flightPathAngle {
 //R for TA
 //r = (a(1-e^2))/(1+e*cos(TA)).
 FUNCTION positionFromTrueAnomaly {
-	PARAMETER TrueAn,
-										ecc IS SHIP:ORBIT:ECCENTRICITY,
-										alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
+	PARAMETER TrueAn, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS.
 
 	LOCAL position TO alpha*((1-ecc^2)/(1 + ecc*COS(TrueAn))).
 
@@ -202,9 +200,7 @@ FUNCTION positionFromTrueAnomaly {
 //TA for R
 //need to test
 FUNCTION trueAnomalyFromPosition {
-	PARAMETER R,
-						ecc IS SHIP:ORBIT:ECCENTRICITY,
-						alpha IS SHIP:ORBIT:ALPHA.
+	PARAMETER R, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:ALPHA.
 
 	IF ecc = 0 {
 		RETURN FALSE.
@@ -225,10 +221,7 @@ FUNCTION trueAnomalyFromPosition {
 //compute position from orbital elements.
 //
 FUNCTION etaToPosition {
-	PARAMETER position,
-						ecc IS SHIP:ORBIT:ECCENTRICITY,
-						alpha IS SHIP:ORBIT:SEMIMAJORAXIS,
-						currentBody IS SHIP:BODY.
+	PARAMETER position, ecc IS SHIP:ORBIT:ECCENTRICITY, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, currentBody IS SHIP:BODY.
 
 	LOCAL currentPosition TO SHIP:ALTITUDE + currentBody:RADIUS.
 

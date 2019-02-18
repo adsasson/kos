@@ -1,9 +1,10 @@
-@lazyglobal off.
+@LAZYGLOBAL OFF.
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
+GLOBAL verbose IS FALSE.
 
 //basic file handling that the rest of the system depends on
-function hasFile {
+FUNCTION hasFile {
     PARAMETER fileName, volumeLabel.
     SWITCH TO volumeLabel.
     LOCAL fileList IS LIST().
@@ -20,16 +21,17 @@ FUNCTION dependsOn {
     PARAMETER fileName, volumeID is 1.
     IF not hasFile(fileName, volumeID) {
         download(fileName,volumeID).
-        PRINT "Downloading dependency " + fileName + ".".
+        IF verbose PRINT "Downloading dependency " + fileName + ".".
     }
-    PRINT "Running dependency: " + fileName + ".".
+    IF verbose PRINT "Running dependency: " + fileName + ".".
     RUNONCEPATH(volumeID + ":" + fileName).
+    WAIT 0.1.
 }
 
-FUNCTION download {
-    PARAMETER fileName, volumeLabel, sourceVolumeID IS 0.
-    SWITCH TO volumeLabel.
-    COPYPATH(sourceVolumeID + ":" + fileName, volumeLabel + ":").
+function download {
+    parameter fileName, volumeLabel, sourceVolumeID IS 0.
+    switch to volumeLabel.
+    copypath(sourceVolumeID + ":" + fileName, volumeLabel + ":").
 }
 
 FUNCTION updateFiles {
@@ -76,4 +78,9 @@ FUNCTION notify {
       RETURN.
   }
   HUDTEXT(prefix + message, 5, locationValue, 20, YELLOW, TRUE).
+}
+
+FUNCTION notifyError {
+  PARAMETER message.
+  HUDTEXT(message, 10, 2, 20, RED, TRUE).
 }

@@ -7,6 +7,7 @@ dependsOn("navigationLib.ks").
 
 dependsOn("constants.ks").
 
+//TODO: add param for inclination launch, which is heading =  90 + inclination
 
 
 LOCAL targetHeading IS 90.

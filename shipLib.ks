@@ -187,10 +187,7 @@ FUNCTION burnTime { //by stage
     IF runningBurnDV <= 0 BREAK.
   }
   IF runningBurnDV > 0 notifyError("insufficient deltaV in ship for burn").
-  
+
   RETURN runningBurnTime.
 }
 
-
-
-//for stage
