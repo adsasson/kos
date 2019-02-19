@@ -73,9 +73,6 @@ UNTIL DONE {
 
 }
 
-
-
-
 FUNCTION executeNode {
 	initializeControls().
 	waitUntilNode(warpFlag).
