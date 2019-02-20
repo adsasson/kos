@@ -2,9 +2,9 @@
 RUNONCEPATH(bootfile).
 
 dependsOn("hohmann.ks").
-dependsON("executeNode.ks").
+dependsOn("executeNode.ks").
 
-PARAMETER targetBody.
+LOCAL targetBody.
 //INTERCEPT FUNCTION -- HOHMANN
 //USES A HOHMANN TRANSFER (GENERALIZED FOR ELLIPTICAL ORBITS THAT ARE COLINEAR WITH RESPECT TO ARGUMENT OF PERIAPSIS AND ARE COINCLINED)
 //CALCULATES THE TRANSFER ORBIT PARAMETERS, AND PHASE ANGLE FOR INTERCEPTION
@@ -50,17 +50,18 @@ FUNCTION timeToPhaseAngle {
 
 	//targetPhase Angle = startPhaseAngle + deltaAngVelocity*time
 	//targetPhaseAngle - startPhaseAngle/(deltaAngVelocity) = time
-	//deltaTrueAnomaly/deltaAngularVelocity = time
+	//(targetPhase Angle - (deltaTrueAnomaly))/deltaAngularVelocity = time
 	//angular velocity = radians/SECONDS
 	//orbital velocity is meters per second, so radians*circumference = meters
 	//radians/second = m/s/circuferemce
 
 	LOCAL targetTrueAnomaly targetBody:ORBIT:TRUEANOMALY.
 	LOCAL vesselTrueAnomaly IS SHIP:ORBIT:TRUEANOMALY.
+	LOCAL startingPhaseAngle IS targetTrueAnomaly - vesselTrueAnomaly.
 	LOCAL targetAngularVelocity IS targetBody:VELOCITY:ORBIT.
 	LOCAL vesselAngularVelocity IS SHIP:VELOCITY:ORBIT.
 
-	RETURN (targetTrueAnomaly - vesselTrueAnomaly)/(targetAngularVelocity - vesselAngularVelocity).
+	RETURN (targetPhaseAngle - startingPhaseAngle)/(targetAngularVelocity - vesselAngularVelocity).
 }
 
 FUNCTION calculateInterceptNode {
@@ -71,13 +72,20 @@ FUNCTION calculateInterceptNode {
 
 	LOCAL hohmmanStatsLex IS hohmannStats(shipAltitude,targetAltitude).
 	LOCAL targetPhaseAngle IS hohmmanStatsLex["phaseAngle"].
-	LOCAL timeToPhaseAngle IS timeToPhaseAngle(targetBody,targetPhaseAngle).
+	LOCAL timeToPhaseAngle IS timeToPhaseAngle(targetPhaseAngle).
 	hohmannNodes(hohmmanStatsLex,TIME:SECONDS + timeToPhaseAngle).
 }
 
+
 FUNCTION performIntercept {
-	calculateInterceptNode().
-	run executeNode.ks.
+	SET targetBody TO TARGET.
+	IF (DEFINED targetBody) {
+		calculateInterceptNode().
+		run executeNode.ks.
+	} ELSE {
+		notifyError("Intercept.ks: Target is umdefined.").
+	}
+
 }
 
 performIntercept().
