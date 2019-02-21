@@ -1,14 +1,17 @@
 @LAZYGLOBAL OFF.
-runoncepath("util.ks").
+RUNONCEPATH(bootfile).
 //this is mostly adapted from gisikw and 'KS programming' on youtube
 
-FUNCTION translate {
-  PARAMETER vector.
-  IF vector:MAG > 1 SET vector TO vector:normalized.
+LOCAL targetBody IS SHIP:TARGET.
 
-  SET SHIP:CONTROL:STARBOARD  TO vector * SHIP:FACING:STARVECTOR.
-  SET SHIP:CONTROL:FORE       TO vector * SHIP:FACING:FOREVECTOR.
-  SET SHIP:CONTROL:TOP        TO vector * SHIP:FACING:TOPVECTOR.
+FUNCTION translate {
+  PARAMETER targetVector.
+  RCS ON.
+  IF targetVector:MAG > 1 SET targetVector TO targetVector:normalized.
+
+  SET SHIP:CONTROL:STARBOARD  TO targetVector * SHIP:FACING:STARVECTOR.
+  SET SHIP:CONTROL:FORE       TO targetVector * SHIP:FACING:FOREVECTOR.
+  SET SHIP:CONTROL:TOP        TO targetVector * SHIP:FACING:TOPVECTOR.
 }
 
 FUNCTION getClosestTargetPort {
@@ -22,7 +25,7 @@ FUNCTION getClosestTargetPort {
 
     //make sure ports exist on target vessel.
     IF targetPorts:LENGTH = 0 {
-      notify("ERROR: No docking ports found on target vessel.").
+      notifyError("No docking ports found on target vessel.").
       RETURN.
     }
     //iterate over target ports that have same size, find closest port by
@@ -46,7 +49,7 @@ FUNCTION getClosestTargetPort {
       ports[0]:CONTROLFROM.
       getClosestTargetPort().
     } ELSE {
-      notify("ERROR: No docking port found on vessel.").
+      notifyError("No docking port found on vessel.").
       RETURN.
     }
   }
@@ -62,7 +65,7 @@ FUNCTION approachPort {
   LOCAL LOCK relativeVelocity TO SHIP:VELOCITY:ORBIT - targetPort:SHIP:VELOCITY:ORBIT.
   LOCK STEERING TO -1 * targetPort:PORTFACING:VECTOR.
 
-  UNTIL dockingPort:STATE <> "Ready" {
+  UNTIL dockingPort:STATE <> "Ready" { //until ship:status = "DOCKED"?
     translate((approachVector:normalized * speed) - relativeVelocity).
     LOCAL distanceVector IS (targetPort:NODEPOSITION - dockingPort:NODEPOSITION).
     IF VANG(dockingPort:PORTFACING:VECTOR, distanceVector) < 2 AND abs(distance - distanceVector:MAG) < 0.1 {
@@ -135,4 +138,19 @@ FUNCTION killRelativeVelocityRCS {
     translate(-relativeVelocity).
   }
   translate(V(0,0,0)).
+}
+
+FUNCTION closeDistance {
+  PARAMETER closestApproachDistance IS 5000, relativeVelocityLimit IS 10, endDistance IS 500.
+  IF (targetBody:DISTANCE < closestApproachDistance) AND
+    ((targetBody:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT) > relativeVelocityLimit) {
+    LOCK STEERING TO targetBody:DIRECTION.
+    waitForAlignmentTo(targetBody:DIRECTION).
+    RCS ON.
+    UNTIL (targetBody:DISTANCE) <= endDistance {
+      translate(targetBody:DIRECTION).
+    }
+  } ELSE {
+    notifyError("Rendezvous.ks: Too far or too fast from target body.").
+  }
 }

@@ -1,16 +1,11 @@
+@LAZYGLOBAL OFF.
+RUNONCEPATH(bootfile).
 //LANDING SCRIPT AIRLESS
+dependsOn("navigationLib.ks").
+dependsOn("hohmann.ks").
 
-//runoncepath("orbitLib.ks").
-//runoncepath("orbMechLib.ks").
-//runoncepath("shipLib.ks").
-dependsOn("orbitLib.ks").
-dependsOn("orbMechLib.ks").
-dependsOn("shipLib.ks").
-
-SET TERMINAL:WIDTH TO 75.
-
-DECLARE FUNCTION descent {
-	DECLARE PARAMETER transitionHeight IS 1000, flag IS "analytic".
+FUNCTION descent {
+	PARAMETER transitionHeight IS 1000, flag IS "analytic".
 
 	IF flag = "analytic" {
 		descentAnalytic(transitionHeight).
@@ -20,35 +15,37 @@ DECLARE FUNCTION descent {
 }
 
 //analytic descent
-DECLARE FUNCTION descentAnalytic {
-	DECLARE PARAMETER transitionHeight IS 1000.
+FUNCTION descentAnalytic {
+	PARAMETER transitionHeight IS 1000.
 	//height at which transition from descent to hover/land
+
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
 	//orient first
-	SAS OFF.
-	LOCAL LOCK cHeading TO SHIP:SRFRETROGRADE.
 
-	LOCAL cThrottle TO 0.
-	LOCK STEERING TO cHeading.
-	LOCK THROTTLE TO cThrottle.
+	initializeControls().
 
-	WAIT UNTIL pointTo(cHeading,FALSE,30,1).
+	LOCK STEERING TO SHIP:SRFRETROGRADE.
+
+	SET lockedThrottle TO 0.
+
+	waitForAlignmentTo(SHIP:SRFRETROGRADE,FALSE,30,1).
 
 	//declarations
-	LOCAL LOCK cBody TO SHIP:BODY.
-	LOCAL cGrav TO -cBody:MU/(cBody:RADIUS)^2. //grav at datum, down is negative
 
-	LOCAL r0 TO ALT:RADAR. //initial
-	LOCAL rF TO r0 - transitionHeight. //final altitude
+	LOCAL currentBody TO SHIP:BODY.
+	LOCAL grav TO -currentBody:MU/(currentBody:RADIUS)^2. //grav at datum, down is negative
 
-	LOCAL vX0 TO SHIP:GROUNDSPEED.
-	LOCAL vY0 TO SHIP:VERTICALSPEED.
+	LOCAL initialAltitude TO ALT:RADAR.
+	LOCAL finalAltitude TO initialAltitude - transitionHeight.
 
-	LOCAL TTI TO timeToImpact(vY0, rf, cGrav).
-	LOCAL vF TO VisViva(rF + cBody:RADIUS). //velocity at transition height
-	LOCAL tB TO burnTime(vF).
+	LOCAL velocityX0 TO SHIP:GROUNDSPEED.
+	LOCAL velocityY0 TO SHIP:VERTICALSPEED.
 
-	LOCAL tManeuver TO TTI - tB/2. //time to manuever is TTI minus burn time/2
+	LOCAL TTI TO timeToImpact(velocityY0, finalAltitude, grav).
+	LOCAL finalVelocity TO VisViva(finalAltitude + currentBody:RADIUS). //velocity at transition height
+	LOCAL descentBurnTime TO burnTime(finalVelocity).
+
+	LOCAL timeToManeuver TO TTI - descentBurnTime/2. //time to manuever is TTI minus burn time/2
 
 	deployLandingGear().
 
@@ -56,15 +53,15 @@ DECLARE FUNCTION descentAnalytic {
 	stageLogic().
 
 	LOCAL startTime TO TIME:SECONDS.
-	UNTIL TIME:SECONDS >= (startTime + tManeuver) {
-		PRINT "Time To Burn: " + ROUND((startTime + tManeuver - TIME:SECONDS),2) AT (TERMINAL:WIDTH/2, 1).
+	UNTIL TIME:SECONDS >= (startTime + timeToManeuver) {
+		PRINT "Time To Burn: " + ROUND((startTime + timeToManeuver - TIME:SECONDS),2) AT (TERMINAL:WIDTH/2, 1).
 		PRINT "Time To Impact: " + ROUND((startTime + TTI - TIME:SECONDS),2) AT (TERMINAL:WIDTH/2, 2).
 		WAIT 0.
 	}
 
-	SET cThrottle TO 1.
-	WAIT tB.
-	SET cThrottle TO 0.
+	SET lockedThrottle TO 1.
+	WAIT descentBurnTime.
+	SET lockedThrottle TO 0.
 
 }
 
@@ -78,35 +75,31 @@ DECLARE FUNCTION descentNumeric {
 		RETURN.
 	}
 	//declarations
-	LOCAL cThrottle TO 0.
-	LOCAL LOCK cAlt TO ALT:RADAR.
+	LOCAL LOCK shipAltitude TO ALT:RADAR.
 
-	LOCAL LOCK velBurnTime TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
-	LOCAL LOCK verticalImpactTime TO 	(cAlt - transitionHeight)/
+	LOCAL LOCK velocityMagnitude TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
+	LOCAL LOCK verticalImpactTime TO 	(shipAltitude - transitionHeight)/
 																		-SHIP:VERTICALSPEED.
 
 	SAS OFF.
 	stageLogic().
 	deployLandingGear().
 
-	LOCK cHeading TO SHIP:SRFRETROGRADE.
+	LOCK STEERING TO SHIP:SRFRETROGRADE.
 
-	LOCK STEERING TO cHeading.
-	LOCK THROTTLE TO cThrottle.
-
-	pointTo(cHeading).
+	waitForAlignmentTo(SHIP:SRFRETROGRADE).
 
 	UNTIL FALSE {
 		PRINT "verticalImpactTime: " + round(verticalImpactTime,2)
 																	AT (TERMINAL:WIDTH/2,1).
-		IF velBurnTime >= verticalImpactTime  {
-			SET cThrottle TO 1.
+		IF velocityMagnitude >= verticalImpactTime  {
+			SET lockedThrottle TO 1.
 			WAIT UNTIL SHIP:GROUNDSPEED <= 1.
 			BREAK.
 		}
 	}
 
-	SET cThrottle TO 0.
+	SET lockedThrottle TO 0.
 }
 
 
@@ -117,10 +110,7 @@ FUNCTION poweredLanding {
 	LOCAL Ki TO 0.005.
 	LOCAL Kd TO 0.01.
 
-	LOCAL cThrottle TO SHIP:CONTROL:PILOTMAINTHROTTLE.
-	LOCK THROTTLE TO cThrottle.
-	LOCAL LOCK cHeading TO SHIP:SRFRETROGRADE.
-	LOCK STEERING TO cHeading.
+	LOCK STEERING TO SHIP:SRFRETROGRADE.
 
 	//new PID for velocity guided descent.
 	//Target of vertical velocity = -altitude/10,
@@ -142,7 +132,7 @@ FUNCTION poweredLanding {
 
 		SET descentRatePID:SETPOINT TO descentRate.
 
-		SET cThrottle TO cThrottle + descentRatePID:UPDATE(TIME:SECONDS,
+		SET lockedThrottle TO lockedThrottle + descentRatePID:UPDATE(TIME:SECONDS,
 																 SHIP:VERTICALSPEED).
 
 		//try to zero out horizontal velocity
@@ -154,10 +144,7 @@ FUNCTION poweredLanding {
 
 	}
 	SAS ON.
-	SET cThrottle TO 0.
-
-	UNLOCK THROTTLE.
-	UNLOCK STEERING.
+	SET lockedThrottle TO 0.
 }
 
 DECLARE FUNCTION hover {
@@ -167,10 +154,7 @@ DECLARE FUNCTION hover {
 	LOCAL Ki TO 0.005.
 	LOCAL Kd TO 0.01.
 
-	LOCAL cThrottle TO SHIP:CONTROL:PILOTMAINTHROTTLE.
-	LOCK THROTTLE TO cThrottle.
-	LOCAL cHeading TO HEADING(90,90).
-	LOCK STEERING TO cHeading.
+	initializeControls().
 
 	//new PID for velocity guided descent. Target of vertical velocity = -altitude/10, not to go below 4 m/s.
 	LOCAL hoverPID TO PIDLOOP(Kp,Ki,Kd,0,1).
@@ -191,7 +175,7 @@ DECLARE FUNCTION hover {
 		PRINT "Star Control: " + ROUND(SHIP:CONTROL:STARBOARD,2) AT (TERMINAL:WIDTH/2,3).
 		PRINT "Top Control: " + ROUND(SHIP:CONTROL:TOP,2) AT (TERMINAL:WIDTH/2,4).
 
-		SET cThrottle TO MIN(1,MAX(0,cThrottle + hoverPID:UPDATE(TIME:SECONDS,
+		SET lockedThrottle TO MIN(1,MAX(0,cThrottle + hoverPID:UPDATE(TIME:SECONDS,
 			 													ALT:RADAR))).
 
 		//try to zero out horizontal velocity
@@ -203,20 +187,16 @@ DECLARE FUNCTION hover {
 	  SET SHIP:CONTROL:TOP        TO topComponent 	* SHIP:FACING:TOPVECTOR.
 	}
 	SAS ON.
-	SET cThrottle TO 0.
+	SET lockedThrottle TO 0.
 
-	UNLOCK THROTTLE.
-	UNLOCK STEERING.
+	deinitializeControls().
 }
 
-DECLARE FUNCTION doi {
-	//PARAMETER periBody IS (surfaceFeature[SHIP:BODY:NAME] + 100).
-	PARAMETER periBody IS 0.
-	LOCK STEERING TO RETROGRADE.
-	UNTIL SHIP:PERIAPSIS <= periBody {
-		LOCK THROTTLE TO 1.
-	}
-	LOCK THROTTLE TO 0.
-	UNLOCK STEERING.
-	UNLOCK THROTTLE.
+FUNCTION deorbitBurn {
+	PARAMETER transitionHeight IS 750.
+	LOCAL startAltitude IS SHIP:ALTITUDE + SHIP:BODY:RADIUS.
+	LOCAL endAltitude IS SHIP:BODY:RADIUS + transitionHeight.
+	LOCAL burnLexicon IS hohmannStats(startAltitude,endAltitude).
+
+	//perform burn 1
 }

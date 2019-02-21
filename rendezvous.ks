@@ -49,17 +49,3 @@ FUNCTION killRelativeVelocity {
   SET lockedThrottle TO 0.
 
 }
-
-FUNCTION closeDistance {
-  PARAMETER closestApproachDistance IS 5000, relativeVelocityLimit IS 10.
-  IF (targetBody:DISTANCE < closestApproachDistance) AND
-    ((targetBody:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT) > relativeVelocityLimit) {
-    LOCK STEERING TO targetBody:DIRECTION.
-    waitForAlignmentTo(targetBody:DIRECTION).
-    RCS ON.
-    //combine with dockingPort
-    //figure out max velocity to be able to kill
-  } ELSE {
-    notifyError("Rendezvous.ks: Too far or too fast from target body.").
-  }
-}
