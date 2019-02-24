@@ -177,7 +177,7 @@ FUNCTION orbitalInsertion {
 	SET targetPeriapsis TO paramPeriapsis.
 	SET staging TO paramStaging.
 
-	IF useNode IS TRUE {
+	IF useNode = TRUE {
 		dependsOn("executeNode.ks").
 		WAIT 0.5.
 	}
@@ -185,12 +185,12 @@ FUNCTION orbitalInsertion {
 	initializeControls().
 	correctForEccentricity().
 	checkPeriapsisMinimumValue().
-	IF useNode IS FALSE {
+	IF useNode = FALSE {
 		onOrbitBurn().
 	} ELSE {
 		LOCAL burnNode IS createOnOrbitManeuverNode().
 		ADD burnNode.
 		run executeNode.ks.
 	}
-	
+
 }

@@ -166,9 +166,9 @@ FUNCTION burnTime { //by stage
   LOCAL currentBurnDV TO burnDV.
 
   //iterate over stages to calculate stage deltaV and burnTime for stage.
-  FROM {LOCAL stageNumber IS STAGE:NUMBER.} 
-    UNTIL STAGE = 0 
-    STEP {SET stageNumber TO stageNumber -1.} 
+  FROM {LOCAL stageNumber IS STAGE:NUMBER.}
+    UNTIL STAGE = 0
+    STEP {SET stageNumber TO stageNumber -1.}
   DO {
     LOCAL indexedStageEngineStats TO stageEngineStats(stageNumber,pressure).
     LOCAL indexedStageMass TO stageMassStats(stageNumber).
@@ -181,12 +181,12 @@ FUNCTION burnTime { //by stage
 
     //get burn time for Stage for remaining deltaV
     IF stageTotalThrust > 0 {
-      SET stageBurnTime TO g0 * shipMass * stageAveISP *
-      (1 - CONSTANT:E^(-currentBurnDV / (g0 * stageAveISP)))/stageTotalThrust.
-    } 
+      SET stageBurnTime TO g0 * shipMass * stageAvgISP *
+      (1 - CONSTANT:E^(-currentBurnDV / (g0 * stageAvgISP)))/stageTotalThrust.
+    }
 
     //get stage delta V
-    LOCAL stageDeltaV IS stageAveISP * g0 * LN(shipMass/shipDryMass).
+    LOCAL stageDeltaV IS stageAvgISP * g0 * LN(shipMass/shipDryMass).
 
 
     //increment total burn time by stage burn time
@@ -204,7 +204,7 @@ FUNCTION burnTime { //by stage
             "Stage Total Mass: " + ROUND(stageMass,2) + " " +
             "Stage Dry Mass: " + ROUND(stageDryMass,2) AT (0,(1+stageNumber)).
     }
-    
+
     //if burnDV counter is >= 0, then we have calculated enough to complete burn
     IF currentBurnDV <= 0 BREAK.
   }
@@ -214,4 +214,3 @@ FUNCTION burnTime { //by stage
 
   RETURN currentBurnTime.
 }
-
