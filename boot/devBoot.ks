@@ -98,3 +98,6 @@ FUNCTION downloadTestFiles {
 }
 
 downloadTestFiles().
+//testing stats
+// RUNONCEPATH("0:shipLib.ks").
+// PRINT stageAnalysis().

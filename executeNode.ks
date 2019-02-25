@@ -2,7 +2,7 @@
 RUNONCEPATH(bootfile).
 
 dependsOn("shipLib.ks").
-dependsOn("navigationLib.ks")
+dependsOn("navigationLib.ks").
 
 PARAMETER warpFlag IS FALSE, timeBuffer IS 60.
 

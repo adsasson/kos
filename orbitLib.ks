@@ -15,7 +15,7 @@ LOCAL targetHeading IS 90.
 LOCAL targetApoapsis IS 100000.
 LOCAL targetPeriapsis IS 100000.
 LOCAL staging IS TRUE.
-LOCAL useNode IS FALSE.
+LOCAL useNode IS TRUE.
 
 LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
@@ -66,8 +66,8 @@ FUNCTION onOrbitBurn {
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
 
 	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
-	LOCAL LOCK orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
-	LOCAL LOCK orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV).
+	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
+	LOCAL orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV).
 
 	LOCAL LOCK r0 TO SHIP:POSITION.
 	LOCAL r1 TO POSITIONAT(SHIP,tau).
@@ -80,6 +80,7 @@ FUNCTION onOrbitBurn {
 	LOCK STEERING TO burnVector:DIRECTION.
 
 	waitForAlignmentTo(burnVector).
+	print "Debug burn deltaV: " + orbitalInsertionBurnDV.
 	print "Debug burn time: " + orbitalInsertionBurnTime.
 	print "Debug tau time: " + tau.
 	print "Debug eta time: " + etaToBurn.
