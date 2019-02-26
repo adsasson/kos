@@ -607,3 +607,129 @@ FUNCTION burnTimeOld { //by stage
 
   RETURN currentBurnTime.
 }
+FUNCTION createStatsForStage {
+  PARAMETER sectionsLexicon, pressure IS 0, includeAllStages IS FALSE.
+  LOCAL g0 IS 9.81.
+  //get highest stage number
+  LOCAL firstStageNumber IS 0.
+  LOCAL shipEngines TO LIST().
+
+  LIST ENGINES IN shipEngines.
+  LOCAL activeEngines IS LIST().
+
+  LOCAL stageStatLexicon IS LEXICON().
+  FOR engine IN shipEngines {
+    IF engine:IGNITION = FALSE {
+      engine:ACTIVATE.
+    } ELSE {
+      activeEngines:ADD(engine).
+    }
+    IF engine:STAGE > firstStageNumber {
+      SET firstStageNumber TO engine:STAGE.
+    }
+  }
+
+  FROM {LOCAL stageNumber IS firstStageNumber.}
+  UNTIL stageNumber = -1
+  STEP {SET stageNumber TO stageNumber - 1.} DO {
+    //start stage loop
+    LOCAL stageMass IS 0.
+    LOCAL stageThrust IS 0.
+    LOCAL stageFuelFlow IS 0.
+    LOCAL stageBurnTime IS 987654321. //some random big number
+
+    LOCAL stageMaxAcceleration IS 0.
+    LOCAL stageMinimumAcceleration IS 0.
+    LOCAL stageISP IS 0.
+    LOCAL stageDeltaV IS 0.
+
+
+    //if decoupler activates on this stage, remove section
+    FROM {LOCAL sectionNumber IS sectionsLexicon:LENGTH - 1.}
+    UNTIL sectionNumber = 0
+    STEP {SET sectionNumber TO sectionNumber - 1.} DO {
+      //start decoupler loop
+      LOCAL sectionTag IS "section" + sectionNumber.
+      IF sectionsLexicon[sectionTag]["sectionRoot"]:STAGE = stageNumber {
+        sectionsLexicon:REMOVE(sectionTag).
+      }
+    } //end remove decoupler loop
+
+    //get base stats for stage
+    FOR sectionKey IN sectionsLexicon:KEYS {
+      //enter cycle through sections in sectionsLexicon
+
+      LOCAL sectionLex IS sectionsLexicon[sectionKey].
+      LOCAL sectionMass IS sectionLex["sectionMass"].
+      LOCAL sectionFuelMass IS sectionLex["sectionFuelMass"].
+      SET sectionLex["fuelFlow"] TO 0.
+      LOCAL sectionBurnTime IS 0.
+
+      SET stageMass TO stageMass + sectionMass.
+      IF sectionLex["sectionEngineList"]:EMPTY = FALSE {
+        FOR engine IN sectionLex["sectionEngineList"] {
+          PRINT "DEBUG ENGINE IGNITION IS " + engine:IGNITION.
+          SET stageThrust TO stageThrust + engine:AVAILABLETHRUSTAT(pressure).
+          SET stageFuelFlow TO stageFuelFlow + engine:AVAILABLETHRUSTAT(pressure)/engine:ISPAT(pressure).
+          SET sectionLex["fuelFlow"] TO sectionLex["fuelFlow"] + engine:AVAILABLETHRUSTAT(pressure)/engine:ISPAT(pressure).
+          PRINT "DEBUG STAGE THRUST IS " + stageThrust.
+        }
+      }
+
+      IF sectionLex["fuelFlow"] > 0 {
+        SET sectionBurnTime TO g0 * sectionLex["sectionFuelMass"]/sectionLex["fuelFlow"].
+        //if section will stage next or is last stageEndMass
+        IF (sectionLex["sectionRoot"]:STAGE = stageNumber - 1 OR
+        stageNumber = 0) AND (sectionBurnTime < stageBurnTime) {
+          SET stageBurnTime TO sectionBurnTime.
+        }
+      }
+      //calculate additional params
+      //if no active engines this stage
+      IF stageBurnTime = 987654321 {
+        SET stageBurnTime TO 0.
+      }
+
+      IF stageBurnTime > 0 {
+        PRINT "DEBUG STAGE BURN TIME IS " + stageBurnTime + " STAGE IS " + stageNumber.
+        LOCAL stageEndMass IS stageMass - stageBurnTime * stageFuelFlow/g0.
+        SET stageMinimumAcceleration TO stageThrust/stageMass.
+        SET stageMaxAcceleration TO stageThrust/stageEndMass.
+        SET stageISP TO stageThrust/stageFuelFlow.
+        SET stageDeltaV TO stageISP * g0 * LN(stageMass/stageEndMass).
+        LOCAL consumedFuelMass IS sectionLex["fuelFlow"]/g0 * stageBurnTime.
+        SET sectionLex["sectionMass"] TO sectionLex["sectionMass"] - consumedFuelMass.
+        SET sectionLex["sectionFuelMass"] TO sectionLex["sectionFuelMass"] - consumedFuelMass.
+      }
+    }//end cycle through section in sections lexicon
+
+
+
+
+    LOCAL currentStageLex IS LEXICON("stageMass",stageMass,
+    "stageISP",stageISP,
+    "stageThrust",stageThrust,
+    "stageMinimumAcceleration",stageMinimumAcceleration,
+    "stageMaxAcceleration",stageMaxAcceleration,
+    "stageDeltaV",stageDeltaV,
+    "stageBurnTime",stageBurnTime).
+
+    stageStatLexicon:ADD(stageNumber,currentStageLex).
+
+  } //end stage loop
+  IF includeAllStages = FALSE {
+    FOR stageKey IN stageStatLexicon:KEYS {
+      IF stageStatLexicon[stageKey]["stageBurnTime"] = 0 {
+        stageStatLexicon:REMOVE(stageKey).
+      }
+    }
+  }
+
+  //shutdown activated engines for stats
+  FOR engine IN shipEngines {
+    IF activeEngines:CONTAINS(engine) = FALSE {
+      engine:SHUTDOWN.
+    }
+  }
+  RETURN stageStatLexicon.
+}

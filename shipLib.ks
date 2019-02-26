@@ -281,10 +281,10 @@ FUNCTION createSectionsLexicon {
       }
     } //end loop through section parts
     LOCAL section IS LEXICON("sectionRoot",sectionRoot,
-                            "sectionMass",sectionMass,
-                            "sectionFuelMass",sectionFuelMass,
-                            "sectionEngineList",sectionEngineList,
-                            "fuelFlow",fuelFlow).
+    "sectionMass",sectionMass,
+    "sectionFuelMass",sectionFuelMass,
+    "sectionEngineList",sectionEngineList,
+    "fuelFlow",fuelFlow).
     sectionsLexicon:ADD("section" + sectionTag,section).
     SET sectionTag TO sectionTag + 1.
 
@@ -293,9 +293,11 @@ FUNCTION createSectionsLexicon {
 }
 
 FUNCTION test {
-  PARAMETER sectionsFuelLexicon.
+  PARAMETER sectionsFuelLexicon, pressure IS 0, includeAllStages IS FALSE.
+  LOCAL g0 IS 9.81.
   LOCAL shipEngines IS LIST().
   LIST ENGINES IN shipEngines.
+  LOCAL stagesLexicon IS LEXICON().
 
   //get first stage number by finding engine with highest stage number
   LOCAL firstStageNumber IS 0.
@@ -304,8 +306,91 @@ FUNCTION test {
       SET firstStageNumber TO engine:STAGE.
     }
   }
-  //iterate over sections to get stage stats 
-}
+  //iterate over sections to get stage stats
+
+  FROM {LOCAL stageNumber IS firstStageNumber.}
+  UNTIL stageNumber = -1
+  STEP {SET stageNumber TO stageNumber - 1.} DO {
+    LOCAL stageMass IS 0.
+    LOCAL stageThrust IS 0.
+    LOCAL stageFuelFlow IS 0.
+    LOCAL stageBurnTime IS -1.
+
+    LOCAL stageMaximumAcceleration IS 0.
+    LOCAL stageMinimumAcceleration IS 0.
+    LOCAL stageISP IS 0.
+    LOCAL stageDeltaV IS 0.
+
+    //loop through sections, if section rootpart activates on this stage, remove sectionNumber
+    FOR sectionKey IN sectionsFuelLexicon:KEYS {
+      IF sectionsFuelLexicon[sectionKey]["sectionRoot"]:STAGE = stageNumber {
+        sectionsFuelLexicon:REMOVE(sectionKey).
+      }
+    }//end loop through sections for tagDecouplers
+
+    //loop through (again? can this be done in same loop?) to calculate STATS
+    FOR sectionKey IN sectionsFuelLexicon:KEYS {
+      LOCAL sectionLexicon IS sectionsFuelLexicon[sectionKey].
+      LOCAL sectionMass IS sectionLexicon["sectionMass"].
+      LOCAL sectionFuelMass IS sectionLexicon["sectionFuelMass"].
+      LOCAL sectionLexicon["fuelFlow"] TO 0.
+      LOCAL sectionBurnTime IS 0.
+      LOCAL sectionEngineList IS sectionLexicon["sectionEngineList"].
+
+      SET stageMass TO stageMass + sectionMass.
+      IF sectionEngineList:EMPTY = FALSE {
+        FOR engine IN sectionEngineList {
+          SET stageThrust TO stageThrust + engine:POSSIBLETHRUSTAT(pressure).
+          SET stageFuelFlow TO stageFuelFlow + engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure).
+          SET sectionLexicon["fuelFlow"] TO sectionLexicon["fuelFlow"] + engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure).
+        } //end loop through section engines
+      }//end if sectionEngineList is empty
+
+      IF sectionLexicon["fuelFlow"] > 0 {
+        SET sectionBurnTime TO g0 * sectionFuelMass/sectionLexicon["fuelFlow"].
+        //if section will stage next or is last stage
+        IF (sectionLexicon["sectionRoot"]:STAGE = stageNumber -1 OR stageNumber = 0) AND
+        (sectionBurnTime < stageBurnTime) {
+          SET stageBurnTime TO sectionBurnTime.
+        } //end if last/next section
+      } //end if fuelflow > 0
+
+      IF stageBurnTime = -1 { //this seems unnecessary? couldn't this have beein set to 0 at init?
+      SET stageBurnTime TO 0.
+    }//end if no engines on this stageEndMass
+
+    IF stageBurnTime > 0 {
+      LOCAL stageEndMass IS stageMass - stageBurnTime * stageFuelFlow/g0.
+      SET stageMinimumAcceleration TO stageThrust/stageMass.
+      SET stageMaximumAcceleration TO stageThrust/stageEndMass.
+      SET stageISP TO stageThrust/stageFuelFlow.
+      SET stageDeltaV TO stageISP * g0 * LN(stageMass/stageEndMass).
+      LOCAL consumedFuelMass IS sectionLexicon["fuelFlow"]/g0 * stageBurnTime.
+      SET sectionLexicon["sectionMass"] TO sectionLexicon["sectionMass"] - consumedFuelMass.
+      SET sectionLexicon["sectionFuelMass"] TO sectionLexicon["sectionFuelMass"] - consumedFuelMass.
+    }//endif burntime > 0
+
+  }//end loop through sections for stats
+
+  LOCAL stageLexicon IS LEXICON("stageMass",stageMass,
+  "stageISP",stageISP,
+  "stageThrust",stageThrust,
+  "stageMinimumAcceleration",stageMinimumAcceleration,
+  "stageMaximumAcceleration",stageMaximumAcceleration,
+  "stageDeltaV",stageDeltaV,
+  "stageBurnTime",stageBurnTime).
+
+  stagesLexicon:ADD(stageNumber,stageLexicon).
+  } //end stage loop
+  IF includeAllStages = FALSE {
+    FOR stageKey IN stagesLexicon:KEYS {
+      IF stageLexicon[stageKey]["burnTime"] = 0 {
+        stagesLexicon:REMOVE(stageKey).
+      } //endif stage burn time is 0
+    }//end for stage loop
+  }//endif includeAllStages
+  RETURN stagesLexicon.
+} //end function
 
 FUNCTION createStatsForStage {
   PARAMETER sectionsLexicon, pressure IS 0, includeAllStages IS FALSE.
