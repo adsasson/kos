@@ -46,6 +46,31 @@ FUNCTION engageDeployables {
   extendAntenna().
 }
 //================================================================
+
+
+FUNCTION burnTimeTotal {
+  PARAMETER burnDV, pressure IS 0.
+
+  LOCAL totalFuelMass IS SHIP:MASS - SHIP:DRYMASS.
+
+  LOCAL g0 TO 9.82.
+
+  LOCAL enginesLex TO engineStats(pressure).
+  LOCAL avgISP TO enginesLex["avgISP"].
+  LOCAL totalThrust TO enginesLex["totalThrust"].
+  LOCAL burn TO 0.
+
+  //check for div by 0..
+  IF totalThrust > 0 {
+    SET burn TO g0 * SHIP:MASS * avgISP *
+    (1 - CONSTANT:E^(-burnDV / (g0 * avgISP))) /totalThrust.
+  } ELSE {
+    notifyError("AVAILABLE THRUST IS 0.").
+  }
+  //notify("BURN TIME FOR " + ROUND(burnDV,2) + "m/s: " + ROUND(burn,2) + " s").
+  RETURN burn.
+}
+
 FUNCTION engineStats {
   PARAMETER pressure IS 0.
   //for active engines only

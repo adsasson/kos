@@ -5,7 +5,7 @@ dependsOn("launch.ks").
 
 dependsOn("orbitLib.ks").
 
-PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, scaleHeight IS 100000, goalTWR IS 2, staging TO TRUE.
+PARAMETER targetHeading IS 90, targetApoapsis IS 100000, targetPeriapsis IS 100000, scaleHeight IS 100000, goalTWR IS 2, staging TO TRUE, useNode IS TRUE.
 
 launchProgram(targetHeading,targetApoapsis,targetPeriapsis,scaleHeight,goalTWR,staging).
-orbitalInsertion(targetHeading,targetApoapsis,targetPeriapsis,staging).
+orbitalInsertion(targetHeading,targetApoapsis,targetPeriapsis,staging,useNode).

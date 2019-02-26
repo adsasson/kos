@@ -15,7 +15,7 @@ LOCAL targetHeading IS 90.
 LOCAL targetApoapsis IS 100000.
 LOCAL targetPeriapsis IS 100000.
 LOCAL staging IS TRUE.
-LOCAL useNode IS TRUE.
+//LOCAL useNode IS TRUE.
 
 LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
@@ -98,17 +98,17 @@ FUNCTION onOrbitBurn {
 FUNCTION createOnOrbitManeuverNode {
 	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
 
-	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
-		//parabolic or hyperbolic
-		LOCK etaToBurn TO ETA:PERIAPSIS.
-	}
-
+	// IF SHIP:ORBIT:ECCENTRICITY >= 1 {
+	// 	//parabolic or hyperbolic
+	// 	LOCK etaToBurn TO ETA:PERIAPSIS.
+	// }
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
 
 	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
 	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
 
 	LOCAL onOrbitNode IS NODE(TIME:SECONDS + tau, 0, 0, orbitalInsertionBurnDV).
+	RETURN onOrbitNode.
 }
 
 //======================================
@@ -171,17 +171,14 @@ FUNCTION killRelativeVelocity {
 }
 
 FUNCTION orbitalInsertion {
-	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramStaging TO TRUE.
+	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramStaging TO TRUE, useNode IS TRUE.
 
 	SET targetHeading TO paramHeading.
 	SET targetApoapsis TO paramApoapsis.
 	SET targetPeriapsis TO paramPeriapsis.
 	SET staging TO paramStaging.
 
-	IF useNode = TRUE {
-		dependsOn("executeNode.ks").
-		WAIT 0.5.
-	}
+
 
 	initializeControls().
 	correctForEccentricity().
@@ -191,7 +188,9 @@ FUNCTION orbitalInsertion {
 	} ELSE {
 		LOCAL burnNode IS createOnOrbitManeuverNode().
 		ADD burnNode.
-		run executeNode.ks.
+		dependsOn("executeNode.ks").
+		WAIT 0.5.
+	//	executeNode().
 	}
 
 }
