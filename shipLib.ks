@@ -1,4 +1,5 @@
 @LAZYGLOBAL OFF.
+RUNONCEPATH(bootfile).
 
 
 //===============================================
@@ -119,7 +120,7 @@ FUNCTION maxTWR {
 // 	RETURN stageEngineStats["avgISP"]*9.81*LN(SHIP:MASS/SHIP:DRYMASS).
 // }
 
-FUNCTION tagDecouplers {
+FUNCTION tagDecouplersOLD {
   FOR part IN SHIP:PARTS {
     FOR module IN part:MODULES {
       IF part:GETMODULE(module):NAME = "ModuleDecouple"
@@ -128,6 +129,97 @@ FUNCTION tagDecouplers {
       }
     }
   }
+}
+
+FUNCTION tagDecouplers {
+  LOCAL decouplers is UNIQUESET().
+  FOR part IN SHIP:PARTS {
+    LOCAL decoupler IS part:DECOUPLER.
+    IF decoupler <> "None" {
+      SET decoupler:TAG TO "decoupler".
+    }
+  }
+}
+
+FUNCTION parseShipSections {
+  //create roots
+  LOCAL sectionRoots IS LIST().
+  sectionRoots:ADD(SHIP:ROOTPART).
+  FOR decoupler IN SHIP:PARTSTAGGED("decoupler") {
+    sectionRoots:ADD(decoupler).
+  }
+  LOCAL sectionsLexicon IS LEXICON().
+
+  LOCAL sectionTagNumber IS 0.
+  //traverse part tree, adding parts to sections, excluding decouplers and LaunchClamp.
+  FOR rootPart IN sectionroots {
+    LOCAL sectionParts IS LIST().
+    sectionParts:ADD(rootPart).
+    FROM {LOCAL sectionPartIndex IS 0.}
+    UNTIL sectionPartIndex = sectionParts:LENGTH
+    STEP {SET sectionPartIndex TO sectionPartIndex + 1.} DO {
+      LOCAL sectionPart IS sectionParts[sectionPartIndex].
+      IF sectionPart:CHILDREN:EMPTY = FALSE {
+        FOR child IN sectionPart:CHILDREN {
+          IF child:TAG <> "decoupler" AND child:NAME <> "LaunchClamp1" {
+            sectionParts:ADD(child).
+            SET child:TAG TO "section" + sectionTagNumber.
+          }
+        }
+      }
+    } //end do loop
+    sectionsLexicon:ADD("section" + sectionTagNumber,sectionParts).
+    SET sectionTagNumber TO sectionTagNumber + 1.
+  }
+  RETURN sectionsLexicon.
+}
+
+FUNCTION sectionFuelStatsLexicon {
+  PARAMETER sectionsLexicon.
+
+  //LOCAL sectionMonopropellantMass IS 0.
+
+  LOCAL shipEngines IS LIST().
+  LIST ENGINES in shipEngines.
+  LOCAL sectionsFuelLexicon IS LEXICON().
+
+  FOR sectionIndex IN sectionsLexicon:KEYS {
+
+    LOCAL sectionMass IS 0.
+    LOCAL sectionFuelMass IS 0.
+    LOCAL sectionFuelFlow IS 0.
+    LOCAL sectionEngineList IS LIST().
+    LOCAL sectionList IS sectionsLexicon[sectionIndex].
+    LOCAL sectionRoot IS sectionList[0].
+    print "debug " + sectionRoot.
+    FOR part IN sectionList { //get fuel stats for section
+      SET sectionMass TO sectionMass + part:MASS.
+      IF shipEngines:CONTAINS(part) {
+        sectionEngineList:ADD(part).
+      }
+
+      IF part:RESOURCES:EMPTY = FALSE {
+        FOR resource IN part:RESOURCES {
+          IF resource:NAME <> "monopropellant" {
+            SET sectionFuelMass TO sectionFuelMass +
+            (part:MASS - part:DRYMASS).
+          } //end if mono
+
+        } //end for resources
+      } //end if resources != empty
+
+    } //end for part in section list.
+    LOCAL sectionFuelLexicon IS LEXICON(
+      "sectionRoot",sectionRoot,
+      "sectionMass",sectionMass,
+      "sectionFuelMass",sectionFuelMass,
+      "sectionEngineList",sectionEngineList,
+      "sectionFuelFlow",0
+    ).
+    sectionsFuelLexicon:ADD(sectionIndex,sectionFuelLexicon).
+  } //end for index in lexicon
+
+  RETURN sectionsFuelLexicon.
 }
 
 FUNCTION createSectionsLexicon {
@@ -178,7 +270,8 @@ FUNCTION createSectionsLexicon {
             SET rcsFlag TO TRUE.
           }
           IF rcsFlag = FALSE {
-            SET sectionFuelMass TO sectionFuelMass + (part:MASS - part:DRYMASS).
+            SET sectionFuelMass TO sectionFuelMass +
+            (part:MASS - part:DRYMASS).
           }
           IF shipEngines:CONTAINS(part) {
             sectionEngineList:ADD(part).
@@ -197,6 +290,21 @@ FUNCTION createSectionsLexicon {
 
   } //end loop through section roots
   RETURN sectionsLexicon.
+}
+
+FUNCTION test {
+  PARAMETER sectionsFuelLexicon.
+  LOCAL shipEngines IS LIST().
+  LIST ENGINES IN shipEngines.
+
+  //get first stage number by finding engine with highest stage number
+  LOCAL firstStageNumber IS 0.
+  FOR engine IN shipEngines {
+    IF engine:STAGE > firstStageNumber {
+      SET firstStageNumber TO engine:STAGE.
+    }
+  }
+  //iterate over sections to get stage stats 
 }
 
 FUNCTION createStatsForStage {
