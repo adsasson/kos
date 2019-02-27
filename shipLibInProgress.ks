@@ -733,3 +733,83 @@ FUNCTION createStatsForStage {
   }
   RETURN stageStatLexicon.
 }
+FUNCTION tagDecouplersOLD {
+  FOR part IN SHIP:PARTS {
+    FOR module IN part:MODULES {
+      IF part:GETMODULE(module):NAME = "ModuleDecouple"
+      OR part:GETMODULE(module):NAME = "ModuleAnchoredDecouple" {
+        SET part:TAG TO "decoupler".
+      }
+    }
+  }
+}
+
+FUNCTION createSectionsLexicon {
+  LOCAL shipEngines TO LIST().
+  LIST ENGINES IN shipEngines.
+  LOCAL sectionRoots IS LIST().
+  sectionRoots:ADD(SHIP:ROOTPART).
+
+  FOR decoupler IN SHIP:PARTSTAGGED("decoupler") {
+    sectionRoots:ADD(decoupler).
+  }
+  LOCAL sectionsLexicon IS LEXICON().
+  LOCAL sectionTag IS 0.
+
+  FOR sectionRoot IN sectionRoots {
+    //enter loop through section roots
+    LOCAL sectionMass IS 0.
+    LOCAL sectionFuelMass IS 0.
+    LOCAL sectionEngineList IS LIST().
+    LOCAL fuelFlow IS 0.
+    LOCAL sectionParts IS LIST().
+    sectionParts:ADD(sectionRoot).
+
+    //add child parts, and tag with sectionNumber
+    FROM {LOCAL sectionPartIndex IS 0.}
+    UNTIL sectionPartIndex = sectionParts:LENGTH
+    STEP {SET sectionPartIndex TO sectionPartIndex + 1.} DO {
+      //enter build section parts loop
+      IF sectionParts[sectionPartIndex]:CHILDREN:EMPTY = FALSE {
+        FOR child IN sectionParts[sectionPartIndex]:CHILDREN {
+          IF child:TAG <> "decoupler" AND child:NAME <> "LaunchClamp1" {
+            sectionParts:ADD(child).
+            SET child:TAG TO "section" + sectionTag.
+          }
+        } //end add children to section parts loop
+      }
+    } //end build section parts loop
+
+    FOR part IN sectionParts {
+      //enter loop through sectionparts
+      LOCAL rcsFlag IS FALSE.
+      SET sectionMass TO sectionMass + part:MASS.
+
+      //exclude RCS (maybe not do this?)
+      IF part:RESOURCES:EMPTY = FALSE {
+        FOR resource IN part:RESOURCES {
+          IF resource:NAME = "monopropellant" {
+            SET rcsFlag TO TRUE.
+          }
+          IF rcsFlag = FALSE {
+            SET sectionFuelMass TO sectionFuelMass +
+            (part:MASS - part:DRYMASS).
+          }
+          IF shipEngines:CONTAINS(part) {
+            sectionEngineList:ADD(part).
+          }
+        }
+
+      }
+    } //end loop through section parts
+    LOCAL section IS LEXICON("sectionRoot",sectionRoot,
+    "sectionMass",sectionMass,
+    "sectionFuelMass",sectionFuelMass,
+    "sectionEngineList",sectionEngineList,
+    "fuelFlow",fuelFlow).
+    sectionsLexicon:ADD("section" + sectionTag,section).
+    SET sectionTag TO sectionTag + 1.
+
+  } //end loop through section roots
+  RETURN sectionsLexicon.
+}

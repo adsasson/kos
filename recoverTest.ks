@@ -14,12 +14,19 @@ IF DEFINED recoverFile  {
   download(recoverFile,1).
 }
 clearscreen.
-set terminal:height to 75.
+//set terminal:height to 75.
 set terminal:width to 60.
 //orbitalInsertion(targetHeading,targetApoapsis,targetPeriapsis,staging).
+
+//PRINT "Ship Sections:".
 tagDecouplers().
-LOCAL shipSectionsLex TO parseShipSections().
-print shipSectionsLex.
-LOCAL shipFuelStatsLex TO sectionFuelStatsLexicon(shipSectionsLex).
-print "SHIP SECTION FUEL STATS".
-print shipFuelStatsLex.
+LOCAL shipSections IS parseShipSections().
+//PRINT shipSections.
+//PRINT "Fuel Stats".
+LOCAL fuelStats IS getFuelStatsForSections(shipSections).
+//PRINT fuelStats.
+PRINT "Stage Stats:".
+LOCAL stageStats IS getShipStatsForStages(fuelStats).
+PRINT stageStats.
+LOCAL testStageStats IS test(fuelStats).
+PRINT testStageStats.
