@@ -84,3 +84,9 @@ FUNCTION notifyError {
   PARAMETER message.
   HUDTEXT(message, 10, 2, 20, RED, TRUE).
 }
+
+FUNCTION restore {
+  PARAMETER fileName, archiveVolumeID IS 0, targetVolume IS 1.
+  copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
+  PRINT "Restored " + fileName + " from archive.".
+}

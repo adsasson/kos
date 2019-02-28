@@ -1,7 +1,7 @@
 @LAZYGLOBAL OFF.
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
-GLOBAL verbose IS TRUE.
+GLOBAL verbose IS FALSE.
 
 //basic file handling that the rest of the system depends on
 FUNCTION hasFile {
@@ -85,19 +85,9 @@ FUNCTION notifyError {
   HUDTEXT(message, 10, 2, 20, RED, TRUE).
 }
 
-LOCAL testList TO LIST(). //put testing files names here.
-
-testList:ADD(orbitProgram.ks).
-testList:ADD(recoverTest.ks).
-
-FUNCTION downloadTestFiles {
-  PARAMETER targetVolume IS 1.
-  FOR testFile in testList {
-    download(testFile,targetVolume).
-  }
+FUNCTION restore {
+  PARAMETER fileName, archiveVolumeID IS 0, targetVolume IS 1.
+  copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
+  PRINT "Restored " + fileName + " from archive.".
 }
-
-downloadTestFiles().
-//testing stats
-// RUNONCEPATH("0:shipLib.ks").
-// PRINT stageAnalysis().
+ //dependsOn("debug.ks").
