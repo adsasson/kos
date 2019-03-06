@@ -272,10 +272,17 @@ FUNCTION burnTime {
       //only using part of stage fuel, calculate fraction of deltaV
       //check for div by 0
       IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
-        LOCAL fraction IS deltaVCounter/stageStats[stageNumber]["stageDeltaV"].
-        SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"] * fraction.
-        //should be done with deltaV at this point.
-        SET deltaVCounter TO 0.
+        // LOCAL fraction IS deltaVCounter/stageStats[stageNumber]["stageDeltaV"].
+        // SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"] * fraction.
+        // //should be done with deltaV at this point.
+        // SET deltaVCounter TO 0.
+        LOCAL currentStage TO stageStats[stageNumber].
+        IF currentStage["stageThrust"] <> 0 {
+          SET burnTime TO 9.81 * currentStage["stageMass"] * currentStage["stageISP"] *
+          (1 -CONSTANT:E^(-deltaVCounter/(9.81 * currentStage["stageISP"])))/currentStage["stageThrust"].
+          SET deltaVCounter TO 0.
+        }
+
         PRINT "DEBUG: BURNTIME COUNTER: " + burnTimeCounter + " DELTAV COUNTER " + deltaVCounter.
 
         BREAK.
