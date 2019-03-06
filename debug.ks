@@ -10,8 +10,8 @@ IF recoverFile <> -1 {
 }
 WAIT 1.
 //clearscreen.
-//set terminal:height to 75.
-set terminal:width to 60.
+set terminal:height to 70.
+set terminal:width to 75.
 //orbitalInsertion(targetHeading,targetApoapsis,targetPeriapsis,staging).
 
 //PRINT "Ship Sections:".

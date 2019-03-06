@@ -31,6 +31,8 @@ FUNCTION parseVesselSections {
     //     }//end for child loop
     //   }//endif childen = empty
     // }//end from sectionPartIndex do loop
+    //the above should be equivalent to below,
+    //but doesn't sem to work correctly, so had to do it manually
 
     LOCAL i IS 0.
     UNTIL i = sectionParts:length {
@@ -48,7 +50,6 @@ FUNCTION parseVesselSections {
     SET sectionTagNumber TO sectionTagNumber + 1.
 
   }//end for rootpart in sectionroots
-  print sectionPartsLexicon.
   RETURN sectionPartsLexicon.
 }
 
@@ -86,13 +87,21 @@ FUNCTION createSectionMassLexicon {
     FOR part IN currentSectionList {
       SET sectionMass TO sectionMass + part:MASS.
       //get section fuel mass
+      // IF part:RESOURCES:EMPTY = FALSE {
+      //   FOR resource IN part:RESOURCES {
+      //     IF resource:NAME <> "monopropellant" {
+      //       SET sectionFuelMass TO sectionFuelMass + (part:MASS - part:DRYMASS).
+      //     }//endif not mono.. consier else for mono/other resource calcs
+      //   }//endfor resource in part
+      // }//enif resources empty
+
+      LOCAL rcsFlag IS FALSE.
       IF part:RESOURCES:EMPTY = FALSE {
-        FOR resource IN part:RESOURCES {
-          IF resource:NAME <> "monopropellant" {
-            SET sectionFuelMass TO sectionFuelMass + (part:MASS - part:DRYMASS).
-          }//endif not mono.. consier else for mono/other resource calcs
-        }//endfor resource in part
-      }//enif resources empty
+        FOR resource in part:RESOURCES {
+          IF resource:NAME = "monopropellant" SET rcsFlag TO TRUE.
+        }
+        IF rcsFlag = FALSE SET sectionFuelMass TO sectionFuelMass + part:MASS - part:DRYMASS.
+      }
 
       IF shipEngines:CONTAINS(part) {sectionEngineList:ADD(part).}
     }//endfor part in section
@@ -103,6 +112,8 @@ FUNCTION createSectionMassLexicon {
       "sectionEngineList",sectionEngineList,
       "sectionFuelFlow",0
     ).
+    print "debug section fuel mass: " + sectionFuelMass.
+
     sectionMassLexicon:ADD(sectionNumber,currentSectionLexicon).
   }//end for sectino in vessel section lexicon
   //print sectionMassLexicon.
@@ -117,6 +128,7 @@ FUNCTION createStageStatsLexicon {
   LIST ENGINES IN shipEngines.
   //result lexicon
   LOCAL stageStatsLexicon IS LEXICON().
+
   IF startingStageNumber = 0 {
     //get highest stage number
     FOR engine IN shipEngines {
@@ -170,6 +182,7 @@ FUNCTION createStageStatsLexicon {
             SET stageFuelFlow TO stageFuelFlow + (engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure)).
             SET currentSectionLexicon["fuelFlow"] TO currentSectionLexicon["fuelFlow"] +
                 (engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure)).
+
           }//endif engine stage >= stageNumber
         }//end for engine in enginelist
       }//end if sectionEngineList is empty
@@ -185,6 +198,8 @@ FUNCTION createStageStatsLexicon {
         //           PRINT "Section Burn Time:  Stage Burn Time: Less than?".
         //           PRINT sectionBurnTime + " // " + stageBurnTime + " // " + (sectionBurnTime<stageBurnTime).
         // }
+        print "DEBUG: STAGE: " + stageNumber + " sectionBurnTime: " + sectionBurnTime.
+
         IF ((currentSectionLexicon["sectionRoot"]:STAGE = stageNumber - 1)
               OR (stageNumber = 0)
               AND (sectionBurnTime < stageBurnTime)) {
@@ -201,7 +216,6 @@ FUNCTION createStageStatsLexicon {
     //calculate additional stage terms
     IF stageBurnTime > 0 {
       LOCAL stageEndMass IS stageMass - stageBurnTime * stageFuelFlow/g0.
-      print "stage endmass: " + stageEndMass.
       SET stageMinimumAcceleration TO stageThrust/stageMass.
       SET stageMaximumAcceleration TO stageThrust/stageEndMass.
       SET stageISP TO stageThrust/stageFuelFlow.
@@ -239,6 +253,6 @@ FUNCTION createStageStatsLexicon {
       }
     }//end for key in stage keys
   }//endif includeAllStages = false
-  PRINT "DEBUG: RESULT: " + stageStatsLexicon.
+  //PRINT "DEBUG: RESULT: " + stageStatsLexicon.
   RETURN stageStatsLexicon.
 }
