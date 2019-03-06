@@ -21,7 +21,7 @@ LOCAL shipSections IS parseVesselSections().
  LOCAL fuelStats IS createSectionMassLexicon(shipSections).
 //PRINT fuelStats.
 //PRINT "Stage Stats:".
-LOCAL stageStats IS createStageStatsLexicon(fuelStats,0,0,false).
+LOCAL stageStats IS createStageStatsLexicon(fuelStats,0,1,false).
 //PRINT stageStats.
 // LOCAL testStageStats IS test(fuelStats).
 // PRINT testStageStats.

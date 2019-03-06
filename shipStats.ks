@@ -112,7 +112,7 @@ FUNCTION createSectionMassLexicon {
       "sectionEngineList",sectionEngineList,
       "sectionFuelFlow",0
     ).
-    print "debug section fuel mass: " + sectionFuelMass.
+    //print "debug section fuel mass: " + sectionFuelMass.
 
     sectionMassLexicon:ADD(sectionNumber,currentSectionLexicon).
   }//end for sectino in vessel section lexicon
@@ -198,7 +198,7 @@ FUNCTION createStageStatsLexicon {
         //           PRINT "Section Burn Time:  Stage Burn Time: Less than?".
         //           PRINT sectionBurnTime + " // " + stageBurnTime + " // " + (sectionBurnTime<stageBurnTime).
         // }
-        print "DEBUG: STAGE: " + stageNumber + " sectionBurnTime: " + sectionBurnTime.
+        //print "DEBUG: STAGE: " + stageNumber + " sectionBurnTime: " + sectionBurnTime.
 
         IF ((currentSectionLexicon["sectionRoot"]:STAGE = stageNumber - 1)
               OR (stageNumber = 0)
@@ -253,6 +253,6 @@ FUNCTION createStageStatsLexicon {
       }
     }//end for key in stage keys
   }//endif includeAllStages = false
-  //PRINT "DEBUG: RESULT: " + stageStatsLexicon.
+  PRINT "DEBUG: RESULT: " + stageStatsLexicon.
   RETURN stageStatsLexicon.
 }
