@@ -3,32 +3,39 @@ RUNONCEPATH(bootfile).
 
 dependsOn("shipLib.ks").
 dependsOn("navigationLib.ks").
+dependsOn("shipStats.ks").
 
-//LOCAL nodeBurnTime IS burnTime(node:DELTAV:MAG).
-LOCAL nodeBurnTime TO 0.
+
+//LOCAL nodeBurnTime TO 0.
 LOCAL nodePrograde TO 0.
 LOCAL node TO NEXTNODE.
 //LOCAL warpFlag TO FALSE.
 LOCAL timeBuffer TO 60.
+LOCAL nodeBurnTime IS burnTime(node:DELTAV:MAG).
+LOCAL tau  IS TIME:SECONDS + node:ETA.
 
-IF verbose PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
 FUNCTION waitUntilNode {
 	PARAMETER shouldWarp IS FALSE.
 	IF shouldWarp {
 		KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (node:ETA - nodeBurnTime/2 + 60)).
 	}
-	WAIT UNTIL node:ETA <= (nodeBurnTime/2 + timeBuffer).
+	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
 	LOCK STEERING TO nodePrograde.
 
 	notify("Orienting to node").
 	waitForAlignmentTo(nodePrograde).
 
-	WAIT UNTIL node:ETA <= (nodeBurnTime/2).
+	WAIT UNTIL (TIME:SECONDS >= (tau - nodeBurnTime/2)).
+
+	RETURN TRUE.
 }
 
 FUNCTION maneuverNodeBurn {
 	LOCAL done TO FALSE.
+	LOCK STEERING TO nodePrograde.
 
 	//INITIAL DELTAV
 	LOCAL deltaV0 TO node:DELTAV.

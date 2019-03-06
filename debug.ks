@@ -1,27 +1,15 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-dependsOn("shipStats.ks").
+dependsOn("orbitLib.ks").
+dependsOn("shipLib.ks").
 
-PARAMETER recoverFile IS "shipStats.ks".
+PARAMETER recoverFile IS "executeNode.ks".
 
 IF recoverFile <> -1 {
   copypath("0:" + recoverFile,"1:").
 }
 WAIT 1.
-//clearscreen.
-set terminal:height to 70.
-set terminal:width to 75.
-//orbitalInsertion(targetHeading,targetApoapsis,targetPeriapsis,staging).
-
-//PRINT "Ship Sections:".
-LOCAL shipSections IS parseVesselSections().
-//PRINT shipSections.
-//PRINT "Fuel Stats".
- LOCAL fuelStats IS createSectionMassLexicon(shipSections).
-//PRINT fuelStats.
-//PRINT "Stage Stats:".
-LOCAL stageStats IS createStageStatsLexicon(fuelStats,0,1,false).
-//PRINT stageStats.
-// LOCAL testStageStats IS test(fuelStats).
-// PRINT testStageStats.
+clearscreen.
+engageDeployables().
+orbitalInsertion(90,100000,100000,TRUE,TRUE).

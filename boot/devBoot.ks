@@ -1,7 +1,7 @@
 @LAZYGLOBAL OFF.
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
-GLOBAL verbose IS FALSE.
+GLOBAL verbose IS TRUE.
 
 core:doevent("open terminal").
 
@@ -92,4 +92,4 @@ FUNCTION restore {
   copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
   PRINT "Restored " + fileName + " from archive.".
 }
- //dependsOn("debug.ks").
+ dependsOn("orbitprogram.ks").

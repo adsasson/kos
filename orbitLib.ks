@@ -4,7 +4,7 @@ RUNONCEPATH(bootfile).
 
 dependsOn("orbitalMechanicsLib.ks").
 
-dependsOn("shipLib.ks").
+dependsOn("shipStats.ks").
 
 dependsOn("navigationLib.ks").
 
@@ -55,7 +55,7 @@ FUNCTION checkPeriapsisMinimumValue {
 }
 
 FUNCTION onOrbitBurn {
-
+	LOCAL currentPressure IS SHIP:BODY:ATMOSPHERE:ALTITUDEPRESSURE(apsis).
 	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
 
 	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
@@ -67,7 +67,7 @@ FUNCTION onOrbitBurn {
 
 	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
 	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
-	LOCAL orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV).
+	LOCAL orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV, currentPressure).
 
 	LOCAL LOCK r0 TO SHIP:POSITION.
 	LOCAL r1 TO POSITIONAT(SHIP,tau).
@@ -95,6 +95,7 @@ FUNCTION onOrbitBurn {
 		SET lockedThrottle TO 0.
 	}
 }
+
 FUNCTION createOnOrbitManeuverNode {
 	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
 
@@ -107,7 +108,7 @@ FUNCTION createOnOrbitManeuverNode {
 	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
 	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
 
-	LOCAL onOrbitNode IS NODE(TIME:SECONDS + tau, 0, 0, orbitalInsertionBurnDV).
+	LOCAL onOrbitNode IS NODE(tau, 0, 0, orbitalInsertionBurnDV).
 	RETURN onOrbitNode.
 }
 

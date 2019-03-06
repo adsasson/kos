@@ -1,5 +1,7 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
+//this is inspired by a script called 'stageAnalysis' by brekus from reddit.
+
 
 FUNCTION parseVesselSections {
   tagDecouplers().
@@ -112,11 +114,9 @@ FUNCTION createSectionMassLexicon {
       "sectionEngineList",sectionEngineList,
       "sectionFuelFlow",0
     ).
-    //print "debug section fuel mass: " + sectionFuelMass.
 
     sectionMassLexicon:ADD(sectionNumber,currentSectionLexicon).
   }//end for sectino in vessel section lexicon
-  //print sectionMassLexicon.
   RETURN sectionMassLexicon.
 }
 
@@ -189,17 +189,6 @@ FUNCTION createStageStatsLexicon {
       IF currentSectionLexicon["fuelFlow"] > 0 {
         //set bburn time
         SET sectionBurnTime TO g0 * sectionFuelMass/currentSectionLexicon["fuelFlow"].
-        //if section will stasge next or on last stage
-        // PRINT "Section Root Stage:  Stage Number:  Equal?".
-        // PRINT currentSectionLexicon["sectionRoot"]:STAGE + " // " + (stageNumber -1 ) + " // "
-        // + (currentSectionLexicon["sectionRoot"]:STAGE = stageNumber - 1).
-        // IF (currentSectionLexicon["sectionRoot"]:STAGE = stageNumber - 1) {
-        //
-        //           PRINT "Section Burn Time:  Stage Burn Time: Less than?".
-        //           PRINT sectionBurnTime + " // " + stageBurnTime + " // " + (sectionBurnTime<stageBurnTime).
-        // }
-        //print "DEBUG: STAGE: " + stageNumber + " sectionBurnTime: " + sectionBurnTime.
-
         IF ((currentSectionLexicon["sectionRoot"]:STAGE = stageNumber - 1)
               OR (stageNumber = 0)
               AND (sectionBurnTime < stageBurnTime)) {
@@ -237,7 +226,6 @@ FUNCTION createStageStatsLexicon {
     stageStatsLexicon:ADD(stageNumber,currentStageLexicon).
 
     //reduce mass of section with active engines
-
     FOR section IN sectionMassLexicon:VALUES {
       SET section["sectionMass"] TO section["sectionMass"] - (stageBurnTime * section["fuelFlow"]/g0).
       SET section["sectionFuelMass"] TO section["sectionFuelMass"] - (stageBurnTime * section["fuelFlow"]/g0).
@@ -253,6 +241,49 @@ FUNCTION createStageStatsLexicon {
       }
     }//end for key in stage keys
   }//endif includeAllStages = false
-  PRINT "DEBUG: RESULT: " + stageStatsLexicon.
+
   RETURN stageStatsLexicon.
+}
+
+FUNCTION stageAnalysis {
+  PARAMETER pressure IS 0, startingStage IS 0, includeAllStages IS FALSE.
+  LOCAL vesselSections IS parseVesselSections().
+  LOCAL sectionMassLexicon IS createSectionMassLexicon(vesselSections).
+  LOCAL stageStats IS createStageStatsLexicon(sectionMassLexicon, startingStage, pressure, includeAllStages).
+  IF VERBOSE PRINT stageStats.
+  RETURN stageStats.
+}
+
+FUNCTION burnTime {
+  PARAMETER burnDeltaV, pressure is 0.
+  LOCAL stageStats IS stageAnalysis(pressure, 0, TRUE).
+
+  LOCAL burnTimeCounter IS 0.
+  LOCAL deltaVCounter IS burnDeltaV.
+
+  FROM {LOCAL stageNumber IS STAGE:NUMBER.}
+  UNTIL stageNumber = 0
+  STEP {SET stageNumber TO stageNumber - 1.} DO {
+    PRINT "DEBUG: BURNTIME COUNTER: " + burnTimeCounter + " DELTAV COUNTER " + deltaVCounter.
+    IF deltaVCounter >= stageStats[stageNumber]["stageDeltaV"] { //will use entire burn for stage
+      SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"].
+      SET deltaVCounter TO deltaVCounter - stageStats[stageNumber]["stageDeltaV"].
+    } ELSE {
+      //only using part of stage fuel, calculate fraction of deltaV
+      //check for div by 0
+      IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
+        LOCAL fraction IS deltaVCounter/stageStats[stageNumber]["stageDeltaV"].
+        SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"] * fraction.
+        //should be done with deltaV at this point.
+        SET deltaVCounter TO 0.
+        PRINT "DEBUG: BURNTIME COUNTER: " + burnTimeCounter + " DELTAV COUNTER " + deltaVCounter.
+
+        BREAK.
+      }
+
+    }
+  }
+    //if we got this far and deltav is not 0, we don't have enough fuel.
+    IF deltaVCounter > 0 notifyError("Insufficient deltaV in ship for burn").
+    RETURN burnTimeCounter.
 }
