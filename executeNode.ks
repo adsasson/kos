@@ -7,28 +7,27 @@ dependsOn("shipStats.ks").
 
 
 //LOCAL nodeBurnTime TO 0.
-LOCAL nodePrograde TO 0.
 LOCAL node TO NEXTNODE.
 //LOCAL warpFlag TO FALSE.
 LOCAL timeBuffer TO 60.
-LOCAL nodeBurnTime IS burnTime(node:DELTAV:MAG).
-LOCAL tau  IS TIME:SECONDS + node:ETA.
+LOCAL nodePrograde TO 0.
+LOCAL nodeBurnTime IS 0.
+LOCAL timeOfNode IS TIME:SECONDS + node:ETA.
 
-PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
-PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
 FUNCTION waitUntilNode {
 	PARAMETER shouldWarp IS FALSE.
 	IF shouldWarp {
-		KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (node:ETA - nodeBurnTime/2 + 60)).
+		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + 60).
 	}
 	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
 	LOCK STEERING TO nodePrograde.
 
-	notify("Orienting to node").
+	IF VERBOSE notify("Orienting to node").
 	waitForAlignmentTo(nodePrograde).
+	IF VERBOSE notify("Completed orientation to node burn vector.").
 
-	WAIT UNTIL (TIME:SECONDS >= (tau - nodeBurnTime/2)).
+	WAIT UNTIL (TIME:SECONDS >= (timeOfNode - nodeBurnTime/2)).
 
 	RETURN TRUE.
 }
@@ -82,13 +81,18 @@ FUNCTION maneuverNodeBurn {
 }
 
 FUNCTION initializeNode {
-	SET nodeBurnTime TO burnTimeTotal(node:DELTAV:MAG).
-	SET nodePrograde TO node:DELTAV.
+	SET nodeBurnTime TO burnTime(node:DELTAV:MAG).
+	LOCK nodePrograde TO node:BURNVECTOR.
 }
 FUNCTION executeNode {
 	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
-	initializeNode().
+	PRINT "DEBUG INITIALIZING CONTROLS".
 	initializeControls().
+	PRINT "DEBUG INITIALIZING NODE".
+	initializeNode().
+	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
+
 	waitUntilNode(shouldWarp).
 	maneuverNodeBurn().
 	REMOVE node.

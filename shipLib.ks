@@ -7,7 +7,6 @@ FUNCTION stageLogic {
   IF STAGE:NUMBER = 0 RETURN.
   WHEN NOT (SHIP:AVAILABLETHRUST > 0) THEN {
     PRINT "ACTIVATING STAGE " + STAGE:NUMBER AT (0,0).
-
     STAGE.
     IF STAGE:NUMBER > 0 {
       RETURN TRUE.
@@ -57,7 +56,7 @@ FUNCTION burnTimeTotal {
 
   LOCAL g0 TO 9.82.
 
-  LOCAL enginesLex TO activeEngineStats(pressure).
+  LOCAL enginesLex TO engineStats(pressure).
   LOCAL avgISP TO enginesLex["avgISP"].
   LOCAL totalThrust TO enginesLex["totalThrust"].
   LOCAL burn TO 0.
@@ -73,7 +72,7 @@ FUNCTION burnTimeTotal {
   RETURN burn.
 }
 
-FUNCTION activeEngineStats {
+FUNCTION engineStats {
   PARAMETER pressure IS 0.
   //for active engines only
   LOCAL totalThrust TO 0.
@@ -112,35 +111,3 @@ FUNCTION maxTWR {
 // F(t) - F(0) = known ?v
 // Expand, simplify, and solve for t
 // credit: gisikw, reddit.
-
-
-// FUNCTION stageAnalysis {//fix this
-//   PARAMETER pressure IS 0, includeAllStages IS FALSE.
-//   tagDecouplers().
-//   LOCAL shipSections IS parseShipSections().
-//   LOCAL fuelStats IS getFuelStatsForSections(shipSections).
-//   LOCAL shipStats IS getShipStatsForStages(fuelStats,pressure,includeAllStages).
-//   RETURN shipStats.
-// }
-
-
-// FUNCTION  burnTime {
-//   PARAMETER burnDV, pressure IS 0.
-//   //get stage stats LEXICON
-//   LOCAL stageStats IS stageAnalysis(pressure).
-//   PRINT "DEBUG STAGE STATS: ".
-//   PRINT stageStats:DUMP.
-//
-//   LOCAL currentBurnTime IS 0.
-//   LOCAL currentBurnDV IS burnDV.
-//   FROM {LOCAL stageNumber IS STAGE:NUMBER.}
-//   UNTIL stageNumber = 0
-//   STEP {SET stageNumber TO stageNumber - 1.} DO {
-//     SET currentBurnTime TO currentBurnTime + stageStats[stageNumber]["stageBurnTime"].
-//     SET currentBurnDV TO currentBurnDV - stageStats[stageNumber]["stageDeltaV"].
-//     IF currentBurnDV <= 0 BREAK.
-//   }
-//   //if we have cycled through all stages and burnDV hasn't been reduced to 0, we don't have enough fuel.
-//   IF currentBurnDV > 0 notifyError("Insufficient deltaV in ship for burn").
-//   RETURN currentBurnTime.
-// }

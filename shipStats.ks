@@ -277,11 +277,9 @@ FUNCTION burnTime {
         // //should be done with deltaV at this point.
         // SET deltaVCounter TO 0.
         LOCAL currentStage TO stageStats[stageNumber].
-        IF currentStage["stageThrust"] <> 0 {
-          SET burnTime TO 9.81 * currentStage["stageMass"] * currentStage["stageISP"] *
-          (1 -CONSTANT:E^(-deltaVCounter/(9.81 * currentStage["stageISP"])))/currentStage["stageThrust"].
-          SET deltaVCounter TO 0.
-        }
+        SET burnTimeCounter TO burnTimeCounter +
+          calculateBurnTime(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
+        SET deltaVCounter TO 0.
 
         PRINT "DEBUG: BURNTIME COUNTER: " + burnTimeCounter + " DELTAV COUNTER " + deltaVCounter.
 
@@ -293,4 +291,13 @@ FUNCTION burnTime {
     //if we got this far and deltav is not 0, we don't have enough fuel.
     IF deltaVCounter > 0 notifyError("Insufficient deltaV in ship for burn").
     RETURN burnTimeCounter.
+}
+
+FUNCTION calculateBurnTime {
+  PARAMETER unitDeltaV, unitMass, unitThrust, unitISP.
+  LOCAL g0 IS 9.81.
+  IF unitThrust <> 0 {
+    RETURN g0*unitMass*unitISP*(1 - CONSTANT:E^(-unitDeltaV/(g0*unitISP)))/unitThrust.
+  }
+  RETURN 0.
 }

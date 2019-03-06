@@ -13,8 +13,9 @@ FUNCTION initializeControls {
 
 FUNCTION deinitializeControls {
 	SET lockedThrottle TO 0.
-	UNLOCK ALL.
 	SET SHIP:CONTROL:PILOTMAINTHROTTLE TO 0.
+	UNLOCK THROTTLE.
+	UNLOCK STEERING.
 	SAS ON.
 }
 
@@ -55,5 +56,3 @@ FUNCTION timeToImpact {
 	RETURN MAX((-v0 - SQRT(v0^2 - 2*accel*distance))/accel,
 						 (-v0 + SQRT(v0^2 - 2*accel*distance))/accel).
 }
-
-

@@ -1,7 +1,7 @@
 @LAZYGLOBAL OFF.
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
-GLOBAL verbose IS TRUE.
+GLOBAL verbose IS FALSE.
 
 core:doevent("open terminal").
 
