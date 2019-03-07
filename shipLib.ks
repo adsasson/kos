@@ -36,6 +36,10 @@ FUNCTION extendAntenna {
   performModuleAction("ModuleDeployableAntenna","extend antenna").
 }
 
+FUNCTION retractAntenna {
+  performModuleAction("ModuleDeployableAntenna","retract antenna").
+}
+
 FUNCTION engageDeployables {
   IF verbose PRINT "DEPLOYING".
   deployFairings().
@@ -46,7 +50,20 @@ FUNCTION engageDeployables {
   IF verbose PRINT "DELPOYING RADIATIORS".
   extendAntenna().
 }
+FUNCTION disengageDeployables {
+	IF VERBOSE PRINT "RETRACTING".
+	retractAntenna().
+	PANELS OFF.
+	RADIATORS OFF.
+}
 
+FUNCTION deployLandingGear {
+	GEAR ON.
+}
+
+FUNCTION retractLandingGear {
+	GEAR OFF.
+}
 FUNCTION engageParachutes {
 	PRINT "ENGAGING PARACHUTES".
 	WHEN (NOT CHUTESSAFE) THEN {

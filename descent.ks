@@ -201,18 +201,3 @@ FUNCTION deorbitBurn {
 
 	//perform burn 1
 }
-
-FUNCTION testDeorbitBurn {
-	PARAMETER transitionHeight IS 30000, burnPoint IS SHIP:APOAPSIS.
-	LOCAL targetSemiMajorAxis TO (burnPoint + transitionHeight)/2 + SHIP:BODY:RADIUS.
-	LOCAL deorbitBurnDeltaV TO deltaV(burnPoint,SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
-	LOCAL deorbitBurnTime IS burnTime(deorbitBurnDeltaV,SHIP:BODY:ATM:ALTITUDEPRESSURE(burnPoint)).
-	LOCAL tau IS TIME:SECONDS + ETA:APOAPSIS.
-	LOCAL startTime IS tau - deorbitBurnTime/2.
-	LOCAL endTime IS startTime + deorbitBurnTime.
-	LOCAL burnVector IS calculateBurnVector(-deorbitBurnDeltaV,tau).
-
-	performBurn(burnVector,startTime,endTime).
-	LOCK STEERING TO SHIP:SRFRETROGRADE.
-
-}
