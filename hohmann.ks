@@ -57,3 +57,11 @@ FUNCTION hohmannNodes {
     notifyError("Hohmann transfer parameters are undefined.").
   }
 }
+
+FUNCTION createHohmannManeuver {
+  PARAMETER startAltitude, endAltitude, startTime.
+  LOCAL maneuverLexicon IS hohmannStats(startAltitude,endAltitude).
+  //create nodes
+  IF verbose PRINT "Creating Hohmann Maneuver Nodes.".
+  hohmannNodes(maneuverLexicon,startTime).
+}

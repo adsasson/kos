@@ -36,16 +36,16 @@ FUNCTION killRelativeVelocity {
 	LOCAL targetDeltaV IS ABS(targetVelocity - shipVelocity).
 	LOCAL killVelocityBurnTime IS burnTime(targetDeltaV).
 
-  IF warpFlag {
-	KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (timeToApproach - killVelocityBurnTime/2) + 300).
-}
-  LOCK STEERING TO -(targetBody:DIRECTION). //should be retrograde vector in target frame.
-  waitForAlignmentTo(-(targetBody:DIRECTION)).
+	IF warpFlag {
+		KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (timeToApproach - killVelocityBurnTime/2) + 300).
+	}
+	LOCK STEERING TO -(targetBody:DIRECTION). //should be retrograde vector in target frame.
+	waitForAlignmentTo(-(targetBody:DIRECTION)).
 
-  stageLogic().
-  WAIT UNTIL (TIME:SECONDS + (timeToApproach - killVelocityBurnTime/2)).
-  SET lockedThrottle TO 1.
-  WAIT killVelocityBurnTime.
-  SET lockedThrottle TO 0.
+	stageLogic().
+	WAIT UNTIL (TIME:SECONDS + (timeToApproach - killVelocityBurnTime/2)).
+	SET lockedThrottle TO 1.
+	WAIT killVelocityBurnTime.
+	SET lockedThrottle TO 0.
 
 }

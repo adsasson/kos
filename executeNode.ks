@@ -6,7 +6,7 @@ dependsOn("navigationLib.ks").
 dependsOn("shipStats.ks").
 
 
-LOCAL node TO NEXTNODE.
+LOCAL node TO "UNDEFINED".
 LOCAL timeBuffer TO 60.
 LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
@@ -15,6 +15,8 @@ LOCAL timeOfNode IS TIME:SECONDS + node:ETA.
 
 FUNCTION waitUntilNode {
 	PARAMETER shouldWarp IS FALSE.
+	IF NOT(HASNODE) RETURN.
+
 	IF shouldWarp {
 		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + timeBuffer).
 	}
@@ -33,6 +35,7 @@ FUNCTION waitUntilNode {
 FUNCTION maneuverNodeBurn {
 	LOCAL done TO FALSE.
 	LOCK STEERING TO nodePrograde.
+	IF NOT(HASNODE) RETURN.
 
 	//INITIAL DELTAV
 	LOCAL deltaV0 TO node:DELTAV.
@@ -79,6 +82,7 @@ FUNCTION maneuverNodeBurn {
 }
 
 FUNCTION initializeNode {
+	SET node TO NEXTNODE.
 	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
 	SET nodeBurnTime TO burnTime(node:DELTAV:MAG).
 	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
