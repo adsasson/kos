@@ -90,8 +90,8 @@ FUNCTION notifyError {
 }
 
 FUNCTION restore {
-  PARAMETER fileName, archiveVolumeID IS 0, targetVolume IS 1.
-  copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
+  PARAMETER fileName, targetVolume IS 1.
+  download(fileName,targetVolume).
   PRINT "Restored " + fileName + " from archive.".
 }
   //download("landProgram.ks",1).

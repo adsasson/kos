@@ -4,7 +4,7 @@ RUNONCEPATH(bootfile).
 
 
 FUNCTION parseVesselSections {
-  IF vesselStatsLexicon <> "UNDEFINED" tagDecouplers().
+  IF vesselStatsLexicon = "UNDEFINED" {tagDecouplers().}
   //find section roots
   LOCAL sectionRoots IS LIST().
   //add vessel root
@@ -48,7 +48,7 @@ FUNCTION parseVesselSections {
       set i to i + 1.
     }
 
-    sectionPartsLexicon:ADD("section" + sectionTagNumber,sectionParts).
+    SET sectionPartsLexicon["section" + sectionTagNumber] TO sectionParts.
     SET sectionTagNumber TO sectionTagNumber + 1.
 
   }//end for rootpart in sectionroots

@@ -10,20 +10,7 @@ FUNCTION deltaV {
 						alpha2 IS SHIP:BODY:RADIUS,
 						cBody IS SHIP:BODY.
 
-	LOCAL r0 TO cBody:RADIUS + burnPoint.
-
-	LOCAL mu TO cBody:MU.
-	LOCAL v1 TO 0.
-	LOCAL v2 TO 0.
-
-	IF (alpha1 > 0) {
-		SET v1 TO SQRT(mu*(2/r0 - 1/alpha1)).
-	}
-	IF (alpha2 > 0) {
-		SET v2 TO SQRT(mu*(2/r0 - 1/alpha2)).
-	}
-
-	RETURN ABS(v1 - v2).
+  RETURN deltaVGeneral(burnPoint,burnPoint,alpha1,alpha2,cBody).
 }
 
 DECLARE FUNCTION deltaVgeneral {

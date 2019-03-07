@@ -3,6 +3,10 @@
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
 GLOBAL verbose IS FALSE.
 
+CORE:DOEVENT("open terminal").
+
+GLOBAL vesselStatsLexicon IS "UNDEFINED".
+
 //basic file handling that the rest of the system depends on
 FUNCTION hasFile {
     PARAMETER fileName, volumeLabel.
@@ -86,7 +90,7 @@ FUNCTION notifyError {
 }
 
 FUNCTION restore {
-  PARAMETER fileName, archiveVolumeID IS 0, targetVolume IS 1.
-  copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
+  PARAMETER fileName, targetVolume IS 1.
+  download(fileName,targetVolume).
   PRINT "Restored " + fileName + " from archive.".
 }
