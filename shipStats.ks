@@ -122,7 +122,7 @@ FUNCTION createSectionMassLexicon {
 
 FUNCTION createStageStatsLexicon {
   PARAMETER sectionMassLexicon, startingStageNumber IS 0,
-            pressure IS 0, includeAllStages IS FALSE.
+  pressure IS 0, includeAllStages IS FALSE.
   LOCAL g0 IS 9.81.
   LOCAL shipEngines IS LIST().
   LIST ENGINES IN shipEngines.
@@ -181,7 +181,7 @@ FUNCTION createStageStatsLexicon {
             SET stageThrust TO stageThrust + engine:POSSIBLETHRUSTAT(pressure).
             SET stageFuelFlow TO stageFuelFlow + (engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure)).
             SET currentSectionLexicon["fuelFlow"] TO currentSectionLexicon["fuelFlow"] +
-                (engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure)).
+            (engine:POSSIBLETHRUSTAT(pressure)/engine:ISPAT(pressure)).
 
           }//endif engine stage >= stageNumber
         }//end for engine in enginelist
@@ -190,10 +190,10 @@ FUNCTION createStageStatsLexicon {
         //set bburn time
         SET sectionBurnTime TO g0 * sectionFuelMass/currentSectionLexicon["fuelFlow"].
         IF ((currentSectionLexicon["sectionRoot"]:STAGE = stageNumber - 1)
-              OR (stageNumber = 0)
-              AND (sectionBurnTime < stageBurnTime)) {
-                SET stageBurnTime TO sectionBurnTime.
-              }//endif next or last stage and sec burn < stage burn
+        OR (stageNumber = 0)
+        AND (sectionBurnTime < stageBurnTime)) {
+          SET stageBurnTime TO sectionBurnTime.
+        }//endif next or last stage and sec burn < stage burn
 
       }//endif section fuel flow > 0
 
@@ -256,7 +256,7 @@ FUNCTION stageAnalysis {
 
 FUNCTION burnTime {
   PARAMETER burnDeltaV, pressure is 0.
-  LOCAL stageStats IS stageAnalysis(pressure, 0, TRUE).
+  LOCAL stageStats IS stageAnalysis(pressure, 0, FALSE).
 
   LOCAL burnTimeCounter IS 0.
   LOCAL deltaVCounter IS burnDeltaV.
@@ -264,33 +264,31 @@ FUNCTION burnTime {
   FROM {LOCAL stageNumber IS STAGE:NUMBER.}
   UNTIL stageNumber = 0
   STEP {SET stageNumber TO stageNumber - 1.} DO {
-    PRINT "DEBUG: BURNTIME COUNTER: " + burnTimeCounter + " DELTAV COUNTER " + deltaVCounter.
-    IF deltaVCounter >= stageStats[stageNumber]["stageDeltaV"] { //will use entire burn for stage
-      SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"].
-      SET deltaVCounter TO deltaVCounter - stageStats[stageNumber]["stageDeltaV"].
-    } ELSE {
-      //only using part of stage fuel, calculate fraction of deltaV
-      //check for div by 0
-      IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
-        // LOCAL fraction IS deltaVCounter/stageStats[stageNumber]["stageDeltaV"].
-        // SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"] * fraction.
-        // //should be done with deltaV at this point.
-        // SET deltaVCounter TO 0.
-        LOCAL currentStage TO stageStats[stageNumber].
-        SET burnTimeCounter TO burnTimeCounter +
+    IF stageStats:HASKEY(stageNumber) {
+      IF deltaVCounter >= stageStats[stageNumber]["stageDeltaV"] { //will use entire burn for stage
+        SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"].
+        SET deltaVCounter TO deltaVCounter - stageStats[stageNumber]["stageDeltaV"].
+      } ELSE {
+        //only using part of stage fuel, calculate fraction of deltaV
+        //check for div by 0
+        IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
+          // LOCAL fraction IS deltaVCounter/stageStats[stageNumber]["stageDeltaV"].
+          // SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"] * fraction.
+          // //should be done with deltaV at this point.
+          // SET deltaVCounter TO 0.
+          LOCAL currentStage TO stageStats[stageNumber].
+          SET burnTimeCounter TO burnTimeCounter +
           calculateBurnTime(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
-        SET deltaVCounter TO 0.
+          SET deltaVCounter TO 0.
+          BREAK.
+        }
 
-        PRINT "DEBUG: BURNTIME COUNTER: " + burnTimeCounter + " DELTAV COUNTER " + deltaVCounter.
-
-        BREAK.
       }
-
     }
   }
-    //if we got this far and deltav is not 0, we don't have enough fuel.
-    IF deltaVCounter > 0 notifyError("Insufficient deltaV in ship for burn").
-    RETURN burnTimeCounter.
+  //if we got this far and deltav is not 0, we don't have enough fuel.
+  IF deltaVCounter > 0 notifyError("Insufficient deltaV in ship for burn").
+  RETURN burnTimeCounter.
 }
 
 FUNCTION calculateBurnTime {

@@ -3,7 +3,7 @@
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
 GLOBAL verbose IS FALSE.
 
-core:doevent("open terminal").
+CORE:DOEVENT("open terminal").
 
 //basic file handling that the rest of the system depends on
 FUNCTION hasFile {

@@ -6,9 +6,7 @@ dependsOn("navigationLib.ks").
 dependsOn("shipStats.ks").
 
 
-//LOCAL nodeBurnTime TO 0.
 LOCAL node TO NEXTNODE.
-//LOCAL warpFlag TO FALSE.
 LOCAL timeBuffer TO 60.
 LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
@@ -18,7 +16,7 @@ LOCAL timeOfNode IS TIME:SECONDS + node:ETA.
 FUNCTION waitUntilNode {
 	PARAMETER shouldWarp IS FALSE.
 	IF shouldWarp {
-		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + 60).
+		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + timeBuffer).
 	}
 	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
 	LOCK STEERING TO nodePrograde.
@@ -48,7 +46,7 @@ FUNCTION maneuverNodeBurn {
 
 		//debug escape
 		IF maxAcceleration = 0 {
-			notifyError("No available thrust.").
+			IF VERBOSE notifyError("No available thrust.").
 		} ELSE {
 			//THROTTLE IS 100% UNTIL THERE IS LESS THAN 1 SECOND OF TIME LEFT TO BURN
 			//WHEN THERE IS LESS THAN 1 SECOND - DECREASE THE THROTTLE LINEARLY
@@ -81,22 +79,28 @@ FUNCTION maneuverNodeBurn {
 }
 
 FUNCTION initializeNode {
+	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
 	SET nodeBurnTime TO burnTime(node:DELTAV:MAG).
+	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
+
 	LOCK nodePrograde TO node:BURNVECTOR.
 }
+
 FUNCTION executeNode {
 	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
 	PRINT "DEBUG INITIALIZING CONTROLS".
 	initializeControls().
 	PRINT "DEBUG INITIALIZING NODE".
 	initializeNode().
+	//IF VERBOSE
 	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+	//IF VERBOSE
 	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
 	waitUntilNode(shouldWarp).
 	maneuverNodeBurn().
 	REMOVE node.
-	deinitializeControls().
+	//deinitializeControls().
 
 }
 

@@ -55,12 +55,12 @@ FUNCTION checkPeriapsisMinimumValue {
 }
 
 FUNCTION onOrbitBurn {
-	LOCAL currentPressure IS SHIP:BODY:ATMOSPHERE:ALTITUDEPRESSURE(apsis).
-	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
+	LOCAL currentPressure IS SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).
+	LOCAL etaToBurn TO ETA:APOAPSIS.
 
 	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
 		//parabolic or hyperbolic
-		LOCK etaToBurn TO ETA:PERIAPSIS.
+		SET etaToBurn TO ETA:PERIAPSIS.
 	}
 
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
@@ -70,25 +70,24 @@ FUNCTION onOrbitBurn {
 	LOCAL orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV, currentPressure).
 
 	LOCAL LOCK r0 TO SHIP:POSITION.
-	LOCAL r1 TO POSITIONAT(SHIP,tau).
+	LOCAL LOCK r1 TO POSITIONAT(SHIP,tau).
 	LOCAL LOCK deltaR TO r1 - r0.
 
 	LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * orbitalInsertionBurnDV.
 	LOCAL LOCK v0 TO SHIP:VELOCITY:ORBIT.
 	LOCAL LOCK burnVector TO deltaR + v1.
 
-	LOCK STEERING TO burnVector:DIRECTION.
+	LOCK STEERING TO burnVector.
 
 	waitForAlignmentTo(burnVector).
-	print "Debug burn deltaV: " + orbitalInsertionBurnDV.
+	print "Debug urn deltaV: " + orbitalInsertionBurnDV.
 	print "Debug burn time: " + orbitalInsertionBurnTime.
-	print "Debug tau time: " + tau.
 	print "Debug eta time: " + etaToBurn.
 
-	LOCAL startTime IS etaToBurn - orbitalInsertionBurnTime/2.
+	LOCAL startTime IS tau - orbitalInsertionBurnTime/2.
 	//performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
 
-	WAIT UNTIL etaToBurn <= orbitalInsertionBurnTime/2. {
+	WAIT UNTIL TIME:SECONDS >= startTime. {
 		SET lockedThrottle TO 1.
 		stageLogic().
 		WAIT orbitalInsertionBurnTime.
@@ -172,7 +171,7 @@ FUNCTION killRelativeVelocity {
 }
 
 FUNCTION orbitalInsertion {
-	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramStaging TO TRUE, useNode IS TRUE.
+	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramStaging TO TRUE, useNode IS FALSE.
 
 	SET targetHeading TO paramHeading.
 	SET targetApoapsis TO paramApoapsis.
