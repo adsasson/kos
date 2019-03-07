@@ -293,6 +293,15 @@ DECLARE FUNCTION deltaVgeneral {
 
 	return ABS(vel1 - vel2).
 }
+
+FUNCTION calculateBurnVector {
+	PARAMETER burnDeltaV, timeOfBurn.
+	LOCAL r0 TO SHIP:POSITION.
+	LOCAL r1 TO POSITIONAT(SHIP,timeOfBurn).
+	LOCAL v0 TO SHIP:VELOCITY:ORBIT.
+	LOCAL v1 TO VELOCITYAT(SHIP,timeOfBurn):ORBIT * burnDeltaV.
+	RETURN (r1 - r0) + v1.
+}
 //tofang
 //
 //a angle around orbit

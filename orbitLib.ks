@@ -80,7 +80,7 @@ FUNCTION onOrbitBurn {
 	LOCK STEERING TO burnVector.
 
 	waitForAlignmentTo(burnVector).
-	print "Debug urn deltaV: " + orbitalInsertionBurnDV.
+	print "Debug burn deltaV: " + orbitalInsertionBurnDV.
 	print "Debug burn time: " + orbitalInsertionBurnTime.
 	print "Debug eta time: " + etaToBurn.
 

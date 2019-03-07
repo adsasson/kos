@@ -46,6 +46,14 @@ FUNCTION engageDeployables {
   IF verbose PRINT "DELPOYING RADIATIORS".
   extendAntenna().
 }
+
+FUNCTION engageParachutes {
+	PRINT "ENGAGING PARACHUTES".
+	WHEN (NOT CHUTESSAFE) THEN {
+		CHUTESSAFE ON.
+		RETURN (NOT CHUTES).
+	}
+}
 //================================================================
 
 

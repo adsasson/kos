@@ -92,4 +92,5 @@ FUNCTION restore {
   copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
   PRINT "Restored " + fileName + " from archive.".
 }
- dependsOn("orbitprogram.ks").
+  download("landProgram.ks",1).
+  download("orbitprogram.ks",1).

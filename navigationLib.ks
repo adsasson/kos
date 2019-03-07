@@ -42,12 +42,14 @@ FUNCTION waitForAlignmentTo {
 	RETURN TRUE.
 }
 FUNCTION performBurn {
-	PARAMETER burnVector, burnStartTime, burnEndTime, targetThrottle IS 1.
+	PARAMETER burnVector, burnStartTime, burnEndTime, useStaging IS TRUE, targetThrottle IS 1.
+	LOCK STEERING TO burnVector.
 	waitForAlignmentTo(burnVector).
-	WAIT UNTIL burnStartTime.
 	print "debug waiting for burn".
+	WAIT UNTIL TIME:SECONDS >= burnStartTime.
 	SET lockedThrottle TO targetThrottle.
-	WAIT UNTIL burnEndTime.
+	IF useStaging {stageLogic().}
+	WAIT UNTIL TIME:SECONDS >= burnEndTime.
 	SET lockedThrottle TO 0.
 }
 

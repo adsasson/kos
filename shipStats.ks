@@ -4,6 +4,7 @@ RUNONCEPATH(bootfile).
 
 
 FUNCTION parseVesselSections {
+  LOCAL debugPerformanceStart IS TIME:SECONDS.
   tagDecouplers().
   //find section roots
   LOCAL sectionRoots IS LIST().
@@ -52,6 +53,7 @@ FUNCTION parseVesselSections {
     SET sectionTagNumber TO sectionTagNumber + 1.
 
   }//end for rootpart in sectionroots
+  PRINT "DEBUG PERFORMANCE TIME SECTION PARSE: " + (TIME:SECONDS - debugPerformanceStart).
   RETURN sectionPartsLexicon.
 }
 
