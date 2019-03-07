@@ -4,7 +4,6 @@ RUNONCEPATH(bootfile).
 
 
 FUNCTION parseVesselSections {
-  LOCAL debugPerformanceStart IS TIME:SECONDS.
   tagDecouplers().
   //find section roots
   LOCAL sectionRoots IS LIST().
@@ -53,7 +52,6 @@ FUNCTION parseVesselSections {
     SET sectionTagNumber TO sectionTagNumber + 1.
 
   }//end for rootpart in sectionroots
-  PRINT "DEBUG PERFORMANCE TIME SECTION PARSE: " + (TIME:SECONDS - debugPerformanceStart).
   RETURN sectionPartsLexicon.
 }
 
@@ -68,6 +66,7 @@ FUNCTION tagDecouplers {
 }
 
 FUNCTION createSectionMassLexicon {
+  LOCAL debugPerformanceStart IS TIME:SECONDS.
   PARAMETER vesselSectionLexicon.
   //result lexicon
   LOCAL sectionMassLexicon IS LEXICON().
@@ -119,6 +118,7 @@ FUNCTION createSectionMassLexicon {
 
     sectionMassLexicon:ADD(sectionNumber,currentSectionLexicon).
   }//end for sectino in vessel section lexicon
+  PRINT "DEBUG PERFORMANCE TIME SECTION MASS LEXICON: " + ROUND((TIME:SECONDS - debugPerformanceStart)).
   RETURN sectionMassLexicon.
 }
 
