@@ -5,6 +5,7 @@ GLOBAL kMu TO SHIP:BODY:MU.
 GLOBAL kLiquidFuel TO "LIQUIDFUEL".
 GLOBAL kOx TO "OXIDIZER".
 GLOBAL kMono TO "MONOPROPELLANT".
+GLOBAL kUndefined TO "UNDEFINED".
 GLOBAL surfaceFeature TO LEXICON(
       "Mun", 4000,
       "Minmus", 6250,

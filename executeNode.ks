@@ -88,6 +88,7 @@ FUNCTION initializeNode {
 
 FUNCTION executeNode {
 	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
+	IF NOT(HASNODE) RETURN.
 	PRINT "DEBUG INITIALIZING CONTROLS".
 	initializeControls().
 	PRINT "DEBUG INITIALIZING NODE".

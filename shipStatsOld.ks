@@ -4,7 +4,7 @@ RUNONCEPATH(bootfile).
 
 
 FUNCTION parseVesselSections {
-  IF vesselStatsLexicon <> "UNDEFINED" tagDecouplers().
+  tagDecouplers().
   //find section roots
   LOCAL sectionRoots IS LIST().
   //add vessel root
@@ -89,6 +89,15 @@ FUNCTION createSectionMassLexicon {
     //iterate over parts in section list, add up masses
     FOR part IN currentSectionList {
       SET sectionMass TO sectionMass + part:MASS.
+      //get section fuel mass
+      // IF part:RESOURCES:EMPTY = FALSE {
+      //   FOR resource IN part:RESOURCES {
+      //     IF resource:NAME <> "monopropellant" {
+      //       SET sectionFuelMass TO sectionFuelMass + (part:MASS - part:DRYMASS).
+      //     }//endif not mono.. consier else for mono/other resource calcs
+      //   }//endfor resource in part
+      // }//enif resources empty
+
       LOCAL rcsFlag IS FALSE.
       IF part:RESOURCES:EMPTY = FALSE {
         FOR resource in part:RESOURCES {
@@ -107,7 +116,7 @@ FUNCTION createSectionMassLexicon {
       "sectionFuelFlow",0
     ).
 
-    SET sectionMassLexicon[sectionNumber] TO currentSectionLexicon.
+    sectionMassLexicon:ADD(sectionNumber,currentSectionLexicon).
   }//end for sectino in vessel section lexicon
   PRINT "DEBUG PERFORMANCE TIME SECTION MASS LEXICON: " + ROUND((TIME:SECONDS - debugPerformanceStart)).
   RETURN sectionMassLexicon.
@@ -135,10 +144,6 @@ FUNCTION createStageStatsLexicon {
   FROM {LOCAL stageNumber IS startingStageNumber.}
   UNTIL stageNumber = -1
   STEP {SET stageNumber TO stageNumber - 1.} DO {
-
-    IF stageNumber <> startingStageNumber AND (vesselStatsLexicon <> "UNDEFINED") {
-      BREAK.
-    }
 
     LOCAL stageMass IS 0.
     LOCAL stageThrust IS 0.
@@ -220,7 +225,7 @@ FUNCTION createStageStatsLexicon {
     ).
 
     //add current stage lex to result lexicon
-    SET stageStatsLexicon[stageNumber] TO currentStageLexicon.
+    stageStatsLexicon:ADD(stageNumber,currentStageLexicon).
 
     //reduce mass of section with active engines
     FOR section IN sectionMassLexicon:VALUES {
@@ -253,15 +258,7 @@ FUNCTION stageAnalysis {
 
 FUNCTION burnTime {
   PARAMETER burnDeltaV, pressure is 0.
-  LOCAL stageStats IS vesselStatsLexicon.
-
-  IF stageStats = -1 {
-    //no stage stats, need to create
-    SET stageStats TO stageAnalysis(pressure).
-  } ELSE {
-    //update stage stats
-    SET stageStats TO updateStageStats(vesselStatsLexicon,pressure).
-  }
+  LOCAL stageStats IS stageAnalysis(pressure, 0, FALSE).
 
   LOCAL burnTimeCounter IS 0.
   LOCAL deltaVCounter IS burnDeltaV.
@@ -277,6 +274,10 @@ FUNCTION burnTime {
         //only using part of stage fuel, calculate fraction of deltaV
         //check for div by 0
         IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
+          // LOCAL fraction IS deltaVCounter/stageStats[stageNumber]["stageDeltaV"].
+          // SET burnTimeCounter TO burnTimeCounter + stageStats[stageNumber]["stageBurnTime"] * fraction.
+          // //should be done with deltaV at this point.
+          // SET deltaVCounter TO 0.
           LOCAL currentStage TO stageStats[stageNumber].
           SET burnTimeCounter TO burnTimeCounter +
           calculateBurnTime(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
@@ -299,27 +300,4 @@ FUNCTION calculateBurnTime {
     RETURN g0*unitMass*unitISP*(1 - CONSTANT:E^(-unitDeltaV/(g0*unitISP)))/unitThrust.
   }
   RETURN 0.
-}
-
-
-FUNCTION updateStageStats {
-  //IF verbose
-  PRINT "Updating Vessel Statistics.".
-  PARAMETER workingStageStatsLexicon, pressure IS 0, includeAllStages IS FALSE.
-  //remove spent stages
-  FOR stageNumber IN workingStageStatsLexicon:KEYS {
-    IF workingStageStatsLexicon:HASKEY(stageNumber) AND stageNumber > STAGE:NUMBER {
-      workingStageStatsLexicon:REMOVE(stageNumber).
-    }
-  }
-
-  //recalculate current stage
-  RETURN stageAnalysis(pressure, STAGE:NUMBER, includeAllStages).
-}
-
-FUNCTION resetStats {
-  PARAMETER pressure IS 0, startingStage IS 0, includeAllStages IS FALSE.
-  SET vesselStatsLexicon TO "UNDEFINED".
-  LOCAL newStats IS stageAnalysis(pressure,startingStage,includeAllStages).
-  SET vesselStatsLexicon TO newStats.
 }

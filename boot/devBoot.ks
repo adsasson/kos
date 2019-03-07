@@ -5,6 +5,8 @@ GLOBAL verbose IS FALSE.
 
 CORE:DOEVENT("open terminal").
 
+GLOBAL vesselStatsLexicon IS "UNDEFINED".
+
 //basic file handling that the rest of the system depends on
 FUNCTION hasFile {
     PARAMETER fileName, volumeLabel.
@@ -92,5 +94,5 @@ FUNCTION restore {
   copypath(archiveVolumeID + ":" + fileName, targetVolume + ":").
   PRINT "Restored " + fileName + " from archive.".
 }
-  download("landProgram.ks",1).
+  //download("landProgram.ks",1).
   download("orbitprogram.ks",1).

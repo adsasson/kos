@@ -49,7 +49,8 @@ FUNCTION ascend {
 	IF SHIP:BODY:ATM:EXISTS {
 		atmosphericAscent(tolerance).
 		LOCK STEERING TO SHIP:PROGRADE.
-		WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
+		//WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
+		WAIT UNTIL (SHIP:STATUS <> "FLYING").
 		correctForDrag().
 	} ELSE {
 		airlessAscent(tolerance).
