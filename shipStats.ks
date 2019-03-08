@@ -255,7 +255,7 @@ FUNCTION burnTime {
   PARAMETER burnDeltaV, pressure is 0.
   LOCAL stageStats IS vesselStatsLexicon.
 
-  IF stageStats = -1 {
+  IF stageStats = "UNDEFINED" {
     //no stage stats, need to create
     SET stageStats TO stageAnalysis(pressure).
   } ELSE {
@@ -306,6 +306,9 @@ FUNCTION updateStageStats {
   //IF verbose
   PRINT "Updating Vessel Statistics.".
   PARAMETER workingStageStatsLexicon, pressure IS 0, includeAllStages IS FALSE.
+
+  //check to see if a vessel lexicon exists.
+  IF workingStageStatsLexicon = "UNDEFINED" {RETURN stageAnalysis(pressure,0,includeAllStages).}
   //remove spent stages
   FOR stageNumber IN workingStageStatsLexicon:KEYS {
     IF workingStageStatsLexicon:HASKEY(stageNumber) AND stageNumber > STAGE:NUMBER {

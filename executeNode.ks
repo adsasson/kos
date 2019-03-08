@@ -10,7 +10,7 @@ LOCAL node TO "UNDEFINED".
 LOCAL timeBuffer TO 60.
 LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
-LOCAL timeOfNode IS TIME:SECONDS + node:ETA.
+LOCAL timeOfNode IS 0.
 
 
 FUNCTION waitUntilNode {
@@ -83,6 +83,8 @@ FUNCTION maneuverNodeBurn {
 
 FUNCTION initializeNode {
 	SET node TO NEXTNODE.
+	SET timeOfNode TO TIME:SECONDS + node:ETA.
+
 	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
 	SET nodeBurnTime TO burnTime(node:DELTAV:MAG).
 	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.

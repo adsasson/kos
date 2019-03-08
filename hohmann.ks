@@ -52,10 +52,10 @@ FUNCTION hohmannNodes {
       SET nodeEntry:PROGRADE TO (hohmmanStatsLex["deltaV2"]).
 
       //if lowering
-      IF (hohmmanStatsLex["startRadius"] > hohmmanStatsLex["endRadius"]) {
-        SET nodeExit:PROGRADE TO -nodeExit:PROGRADE.
-        SET nodeEntry:PROGRADE TO -nodeEntry:PROGRADE.
-      }
+      // IF (hohmmanStatsLex["startRadius"] > hohmmanStatsLex["endRadius"]) {
+      //   SET nodeExit:PROGRADE TO -nodeExit:PROGRADE.
+      //   SET nodeEntry:PROGRADE TO -nodeEntry:PROGRADE.
+      // }
       ADD nodeExit.
       ADD nodeEntry.
     } ELSE {
