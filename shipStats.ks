@@ -276,7 +276,8 @@ FUNCTION shipBurnTime {
 FUNCTION burnTime {
   PARAMETER burnDeltaV, pressure is 0.
   LOCAL lastStageWithEngines IS TRUE.
-  LOCAL shipEngines IS SHIP:ENGINES.
+  LOCAL shipEngines IS LIST().
+  LIST ENGINES IN shipEngines.
   FOR engine IN shipEngines {
     IF engine:STAGE < STAGE:NUMBER {
       SET lastStageWithEngines TO FALSE. //we have an engine that is not on the current stage.
