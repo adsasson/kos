@@ -252,6 +252,7 @@ FUNCTION stageAnalysis {
 }
 
 FUNCTION burnTime {
+  //TODO: if on last stag with engines, don't parse, and just get ship burn time 
   PARAMETER burnDeltaV, pressure is 0.
   LOCAL stageStats IS vesselStatsLexicon.
 
