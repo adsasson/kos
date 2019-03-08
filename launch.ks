@@ -10,22 +10,22 @@ dependsOn("constants.ks").
 //TODO: add param for inclination launch, which is heading =  90 + inclination
 
 
-LOCAL targetHeading IS 90.
-LOCAL targetApoapsis IS 100000.
-LOCAL targetPeriapsis IS 100000.
-LOCAL scaleHeight IS 100000.
-LOCAL goalTWR IS 2.
-LOCAL staging TO TRUE.
+LOCAL launchTargetHeading IS 90.
+LOCAL launchTargetApoapsis IS 100000.
+LOCAL launchTargetPeriapsis IS 100000.
+LOCAL launchScaleHeight IS 100000.
+LOCAL launchGoalTWR IS 2.
+LOCAL launchStaging TO TRUE.
 
 FUNCTION sanitizeInput {
-	IF targetPeriapsis > targetApoapsis {
-		LOCAL tempValue IS targetPeriapsis.
-		SET targetPeriapsis TO targetApoapsis.
-		SET targetApoapsis TO tempValue.
+	IF launchTargetPeriapsis > launchTargetApoapsis {
+		LOCAL tempValue IS launchTargetPeriapsis.
+		SET launchTargetPeriapsis TO launchTargetApoapsis.
+		SET launchTargetApoapsis TO tempValue.
 	}
 
-	IF targetHeading > 360 {
-		SET targetHeading TO targetHeading - 360*MOD(aHeading,360).
+	IF launchTargetHeading > 360 {
+		SET launchTargetHeading TO launchTargetHeading - 360*MOD(aHeading,360).
 	}
 }
 
@@ -61,9 +61,9 @@ FUNCTION atmosphericAscent {
 	PARAMETER tolerance TO 0.1.
 	LOCAL atmosphereHeight TO SHIP:BODY:ATM:HEIGHT.
 
-	IF targetApoapsis < atmosphereHeight {
-		SET targetApoapsis TO atmosphereHeight * (1 + tolerance).
-		notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + targetApoapsis + " meters.").
+	IF launchTargetApoapsis < atmosphereHeight {
+		SET launchTargetApoapsis TO atmosphereHeight * (1 + tolerance).
+		notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + launchTargetApoapsis + " meters.").
 	}
 
 	ascentCurve(atmosphereHeight).
@@ -73,20 +73,20 @@ FUNCTION ascentCurve {
 	PARAMETER atmosphereHeight.
 	LOCAL LOCK maximumTWR TO maxTWR().
 	//normalize altitude to scale height.
-	LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/scaleHeight),2).
+	LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/launchScaleHeight),2).
 
 	LOCK deltaPitch TO 90 * SQRT(normalizedAltitude).
 	clearscreen.
 
-	UNTIL SHIP:APOAPSIS >= targetApoapsis {
+	UNTIL SHIP:APOAPSIS >= launchTargetApoapsis {
 
-		IF staging {
+		IF launchStaging {
 			stageLogic().
 		}
 
 		IF SHIP:BODY:ATM:EXISTS {
 
-			IF (maximumTWR > 0) SET lockedThrottle TO MIN(1,MAX(0,goalTWR/maximumTWR)).
+			IF (maximumTWR > 0) SET lockedThrottle TO MIN(1,MAX(0,launchGoalTWR/maximumTWR)).
 		} ELSE {
 			SET lockedThrottle TO 1.
 		}
@@ -99,13 +99,13 @@ FUNCTION ascentCurve {
 }
 
 FUNCTION correctForDrag {
-	IF (SHIP:APOAPSIS < targetApoapsis) {
+	IF (SHIP:APOAPSIS < launchTargetApoapsis) {
 		notify("Correcting apoapsis for atmospheric drag.").
 		LOCK STEERING TO SHIP:PROGRADE.
 		waitForAlignmentTo(SHIP:PROGRADE).
-		SET lockedThrottle TO MAX(1,(targetApoapsis - SHIP:APOAPSIS)/targetApoapsis * 10).
+		SET lockedThrottle TO MAX(1,(launchTargetApoapsis - SHIP:APOAPSIS)/launchTargetApoapsis * 10).
 
-		WAIT UNTIL (SHIP:APOAPSIS >= targetApoapsis).
+		WAIT UNTIL (SHIP:APOAPSIS >= launchTargetApoapsis).
 
 		SET lockedThrottle TO 0.
 	}
@@ -116,9 +116,9 @@ FUNCTION airlessAscent {
 	LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
 
 	//check inputs
-	IF targetApoapsis < minFeatureHeight {
-		SET targetApoapsis TO minFeatureHeight * (1 + tolerance).
-		notify("WARNING: Orbit will not clear minimum surface feature altitude. Adjusting apoapsis to " + targetApoapsis + " m").
+	IF launchTargetApoapsis < minFeatureHeight {
+		SET launchTargetApoapsis TO minFeatureHeight * (1 + tolerance).
+		notify("WARNING: Orbit will not clear minimum surface feature altitude. Adjusting apoapsis to " + launchTargetApoapsis + " m").
 	}
 	ascentCurve().
 }
@@ -127,16 +127,16 @@ FUNCTION airlessAscent {
 FUNCTION launchProgram {
 	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramScaleHeight IS 100000, paramGoalTWR IS 2, paramStaging TO TRUE.
 
-	SET targetHeading TO paramHeading.
-	SET targetApoapsis TO paramApoapsis.
-	SET targetPeriapsis TO paramPeriapsis.
-	SET staging TO paramStaging.
-	SET scaleHeight TO paramScaleHeight.
-	SET goalTWR TO paramGoalTWR.
+	SET launchTargetHeading TO paramHeading.
+	SET launchTargetApoapsis TO paramApoapsis.
+	SET launchTargetPeriapsis TO paramPeriapsis.
+	SET launchStaging TO paramStaging.
+	SET launchScaleHeight TO paramScaleHeight.
+	SET launchGoalTWR TO paramGoalTWR.
 
 	sanitizeInput().
 	initializeControls().
-	SET lockedCompassHeading TO targetHeading.
+	SET lockedCompassHeading TO launchTargetHeading.
 	ignition().
 	ascend().
 	engageDeployables().

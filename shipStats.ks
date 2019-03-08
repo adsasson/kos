@@ -2,7 +2,6 @@
 RUNONCEPATH(bootfile).
 //this is inspired by a script called 'stageAnalysis' by brekus from reddit.
 
-
 FUNCTION parseVesselSections {
   IF vesselStatsLexicon = "UNDEFINED" {tagDecouplers().}
   //find section roots
@@ -135,7 +134,7 @@ FUNCTION createStageStatsLexicon {
   FROM {LOCAL stageNumber IS startingStageNumber.}
   UNTIL stageNumber = -1
   STEP {SET stageNumber TO stageNumber - 1.} DO {
-
+    //skip already calculated stages that aren't current stage.
     IF stageNumber <> startingStageNumber AND (vesselStatsLexicon <> "UNDEFINED") {
       BREAK.
     }
@@ -251,8 +250,49 @@ FUNCTION stageAnalysis {
   RETURN stageStats.
 }
 
+FUNCTION shipBurnTime {
+  PARAMETER burnDeltaV, pressure is 0.
+
+  LOCAL totalThrust TO 0.
+  LOCAL totalISP TO 0.
+  LOCAL avgISP TO 0.
+  LOCAL shipEngines TO LIST().
+  LIST ENGINES IN shipEngines.
+  FOR eng IN shipEngines {
+    IF eng:IGNITION {
+      SET totalThrust TO totalThrust + eng:AVAILABLETHRUSTAT(pressure).
+      SET totalISP TO totalISP + (eng:AVAILABLETHRUSTAT(pressure)/
+      eng:ISPAT(pressure)).
+    }
+  }
+
+  IF totalISP > 0 {
+    SET avgISP TO totalThrust/totalISP.
+  }
+  RETURN calculateBurnTime(burnDeltaV,SHIP:MASS,totalThrust,avgISP).
+}
+
+
 FUNCTION burnTime {
-  //TODO: if on last stag with engines, don't parse, and just get ship burn time 
+  PARAMETER burnDeltaV, pressure is 0.
+  LOCAL lastStageWithEngines IS TRUE.
+  LOCAL shipEngines IS SHIP:ENGINES.
+  FOR engine IN shipEngines {
+    IF engine:STAGE < STAGE:NUMBER {
+      SET lastStageWithEngines TO FALSE. //we have an engine that is not on the current stage.
+      BREAK.
+    }
+  }
+
+  IF lastStageWithEngines {
+    RETURN shipBurnTime(burnDeltaV, pressure).
+  } ELSE {
+    RETURN stagedBurnTime(burnDeltaV, pressure).
+  }
+}
+
+FUNCTION stagedBurnTime {
+
   PARAMETER burnDeltaV, pressure is 0.
   LOCAL stageStats IS vesselStatsLexicon.
 
@@ -303,6 +343,7 @@ FUNCTION calculateBurnTime {
 }
 
 
+
 FUNCTION updateStageStats {
   //IF verbose
   PRINT "Updating Vessel Statistics.".
@@ -316,7 +357,6 @@ FUNCTION updateStageStats {
       workingStageStatsLexicon:REMOVE(stageNumber).
     }
   }
-
   //recalculate current stage
   RETURN stageAnalysis(pressure, STAGE:NUMBER, includeAllStages).
 }
