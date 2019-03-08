@@ -18,7 +18,12 @@ FUNCTION hohmannStats {
     LOCAL totalDeltaV TO deltaV1 + deltaV2.
 
     //Time of flight of transfer
-    LOCAL timeOfFlight TO CONSTANT:PI*SQRT((startRadius+endRadius)^3/8*cMu).
+    LOCAL alpha IS (startRadius + endRadius).
+    LOCAL numerator IS alpha^3.
+    LOCAL denominator IS 8*cMu.
+
+
+    LOCAL timeOfFlight TO CONSTANT:PI * (SQRT(numerator/denominator)).
 
     //phase angle (in radians) between vessel and object in target orbit to intercept
     LOCAL phaseAngle TO CONSTANT:PI*(1-(1/2*SQRT(2))*SQRT((startRadius/endRadius+1)^3)).
@@ -33,8 +38,8 @@ FUNCTION hohmannStats {
 
 FUNCTION hohmannNodes {
   PARAMETER hohmmanStatsLex, nodeTime TO (TIME:SECONDS + 600).
-    IF (hohmmanStatsLex:ISTYPE) = "Lexicon") AND
-      (hohmmanStatsLex:HASKEY("deltaV1")) {
+    IF hohmmanStatsLex:ISTYPE("LEXICON") AND
+      hohmmanStatsLex:HASKEY("deltaV1") {
       //assumes lexicon is complete if dv1 present
 
       //create nodes, assumes raising
@@ -44,7 +49,7 @@ FUNCTION hohmannNodes {
       SET nodeExit:ETA TO nodeTime.
       SET nodeExit:PROGRADE TO hohmmanStatsLex["deltaV1"].
       SET nodeEntry:ETA TO (nodeTime + hohmmanStatsLex["timeOfFlight"]).
-      SET nodeEntry:PROGRADE TO -(hohmmanStatsLex["deltaV2"]).
+      SET nodeEntry:PROGRADE TO (hohmmanStatsLex["deltaV2"]).
 
       //if lowering
       IF (hohmmanStatsLex["startRadius"] > hohmmanStatsLex["endRadius"]) {
@@ -61,6 +66,7 @@ FUNCTION hohmannNodes {
 FUNCTION createHohmannManeuver {
   PARAMETER startAltitude, endAltitude, startTime.
   LOCAL maneuverLexicon IS hohmannStats(startAltitude,endAltitude).
+  PRINT maneuverLexicon.
   //create nodes
   IF verbose PRINT "Creating Hohmann Maneuver Nodes.".
   hohmannNodes(maneuverLexicon,startTime).
