@@ -12,18 +12,11 @@ dependsOn("constants.ks").
 
 LOCAL launchTargetHeading IS 90.
 LOCAL launchTargetApoapsis IS 100000.
-LOCAL launchTargetPeriapsis IS 100000.
 LOCAL launchScaleHeight IS 100000.
 LOCAL launchGoalTWR IS 2.
 LOCAL launchStaging TO TRUE.
 
 FUNCTION sanitizeInput {
-	IF launchTargetPeriapsis > launchTargetApoapsis {
-		LOCAL tempValue IS launchTargetPeriapsis.
-		SET launchTargetPeriapsis TO launchTargetApoapsis.
-		SET launchTargetApoapsis TO tempValue.
-	}
-
 	IF launchTargetHeading > 360 {
 		SET launchTargetHeading TO launchTargetHeading - 360*MOD(aHeading,360).
 	}
@@ -127,14 +120,12 @@ FUNCTION airlessAscent {
 FUNCTION launchProgram {
 	PARAMETER paramHeading IS 90,
 						paramApoapsis IS 100000,
-						paramPeriapsis IS 100000,
 						paramScaleHeight IS 100000,
 						paramGoalTWR IS 2,
 						paramStaging TO TRUE.
 
 	SET launchTargetHeading TO paramHeading.
 	SET launchTargetApoapsis TO paramApoapsis.
-	SET launchTargetPeriapsis TO paramPeriapsis.
 	SET launchStaging TO paramStaging.
 	SET launchScaleHeight TO paramScaleHeight.
 	SET launchGoalTWR TO paramGoalTWR.

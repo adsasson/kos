@@ -38,6 +38,12 @@ FUNCTION correctForEccentricity {
 
 FUNCTION checkPeriapsisMinimumValue {
 	PARAMETER tolerance IS 0.1.
+		//first make sure peri < apo.
+		IF orbitTargetPeriapsis > orbitTargetApoapsis {
+			LOCAL temp IS orbitTargetPeriapsis.
+			SET orbitTargetPeriapsis TO orbitTargetApoapsis.
+			SET orbitTargetApoapsis TO temp.
+		}
 		IF SHIP:BODY:ATM:EXISTS {
 		IF orbitTargetPeriapsis < SHIP:BODY:ATM:HEIGHT {
 			SET orbitTargetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
@@ -171,7 +177,11 @@ FUNCTION killRelativeVelocity {
 }
 
 FUNCTION orbitalInsertion {
-	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramStaging TO TRUE, useNode IS FALSE.
+	PARAMETER paramHeading IS 90,
+						paramApoapsis IS 100000,
+						paramPeriapsis IS 100000,
+						paramStaging TO TRUE,
+						useNode IS FALSE.
 
 	SET orbitTargetHeading TO paramHeading.
 	SET orbitTargetApoapsis TO paramApoapsis.
