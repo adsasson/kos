@@ -84,9 +84,9 @@ FUNCTION ascentCurve {
 			stageLogic().
 		}
 
-		IF SHIP:BODY:ATM:EXISTS {
+		IF (SHIP:BODY:ATM:EXISTS AND (SHIP:ALTITUDE > SHIP:BODY:ATM:HEIGHT)) {
 
-			IF (maximumTWR > 0) SET lockedThrottle TO MIN(1,MAX(0,launchGoalTWR/maximumTWR)).
+			IF (maximumTWR <> 0) SET lockedThrottle TO MIN(1,MAX(0,launchGoalTWR/maximumTWR)).
 		} ELSE {
 			SET lockedThrottle TO 1.
 		}
@@ -125,7 +125,12 @@ FUNCTION airlessAscent {
 
 
 FUNCTION launchProgram {
-	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000, paramScaleHeight IS 100000, paramGoalTWR IS 2, paramStaging TO TRUE.
+	PARAMETER paramHeading IS 90,
+						paramApoapsis IS 100000,
+						paramPeriapsis IS 100000,
+						paramScaleHeight IS 100000,
+						paramGoalTWR IS 2,
+						paramStaging TO TRUE.
 
 	SET launchTargetHeading TO paramHeading.
 	SET launchTargetApoapsis TO paramApoapsis.

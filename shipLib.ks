@@ -122,7 +122,9 @@ FUNCTION engineStats {
 FUNCTION maxTWR {
   LOCAL gravityAtAltitude TO SHIP:BODY:MU/(SHIP:ALTITUDE + SHIP:BODY:RADIUS)^2.
   //gravity for altitude
-  RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
+  LOCAL pressure IS SHIP:BODY:ATM:ALTITUDEPRESSURE(SHIP:ALTITUDE).
+  //RETURN (SHIP:AVAILABLETHRUST/(SHIP:MASS * gravityAtAltitude)).
+  RETURN (SHIP:AVAILABLETHRUSTAT(pressure)/(SHIP:MASS * gravityAtAltitude)).
 }
 //burn time.
 
