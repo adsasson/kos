@@ -128,7 +128,32 @@ FUNCTION binarySearch {
 
 FUNCTION testClosestApproachTime {
 	//RETURN bisectionMethod(targetDistanceAtTime@,0,SHIP:ORBIT:PERIOD,10,25).
-	RETURN binarySearch(targetDistanceAtTime@,0,SHIP:ORBIT:PERIOD,10,25).
+	//RETURN binarySearch(targetDistanceAtTime@,0,SHIP:ORBIT:PERIOD,10,25).
+	PARAMETER closestTime IS TIME:SECONDS.
+	LOCAL timeIncrement IS 10.
+
+	UNTIL FALSE {
+
+		IF targetDistanceAtTime(closestTime + timeIncrement) < targetDistanceAtTime(closestTime) {
+			SET closestTime TO closestTime + timeIncrement.
+		} ELSE IF  targetDistanceAtTime(closestTime - timeIncrement) < targetDistanceAtTime(closestTime) {
+			SET closestTime TO closestTime - timeIncrement.
+		} ELSE {
+			BREAK.
+		}
+	}
+	RETURN closestTime.
+
+	// LOCAL positionVector IS TARGET:POSITION - SHIP:POSITION.
+	// LOCAL velocityVector IS TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+	// LOCAL xPosition IS positionVector:X. LOCAL xVelocity IS velocityVector:X.
+	// LOCAL yPosition IS positionVector:Y. LOCAL yVelocity IS velocityVector:Y.
+	// LOCAL zPosition IS positionVector:Z. LOCAL zVelocity IS velocityVector:Z.
+	// LOCAL xTime IS xPosition/xVelocity. IF xTime < 0 {SET xTIME TO 2^64.}
+	// LOCAL yTime IS yPosition/yVelocity. IF yTime < 0 {SET yTIME TO 2^64.}
+	// LOCAL zTime IS zPosition/zVelocity. IF zTime < 0 {SET zTIME TO 2^64.}
+	// LOCAL minTime IS MIN(MIN(MIN(xTime,yTime),MIN(xTime,zTime)),yTime).
+	// RETURN minTime.
 }
 
 FUNCTION killRelativeVelocity {
