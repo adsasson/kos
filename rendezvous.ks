@@ -3,26 +3,30 @@ RUNONCEPATH(bootfile).
 
 dependsOn("shipLib.ks").
 
-LOCAL targetBody.
+LOCAL targetBody IS TARGET.
 
 FUNCTION closestApproachTime {
 	PARAMETER closestApproachDistance IS 5000, startingTimeIncrement IS 10000,.
 	LOCAL timeIncrement IS startingTimeIncrement.
 	LOCAL tau IS TIME:SECONDS.
-	LOCAL targetDistance IS ABS(POSITIONAT(targetBody,tau) - POSITIONAT(SHIP,tau)).
-	LOCAL newTargetDistance IS ABS(POSITIONAT(targetBody,tau + timeIncrement) -
-	POSITIONAT(SHIP, tau + timeIncrement)).
+	LOCAL oldTargetDistance IS ABS(POSITIONAT(targetBody,tau) - POSITIONAT(SHIP,tau)).
+	LOCAL newTargetDistance IS ABS(POSITIONAT(targetBody,(tau + timeIncrement)) -
+	POSITIONAT(SHIP, (tau + timeIncrement))).
 
 	UNTIL timeIncrement < 10 {
-		IF targetDistance <= newTargetDistance { //old solution is better than new solution
+		IF newTargetDistance <= oldTargetDistance { //old solution is better than new solution
 			SET timeIncrement TO timeIncrement/10. //decrease time increment by factor of 10.
+			SET oldTargetDistance TO newTargetDistance.
+		} ELSE {
+			SET tau TO tau + timeIncrement.
 		}
-		SET tau TO tau + timeIncrement.
+		SET newTargetDistance TO ABS(POSITIONAT(targetBody,(tau + timeIncrement)) -
+		POSITIONAT(SHIP, (tau + timeIncrement))).
 	}
-	IF ABS(targetDistance) <= closestApproachDistance {
+	IF ABS(oldTargetDistance) <= closestApproachDistance {
 		RETURN tau.
 	} ELSE {
-		notify("Closest approach to " + targetBody + " is " + ROUND(ABS(targetDistance),2) +
+		notify("Closest approach to " + targetBody + " is " + ROUND(ABS(oldTargetDistance),2) +
 		" which is greater than " + closestApproachDistance).
 	}
 }

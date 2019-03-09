@@ -77,7 +77,7 @@ FUNCTION ascentCurve {
 			stageLogic().
 		}
 
-		IF (SHIP:BODY:ATM:EXISTS AND (SHIP:ALTITUDE > SHIP:BODY:ATM:HEIGHT)) {
+		IF (SHIP:BODY:ATM:EXISTS AND (SHIP:ALTITUDE < SHIP:BODY:ATM:HEIGHT)) {
 
 			IF (maximumTWR <> 0) SET lockedThrottle TO MIN(1,MAX(0,launchGoalTWR/maximumTWR)).
 		} ELSE {
