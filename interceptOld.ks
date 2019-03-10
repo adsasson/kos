@@ -76,6 +76,32 @@ FUNCTION calculateInterceptNode {
 	hohmannNodes(hohmmanStatsLex,TIME:SECONDS + timeToPhaseAngle).
 }
 
+FUNCTION hillClimbClosestApproachTime {
+	PARAMETER closestApproachDistance IS 5000, startingTimeIncrement IS 10000.
+	LOCAL timeIncrement IS startingTimeIncrement.
+	LOCAL tau IS TIME:SECONDS.
+	LOCAL oldTargetDistance IS ABS(POSITIONAT(targetBody,tau):MAG - POSITIONAT(SHIP,tau):MAG).
+	LOCAL newTargetDistance IS ABS(POSITIONAT(targetBody,(tau + timeIncrement)):MAG -
+	POSITIONAT(SHIP, (tau + timeIncrement)):MAG).
+
+	UNTIL timeIncrement < 10 {
+		IF newTargetDistance <= oldTargetDistance { //old solution is better than new solution
+			SET timeIncrement TO timeIncrement/2. //decrease time increment by factor of 10.
+			SET oldTargetDistance TO newTargetDistance.
+		} ELSE {
+			SET tau TO tau + timeIncrement.
+		}
+		SET newTargetDistance TO ABS(POSITIONAT(targetBody,(tau + timeIncrement)):MAG -
+		POSITIONAT(SHIP, (tau + timeIncrement)):MAG).
+	}
+	IF ABS(oldTargetDistance) <= closestApproachDistance {
+		RETURN tau.
+	} ELSE {
+		notify("Closest approach to " + targetBody + " is " + ROUND(ABS(oldTargetDistance),2) +
+		" which is greater than " + closestApproachDistance).
+		RETURN tau.
+	}
+}
 
 FUNCTION performIntercept {
 	SET targetBody TO TARGET.
