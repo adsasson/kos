@@ -87,16 +87,16 @@ FUNCTION calculateTimeToInterceptBurn {
 }
 
 FUNCTION performIntercept {
-//	SET targetBody TO TARGET.
+	PARAMETER useWarp IS TRUE, timeBuffer IS 60.
 	IF (DEFINED targetBody) {
 		calculateInterceptNode().
 		FOR aNode IN ALLNODES {
-			executeNode(NEXTNODE,TRUE,60).//using next node since not sure if allnodes is sorted.
+			executeNode(NEXTNODE,useWarp,timeBuffer).//using next node since not sure if allnodes is sorted.
 		}
 	} ELSE {
 		notifyError("Intercept.ks: Target is undefined.").
 	}
 
 }
-calculateInterceptNode().
+//calculateInterceptNode().
 //performIntercept().
