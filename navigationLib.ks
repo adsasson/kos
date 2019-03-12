@@ -41,6 +41,7 @@ FUNCTION waitForAlignmentTo {
   RCS OFF.
 	RETURN TRUE.
 }
+
 FUNCTION performBurn {
 	PARAMETER burnVector, burnStartTime, burnEndTime, useStaging IS TRUE, targetThrottle IS 1.
 	LOCK STEERING TO burnVector.

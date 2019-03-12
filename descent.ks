@@ -44,7 +44,7 @@ FUNCTION descentAnalytic {
 
 	LOCAL TTI TO timeToImpact(velocityY0, finalAltitude, grav).
 	LOCAL finalVelocity TO VisViva(finalAltitude + currentBody:RADIUS). //velocity at transition height
-	LOCAL descentBurnTime TO burnTime(finalVelocity).
+	LOCAL descentBurnTime TO calculateBurnTimeForDeltaV(finalVelocity).
 
 	LOCAL timeToManeuver TO TTI - descentBurnTime/2. //time to manuever is TTI minus burn time/2
 
@@ -78,7 +78,7 @@ DECLARE FUNCTION descentNumeric {
 	//declarations
 	LOCAL LOCK shipAltitude TO ALT:RADAR.
 
-	LOCAL LOCK velocityMagnitude TO burnTime(SHIP:VELOCITY:ORBIT:MAG).
+	LOCAL LOCK velocityMagnitude TO calculateBurnTimeForDeltaV(SHIP:VELOCITY:ORBIT:MAG).
 	LOCAL LOCK verticalImpactTime TO 	(shipAltitude - transitionHeight)/
 																		-SHIP:VERTICALSPEED.
 

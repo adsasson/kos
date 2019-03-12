@@ -2,10 +2,8 @@
 RUNONCEPATH(bootfile).
 
 dependsOn("shipLib.ks").
-
 dependsOn("navigationLib.ks").
-
-dependsOn("constants.ks").
+//dependsOn("constants.ks").
 
 //TODO: add param for inclination launch, which is heading =  90 + inclination
 
@@ -117,7 +115,7 @@ FUNCTION airlessAscent {
 }
 
 
-FUNCTION launchProgram {
+FUNCTION performLaunch {
 	PARAMETER paramHeading IS 90,
 						paramApoapsis IS 100000,
 						paramScaleHeight IS 100000,

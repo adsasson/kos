@@ -2,6 +2,7 @@
 RUNONCEPATH(bootfile).
 //this is inspired by a script called 'stageAnalysis' by brekus from reddit.
 
+//TODO: refactor based on part:decoupler?
 FUNCTION parseVesselSections {
   IF vesselStatsLexicon = "UNDEFINED" {tagDecouplers().}
   //find section roots
@@ -269,11 +270,11 @@ FUNCTION shipBurnTime {
   IF totalISP > 0 {
     SET avgISP TO totalThrust/totalISP.
   }
-  RETURN calculateBurnTime(burnDeltaV,SHIP:MASS,totalThrust,avgISP).
+  RETURN calculatecalculateBurnTimeForDeltaV(burnDeltaV,SHIP:MASS,totalThrust,avgISP).
 }
 
 
-FUNCTION burnTime {
+FUNCTION calculateBurnTimeForDeltaV {
   PARAMETER burnDeltaV, pressure is 0.
   LOCAL lastStageWithEngines IS TRUE.
   LOCAL shipEngines IS LIST().
@@ -286,9 +287,9 @@ FUNCTION burnTime {
   }
 
   IF lastStageWithEngines {
-    RETURN shipBurnTime(burnDeltaV, pressure).
+    RETURN shipcalculateBurnTimeForDeltaV(burnDeltaV, pressure).
   } ELSE {
-    RETURN stagedBurnTime(burnDeltaV, pressure).
+    RETURN stagedcalculateBurnTimeForDeltaV(burnDeltaV, pressure).
   }
 }
 
@@ -321,7 +322,7 @@ FUNCTION stagedBurnTime {
         IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
           LOCAL currentStage TO stageStats[stageNumber].
           SET burnTimeCounter TO burnTimeCounter +
-          calculateBurnTime(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
+          getcalculateBurnTimeForDeltaV(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
           SET deltaVCounter TO 0.
           BREAK.
         }
@@ -334,7 +335,7 @@ FUNCTION stagedBurnTime {
   RETURN burnTimeCounter.
 }
 
-FUNCTION calculateBurnTime {
+FUNCTION getBurnTime {
   PARAMETER unitDeltaV, unitMass, unitThrust, unitISP.
   LOCAL g0 IS 9.81.
   IF unitThrust <> 0 {

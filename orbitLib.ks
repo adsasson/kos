@@ -3,12 +3,9 @@
 RUNONCEPATH(bootfile).
 
 dependsOn("orbitalMechanicsLib.ks").
-
 dependsOn("shipStats.ks").
-
 dependsOn("navigationLib.ks").
-
-dependsOn("constants.ks").
+//dependsOn("constants.ks").
 
 
 LOCAL orbitTargetHeading IS 90.
@@ -44,6 +41,7 @@ FUNCTION checkPeriapsisMinimumValue {
 			SET orbitTargetPeriapsis TO orbitTargetApoapsis.
 			SET orbitTargetApoapsis TO temp.
 		}
+
 		IF SHIP:BODY:ATM:EXISTS {
 		IF orbitTargetPeriapsis < SHIP:BODY:ATM:HEIGHT {
 			SET orbitTargetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
@@ -60,7 +58,7 @@ FUNCTION checkPeriapsisMinimumValue {
 	}
 }
 
-FUNCTION onOrbitBurn {
+FUNCTION performOnOrbitBurn {
 	LOCAL currentPressure IS SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).
 	LOCAL etaToBurn TO ETA:APOAPSIS.
 
@@ -73,7 +71,7 @@ FUNCTION onOrbitBurn {
 
 	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
 	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
-	LOCAL orbitalInsertionBurnTime TO burnTime(orbitalInsertionBurnDV, currentPressure).
+	LOCAL orbitalInsertionBurnTime TO calculateBurnTimeForDeltaV(orbitalInsertionBurnDV, currentPressure).
 
 	LOCAL LOCK r0 TO SHIP:POSITION.
 	LOCAL LOCK r1 TO POSITIONAT(SHIP,tau).
@@ -120,63 +118,7 @@ FUNCTION createOnOrbitManeuverNode {
 //======================================
 
 
-FUNCTION killRelativeVelocity {
-	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
-	IF HASTARGET {
-		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
-		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
-		LOCAL mu1 TO SHIP:BODY:MU.
-		LOCAL mu2 TO TARGET:BODY:MU.
-
-		//LOCAL v1 TO visViva(r1,alpha1,mu1). //interceptor position
-		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
-		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
-		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
-
-		LOCAL tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
-		LOCK tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
-
-		LOCAL velRel TO (tgtRetrograde):MAG.
-		LOCK velRel TO (tgtRetrograde):MAG.
-
-		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
-			//if intercept requires a 5 minute or more burn, something is wrong
-			LOCK STEERING TO tgtRetrograde:DIRECTION.
-			LOCAL cThrott TO 0.
-			LOCK THROTTLE TO cThrott.
-
-			WAIT UNTIL pointTo(tgtRetrograde:DIRECTION, FALSE, 0.3).
-			//LOCAL deltaV TO ABS(velTarget - velIntercept).
-
-			LOCAL cBurn TO burnTime(velRel).
-			LOCK cBurn TO burnTime(velRel).
-
-			LOCAL burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
-			LOCK burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
-
-			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
-			//AIT UNTIL cBurn >= ABS(TARGET:DISTANCE/velRel).
-
-			UNTIL velRel <= bufferVel*10 {
-				SET cThrott TO 1.
-				WAIT 0.
-			}
-			UNTIL velRel <= bufferVel {
-				SET cThrott TO 0.1.
-				WAIT 0.
-			}
-
-			SET cThrott TO 0.
-		} ELSE {
-			notify("Too far from target: " + TARGET:NAME).
-		}
-	} ELSE {
-		notify("No target selected.").
-	}
-
-}
-
-FUNCTION orbitalInsertion {
+FUNCTION performOrbitalInsertion {
 	PARAMETER paramHeading IS 90,
 						paramApoapsis IS 100000,
 						paramPeriapsis IS 100000,
@@ -188,13 +130,11 @@ FUNCTION orbitalInsertion {
 	SET orbitTargetPeriapsis TO paramPeriapsis.
 	SET orbitStaging TO paramStaging.
 
-
-
 	initializeControls().
 	correctForEccentricity().
 	checkPeriapsisMinimumValue().
 	IF useNode = FALSE {
-		onOrbitBurn().
+		performOnOrbitBurn().
 	} ELSE {
 		LOCAL burnNode IS createOnOrbitManeuverNode().
 		ADD burnNode.

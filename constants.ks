@@ -19,3 +19,4 @@ GLOBAL surfaceFeature TO LEXICON(
       "Tylo", 13500,
       "Vall", 9000
 ).
+GLOBAL vesselStatsLexicon IS "UNDEFINED".

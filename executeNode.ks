@@ -86,7 +86,7 @@ FUNCTION initializeNode {
 	SET timeOfNode TO TIME:SECONDS + node:ETA.
 
 	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
-	SET nodeBurnTime TO burnTime(node:DELTAV:MAG).
+	SET nodeBurnTime TO calculateBurnTimeForDeltaV(node:DELTAV:MAG).
 	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
 
 	LOCK nodePrograde TO node:BURNVECTOR.

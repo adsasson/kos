@@ -29,7 +29,7 @@ FUNCTION oldkillRelativeVelocity {
 	PRINT "relativeVelocityAtTime " + ROUND(relativeVelocityAtTime:MAG).
 	LOCAL killRelativeVelocityDeltaV IS (relativeVelocityAtTime:MAG).
 	//todo: if small enough use rcs and/or limit throttle.
-	LOCAL killRelativeVelocityBurnTime IS burnTime(killRelativeVelocityDeltaV).
+	LOCAL killRelativeVelocityBurnTime IS calculateBurnTimeForDeltaV(killRelativeVelocityDeltaV).
 	PRINT "killRelativeVelocityBurnTime " + killRelativeVelocityBurnTime.
 	IF warpFlag {
 		KUNIVERSE:TIMEWARP:WARPTO((timeOfClosestApproach - killRelativeVelocityBurnTime/2) + timeBuffer*2).
@@ -101,7 +101,7 @@ FUNCTION killRelativeVelocity {
 	LOCAL tau IS closestApproachTime().
 	PRINT "tau: " + tau.
 	LOCAL killBurnDeltaV IS killRelativeVelocityBurnDeltaV(tau).
-	LOCAL killRelativeVelocityBurnTime IS burnTime(killBurnDeltaV).
+	LOCAL killRelativeVelocityBurnTime IS calculateBurnTimeForDeltaV(killBurnDeltaV).
 	PRINT "burnTime: " + killRelativeVelocityBurnTime.
 	LOCAL timeOfBurn IS (TIME:SECONDS + tau) - killRelativeVelocityBurnTime/2.
 
@@ -120,6 +120,64 @@ FUNCTION killRelativeVelocity {
 	 WAIT killRelativeVelocityBurnTime.
 	 SET THROTTLE TO 0.
 }
+
+FUNCTION oldkillRelativeVelocity {
+	PARAMETER posIntercept, posTarget, bufferVel IS 0.1.
+	IF HASTARGET {
+		LOCAL alpha1 TO SHIP:ORBIT:SEMIMAJORAXIS.
+		LOCAL alpha2 TO TARGET:ORBIT:SEMIMAJORAXIS.
+		LOCAL mu1 TO SHIP:BODY:MU.
+		LOCAL mu2 TO TARGET:BODY:MU.
+
+		//LOCAL v1 TO visViva(r1,alpha1,mu1). //interceptor position
+		//LOCAL v2 TO visViva(r2,alpha2,mu2). //target position
+		LOCAL velTarget TO TARGET:VELOCITY:ORBIT.
+		LOCAL velIntercept TO SHIP:VELOCITY:ORBIT.
+
+		LOCAL tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+		LOCK tgtRetrograde TO TARGET:VELOCITY:ORBIT - SHIP:VELOCITY:ORBIT.
+
+		LOCAL velRel TO (tgtRetrograde):MAG.
+		LOCK velRel TO (tgtRetrograde):MAG.
+
+		IF (ABS(TARGET:DISTANCE/velRel) < 300) { //more than 5 minutes from TARGET
+			//if intercept requires a 5 minute or more burn, something is wrong
+			LOCK STEERING TO tgtRetrograde:DIRECTION.
+			LOCAL cThrott TO 0.
+			LOCK THROTTLE TO cThrott.
+
+			WAIT UNTIL pointTo(tgtRetrograde:DIRECTION, FALSE, 0.3).
+			//LOCAL deltaV TO ABS(velTarget - velIntercept).
+
+			LOCAL cBurn TO calculateBurnTimeForDeltaV(velRel).
+			LOCK cBurn TO calculateBurnTimeForDeltaV(velRel).
+
+			LOCAL burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+			LOCK burnDistance TO (velRel + 2*bufferVel)/2*cBurn. //avg velocity + buffer velocity.
+
+			WAIT UNTIL (TARGET:DISTANCE <= burnDistance).
+			//AIT UNTIL cBurn >= ABS(TARGET:DISTANCE/velRel).
+
+			UNTIL velRel <= bufferVel*10 {
+				SET cThrott TO 1.
+				WAIT 0.
+			}
+			UNTIL velRel <= bufferVel {
+				SET cThrott TO 0.1.
+				WAIT 0.
+			}
+
+			SET cThrott TO 0.
+		} ELSE {
+			notify("Too far from target: " + TARGET:NAME).
+		}
+	} ELSE {
+		notify("No target selected.").
+	}
+
+}
+
+
 // FUNCTION killRelativeVelocity {
 // 	PARAMETER timeToApproach, warpFlag IS FALSE, timeBuffer IS 60.
 //
@@ -127,7 +185,7 @@ FUNCTION killRelativeVelocity {
 // 	LOCAL targetVelocity IS VELOCITYAT(targetBody,timeToApproach):ORBIT.
 // 	LOCAL shipVelocity IS VELOCITYAT(SHIP,timeToApproach):ORBIT.
 // 	LOCAL targetDeltaV IS ABS(targetVelocity - shipVelocity).
-// 	LOCAL killVelocityBurnTime IS burnTime(targetDeltaV).
+// 	LOCAL killVelocityBurnTime IS calculateBurnTimeForDeltaV(targetDeltaV).
 //
 // 	IF warpFlag {
 // 		KUNIVERSE:TIMEWARP:WARPTO(TIME:SECONDS + (timeToApproach - killVelocityBurnTime/2) + 300).
