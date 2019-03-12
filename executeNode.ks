@@ -32,7 +32,7 @@ FUNCTION waitUntilNode {
 	RETURN TRUE.
 }
 
-FUNCTION maneuverNodeBurn {
+FUNCTION performManeuverNodeBurn {
 	LOCAL done TO FALSE.
 	LOCK STEERING TO nodePrograde.
 	IF NOT(HASNODE) RETURN.
@@ -105,7 +105,7 @@ FUNCTION executeNode {
 	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
 	waitUntilNode(shouldWarp).
-	maneuverNodeBurn().
+	performManeuverNodeBurn().
 	REMOVE node.
 	//deinitializeControls().
 

@@ -270,7 +270,7 @@ FUNCTION shipBurnTime {
   IF totalISP > 0 {
     SET avgISP TO totalThrust/totalISP.
   }
-  RETURN calculatecalculateBurnTimeForDeltaV(burnDeltaV,SHIP:MASS,totalThrust,avgISP).
+  RETURN getBurnTime(burnDeltaV,SHIP:MASS,totalThrust,avgISP).
 }
 
 
@@ -287,9 +287,9 @@ FUNCTION calculateBurnTimeForDeltaV {
   }
 
   IF lastStageWithEngines {
-    RETURN shipcalculateBurnTimeForDeltaV(burnDeltaV, pressure).
+    RETURN shipBurnTime(burnDeltaV, pressure).
   } ELSE {
-    RETURN stagedcalculateBurnTimeForDeltaV(burnDeltaV, pressure).
+    RETURN stagedBurnTime(burnDeltaV, pressure).
   }
 }
 

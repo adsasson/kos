@@ -5,7 +5,7 @@ dependsOn("shipLib.ks").
 dependsOn("navigationLib.ks").
 
 
-FUNCTION deOrbitBurn {
+FUNCTION performDeOrbitBurn {
 	PARAMETER transitionHeight IS 30000, burnPoint IS SHIP:APOAPSIS, timeBuffer IS 30.
 	LOCAL tau IS TIME:SECONDS + ETA:APOAPSIS.
 	IF SHIP:ORBIT:ECCENTRICITY < 0.1 {//orbit is basically circular so can burn at any point
@@ -33,7 +33,7 @@ FUNCTION deOrbitBurn {
 FUNCTION atmosphericEntry {
   PARAMETER transitionHeight IS 30000.
   initializeControls().
-  deOrbitBurn(transitionHeight).
+  performDeOrbitBurn(transitionHeight).
   WAIT UNTIL SHIP:STATUS = "FLYING".
   disengageDeployables().
   engageParachutes().
