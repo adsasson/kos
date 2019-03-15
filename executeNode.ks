@@ -36,11 +36,11 @@ FUNCTION performManeuverNodeBurn {
 	LOCAL done TO FALSE.
 	LOCK STEERING TO nodePrograde.
 	IF NOT(HASNODE) RETURN.
-
+	LOCAL oldNodeDeltaV IS node:DELTAV:MAG.
 	//INITIAL DELTAV
 	LOCAL deltaV0 TO node:DELTAV.
 	UNTIL DONE {
-
+		SET oldNodeDeltaV TO node:DELTAV:MAG.
 		stageLogic().
 
 		//RECALCULATE CURRENT MAX_ACCELERATION, AS IT CHANGES WHILE
@@ -77,6 +77,7 @@ FUNCTION performManeuverNodeBurn {
 			SET done TO TRUE.
 			WAIT 1.
 		}
+		IF node:DELTAV:MAG > oldNodeDeltaV {BREAK.}
 	}
 
 }
@@ -84,10 +85,10 @@ FUNCTION performManeuverNodeBurn {
 FUNCTION initializeNode {
 	SET node TO NEXTNODE.
 	SET timeOfNode TO TIME:SECONDS + node:ETA.
-
-	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
+	LOCAL debugNow IS TIME:SECONDS.
+	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + debugNow.
 	SET nodeBurnTime TO calculateBurnTimeForDeltaV(node:DELTAV:MAG).
-	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + TIME:SECONDS.
+	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + (debugNow - TIME:SECONDS).
 
 	LOCK nodePrograde TO node:BURNVECTOR.
 }
@@ -95,9 +96,7 @@ FUNCTION initializeNode {
 FUNCTION executeNode {
 	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
 	IF NOT(HASNODE) RETURN.
-	PRINT "DEBUG INITIALIZING CONTROLS".
 	initializeControls().
-	PRINT "DEBUG INITIALIZING NODE".
 	initializeNode().
 	//IF VERBOSE
 	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
@@ -110,5 +109,4 @@ FUNCTION executeNode {
 	//deinitializeControls().
 
 }
-
-executeNode().
+IF HASNODE {executeNode().}
