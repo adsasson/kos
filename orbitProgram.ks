@@ -12,7 +12,7 @@ PARAMETER inputHeading IS 90,
           inputScaleHeight IS 100000,
           inputGoalTWR IS 2,
           inputStaging TO TRUE,
-          inputUseNode IS TRUE.
+          inputUseNode IS FALSE.
 SET vesselStatsLexicon TO stageAnalysis().
 
 performLaunch(inputHeading,inputApoapsis,inputScaleHeight,inputGoalTWR,inputStaging).

@@ -322,7 +322,7 @@ FUNCTION stagedBurnTime {
         IF stageStats[stageNumber]["stageDeltaV"] <> 0 {
           LOCAL currentStage TO stageStats[stageNumber].
           SET burnTimeCounter TO burnTimeCounter +
-          getcalculateBurnTimeForDeltaV(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
+          getBurnTime(deltaVCounter,currentStage["stageMass"], currentStage["stageThrust"],currentStage["stageISP"]).
           SET deltaVCounter TO 0.
           BREAK.
         }

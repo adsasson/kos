@@ -138,7 +138,7 @@ FUNCTION performOrbitalInsertion {
 	} ELSE {
 		LOCAL burnNode IS createOnOrbitManeuverNode().
 		ADD burnNode.
-		download("executeNode.ks",1).
+		if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
 		WAIT 0.5.
 		RUNONCEPATH("executeNode.ks").
 	}

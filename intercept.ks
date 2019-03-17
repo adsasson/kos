@@ -91,7 +91,7 @@ FUNCTION performIntercept {
 	IF (DEFINED targetBody) {
 		calculateInterceptNode().
 		FOR aNode IN ALLNODES {
-			executeNode(NEXTNODE,useWarp,timeBuffer).//using next node since not sure if allnodes is sorted.
+			runoncepath("1:executeNode(NEXTNODE,useWarp,timeBuffer)").//using next node since not sure if allnodes is sorted.
 		}
 	} ELSE {
 		notifyError("Intercept.ks: Target is undefined.").

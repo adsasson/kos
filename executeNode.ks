@@ -6,7 +6,7 @@ dependsOn("navigationLib.ks").
 dependsOn("shipStats.ks").
 
 
-LOCAL node TO "UNDEFINED".
+LOCAL node TO NEXTNODE.
 LOCAL timeBuffer TO 60.
 LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
@@ -106,7 +106,8 @@ FUNCTION executeNode {
 	waitUntilNode(shouldWarp).
 	performManeuverNodeBurn().
 	REMOVE node.
+	LOCK STEERING TO PROGRADE.
 	//deinitializeControls().
 
 }
-IF HASNODE {executeNode().}
+executeNode().
