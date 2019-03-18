@@ -5,7 +5,6 @@ GLOBAL verbose IS FALSE.
 
 CORE:DOEVENT("open terminal").
 
-
 //basic file handling that the rest of the system depends on
 FUNCTION hasFile {
     PARAMETER fileName, volumeLabel.
@@ -94,6 +93,7 @@ FUNCTION restore {
   PRINT "Restored " + fileName + " from archive.".
 }
   //download("landProgram.ks",1).
-  download("orbitprogram.ks",1).
+  download("orbitProgram.ks",1).
+  download("executeNodeProgram.ks",1).
 
 dependsOn("constants.ks").

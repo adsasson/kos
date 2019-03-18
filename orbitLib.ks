@@ -5,7 +5,7 @@ RUNONCEPATH(bootfile).
 dependsOn("orbitalMechanicsLib.ks").
 dependsOn("shipStats.ks").
 dependsOn("navigationLib.ks").
-//dependsOn("constants.ks").
+dependsOn("executeNode.ks").
 
 
 LOCAL orbitTargetHeading IS 90.
@@ -138,9 +138,8 @@ FUNCTION performOrbitalInsertion {
 	} ELSE {
 		LOCAL burnNode IS createOnOrbitManeuverNode().
 		ADD burnNode.
-		if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
 		WAIT 0.5.
-		RUNONCEPATH("executeNode.ks").
+		executeNode().
 	}
 
 }

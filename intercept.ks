@@ -2,7 +2,7 @@
 RUNONCEPATH(bootfile).
 
 dependsOn("hohmann.ks").
-download("executeNode.ks",1).
+dependsOn("executeNode.ks").
 
 LOCAL targetBody IS TARGET.
 
@@ -91,7 +91,7 @@ FUNCTION performIntercept {
 	IF (DEFINED targetBody) {
 		calculateInterceptNode().
 		FOR aNode IN ALLNODES {
-			runoncepath("1:executeNode(NEXTNODE,useWarp,timeBuffer)").//using next node since not sure if allnodes is sorted.
+			executeNode(NEXTNODE,useWarp,timeBuffer).//using next node since not sure if allnodes is sorted.
 		}
 	} ELSE {
 		notifyError("Intercept.ks: Target is undefined.").
