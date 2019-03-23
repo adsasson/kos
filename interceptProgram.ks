@@ -4,4 +4,4 @@ RUNONCEPATH(bootfile).
 dependsOn("intercept.ks").
 
 calculateInterceptNode().
-performIntercept().
+//performIntercept().

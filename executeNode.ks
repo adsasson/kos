@@ -35,7 +35,7 @@ FUNCTION waitUntilNode {
 FUNCTION performManeuverNodeBurn {
 	LOCAL done TO FALSE.
 	LOCK STEERING TO nodePrograde.
-	IF NOT(HASNODE) RETURN.
+	IF NOT(HASNODE) {PRINT "NO NODE IN FLIGHT PLAN". RETURN.}
 	LOCAL oldNodeDeltaV IS node:DELTAV:MAG.
 	//INITIAL DELTAV
 	LOCAL deltaV0 TO node:DELTAV.
@@ -77,7 +77,7 @@ FUNCTION performManeuverNodeBurn {
 			SET done TO TRUE.
 			WAIT 1.
 		}
-		IF node:DELTAV:MAG > oldNodeDeltaV {BREAK.}
+		//IF node:DELTAV:MAG > oldNodeDeltaV {PRINT "DELTA V INCREASING". BREAK.}
 	}
 
 }
@@ -95,7 +95,7 @@ FUNCTION initializeNode {
 
 FUNCTION executeNode {
 	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
-	IF NOT(HASNODE) RETURN.
+	IF NOT(HASNODE) {PRINT "NO NODE IN FLIGHT PLAN". RETURN.}
 	initializeControls().
 	initializeNode().
 	//IF VERBOSE
@@ -107,7 +107,7 @@ FUNCTION executeNode {
 	performManeuverNodeBurn().
 	REMOVE node.
 	LOCK STEERING TO PROGRADE.
-	//deinitializeControls().
+	deinitializeControls().
 
 }
 executeNode().
