@@ -2,7 +2,7 @@
 
 
 
-LOCAL node TO NEXTNODE.
+LOCAL node TO "UNDEFINED".
 LOCAL timeBuffer TO 60.
 LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.

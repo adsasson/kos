@@ -5,7 +5,7 @@ LOCAL targetBody IS TARGET.
 RUNONCEPATH(bootfile).
 
 dependsOn("hohmann.ks").
-download("executeNode.ks",1).
+dependsOn("executeNode.ks").
 
 FUNCTION getTargetPhaseAngle {
   RETURN targetBody:LONGITUDE - SHIP:LONGITUDE. //works

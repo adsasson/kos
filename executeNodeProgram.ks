@@ -1,9 +1,6 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
-PARAMETER shouldWarp IS TRUE, buffer IS 60.
 
-dependsOn("executeNode.ks").
+PARAMETER inputNode IS NEXTNODE, warpFlag IS FALSE, inputBuffer IS 60.
 
-
-
-executeNode(shouldWarp,buffer).
+executeNode(inputNode,warpFlag,inputBuffer).

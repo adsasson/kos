@@ -18,7 +18,7 @@ LOCAL burnDirection TO SHIP:PROGRADE.
 dependsOn("orbitalMechanicsLib.ks").
 dependsOn("shipStats.ks").
 dependsOn("navigationLib.ks").
-//dependsOn("constants.ks").
+dependsOn("executeNode.ks").
 
 FUNCTION sanitizeInput {
 	PARAMETER tolerance IS 0.1.
@@ -227,9 +227,8 @@ FUNCTION performOrbitalInsertion {
 	} ELSE {
 		LOCAL burnNode IS createOnOrbitManeuverNode().
 		ADD burnNode.
-		if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
 		WAIT 0.5.
-		RUNONCEPATH("executeNode.ks").
+		executeNode().
 	}
 
 	FUNCTION performLaunch {
