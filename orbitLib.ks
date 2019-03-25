@@ -1,10 +1,16 @@
 //orbital maneuver library
 @LAZYGLOBAL OFF.
 
-LOCAL orbitTargetHeading IS 90.
-LOCAL orbitTargetApoapsis IS 100000.
-LOCAL orbitTargetPeriapsis IS 100000.
-LOCAL orbitStaging IS TRUE.
+LOCAL targetHeading IS 90.
+LOCAL targetApoapsis IS 100000.
+LOCAL targetPeriapsis IS 100000.
+LOCAL scaleHeight IS 100000.
+LOCAL goalTWR IS 2.
+LOCAL staging IS TRUE.
+LOCAL targetApsisHeight IS targetApoapsis.
+LOCAL apsis TO SHIP:APOAPSIS.
+LOCAL burnDirection TO SHIP:PROGRADE.
+
 //LOCAL useNode IS TRUE.
 
 //RUNONCEPATH(bootfile).
@@ -14,11 +20,74 @@ dependsOn("shipStats.ks").
 dependsOn("navigationLib.ks").
 //dependsOn("constants.ks").
 
+FUNCTION sanitizeInput {
+	PARAMETER tolerance IS 0.1.
+	IF targetHeading > 360 {
+		SET targetHeading TO targetHeading - 360*MOD(targetHeading,360).
+	}
 
+	IF targetPeriapsis > targetApoapsis {
+		LOCAL temp IS orbitTargetPeriapsis.
+		SET targetPeriapsis TO targetApoapsis.
+		SET targetApoapsis TO temp.
+	}
 
-LOCAL targetApsisHeight IS orbitTargetApoapsis.
-LOCAL apsis TO SHIP:APOAPSIS.
-LOCAL burnDirection TO SHIP:PROGRADE.
+	IF SHIP:BODY:ATM:EXISTS {
+		IF targetApoapsis < SHIP:BODY:ATM:HEIGHT {
+			SET targetApoapsis TO atmosphereHeight * (1 + tolerance).
+			notify("WARNING: Orbit will not clear atmosphere. Adjusting apoapsis to " + targetApoapsis + " meters.").
+
+			IF targetPeriapsis < SHIP:BODY:ATM:HEIGHT {
+				SET targetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
+				notify("WARNING: Orbit will not clear atmosphere. " +
+								"Adjusting periapsis to " +	targetPeriapsis + " m").
+			}
+
+		}
+	} ELSE {
+		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
+		IF targetApoapsis < minFeatureHeight {
+			SET targetApoapsis TO minFeatureHeight * (1 + tolerance).
+			notify("WARNING: Orbit will not clear minimum surface feature altitude. Adjusting apoapsis to " + targetApoapsis + " m").
+		}
+
+		IF targetPeriapsis < minFeatureHeight {
+			SET targetAlt TO minFeatureHeight * (1 + tolerance).
+			notify("WARNING: Orbit will not clear minimum surface feature altitude."
+						+ " Adjusting periapsis to " + targetPeriapsis + " m").
+		}
+
+	}
+
+}
+
+FUNCTION ignition {
+	initializeControls().
+	SET lockedThrottle TO 1.
+	countdown().
+	stage.
+}
+
+FUNCTION countdown {
+	PARAMETER countNumber IS 3.
+	FROM {LOCAL count TO countNumber.} UNTIL count = 0 STEP {SET count TO count - 1.} DO {
+		notify("..." + count + "...", "COUNTDOWN: ", "upperCenter").
+		WAIT 1.
+	}
+}
+
+FUNCTION ascend {
+	IF SHIP:BODY:ATM:EXISTS {
+		ascentCurve().
+		LOCK STEERING TO SHIP:PROGRADE.
+		//WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
+		WAIT UNTIL (SHIP:STATUS <> "FLYING").
+		engageDeployables().
+		correctForDrag().
+	} ELSE {
+		airlessAscent(tolerance).
+	}
+}
 
 FUNCTION correctForEccentricity {
 	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
@@ -27,38 +96,56 @@ FUNCTION correctForEccentricity {
 	} ELSE { //parabolic or hyperbolic
 		SET apsis TO SHIP:PERIAPSIS.
 		SET burnDirection TO SHIP:RETROGRADE.
-		SET targetApsisHeight TO orbitTargetPeriapsis.
+		SET targetApsisHeight TO targetPeriapsis.
 	}
 }
+
+FUNCTION ascend {
+	LOCAL LOCK maximumTWR TO maxTWR().
+	//normalize altitude to scale height.
+	LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/launchScaleHeight),2).
+
+	LOCK deltaPitch TO 90 * SQRT(normalizedAltitude).
+	clearscreen.
+
+	UNTIL SHIP:APOAPSIS >= targetApoapsis {
+
+		IF launchStaging {
+			stageLogic().
+		}
+
+		IF (SHIP:BODY:ATM:EXISTS AND (SHIP:ALTITUDE < SHIP:BODY:ATM:HEIGHT)) {
+			IF (maximumTWR <> 0) SET lockedThrottle TO MIN(1,MAX(0,launchGoalTWR/maximumTWR)).
+		} ELSE {
+			SET lockedThrottle TO 1.
+		}
+		SET lockedPitch TO 90 - (MIN(90,deltaPitch)).
+		WAIT 0.
+	}
+
+	LOCK STEERING TO SHIP:PROGRADE.
+	notify("Target Apopasis Reached").
+	SET lockedThrottle TO 0.
+}
+
+FUNCTION correctForDrag {
+	IF (SHIP:APOAPSIS < targetApoapsis) {
+		notify("Correcting apoapsis for atmospheric drag.").
+		LOCK STEERING TO SHIP:PROGRADE.
+		waitForAlignmentTo(SHIP:PROGRADE).
+		SET lockedThrottle TO MAX(1,(targetApoapsis - SHIP:APOAPSIS)/targetApoapsis * 10).
+
+		WAIT UNTIL (SHIP:APOAPSIS >= targetApoapsis).
+
+		SET lockedThrottle TO 0.
+	}
+}
+
+
 //TODO: functions to check that burn apsis is above atmosphere or minimum feature HEIGHT,
 //then correct burn time and burn point if too low. Which leads to the idea of:
 //TODO: aerobrake function for atmospheric bodies.
 
-
-FUNCTION checkPeriapsisMinimumValue {
-	PARAMETER tolerance IS 0.1.
-		//first make sure peri < apo.
-		IF orbitTargetPeriapsis > orbitTargetApoapsis {
-			LOCAL temp IS orbitTargetPeriapsis.
-			SET orbitTargetPeriapsis TO orbitTargetApoapsis.
-			SET orbitTargetApoapsis TO temp.
-		}
-
-		IF SHIP:BODY:ATM:EXISTS {
-		IF orbitTargetPeriapsis < SHIP:BODY:ATM:HEIGHT {
-			SET orbitTargetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
-			notify("WARNING: Orbit will not clear atmosphere. " +
-							"Adjusting periapsis to " +	orbitTargetPeriapsis + " m").
-		}
-	} ELSE {
-		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
-		IF orbitTargetPeriapsis < minFeatureHeight {
-			SET targetAlt TO minFeatureHeight * (1 + tolerance).
-			notify("WARNING: Orbit will not clear minimum surface feature altitude."
-						+ " Adjusting periapsis to " + orbitTargetPeriapsis + " m").
-		}
-	}
-}
 
 FUNCTION performOnOrbitBurn {
 	LOCAL currentPressure IS SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).
@@ -102,7 +189,7 @@ FUNCTION performOnOrbitBurn {
 }
 
 FUNCTION createOnOrbitManeuverNode {
-	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
+	LOCAL etaToBurn TO ETA:APOAPSIS.
 
 	// IF SHIP:ORBIT:ECCENTRICITY >= 1 {
 	// 	//parabolic or hyperbolic
@@ -127,9 +214,9 @@ FUNCTION performOrbitalInsertion {
 						paramStaging TO TRUE,
 						useNode IS FALSE.
 
-	SET orbitTargetHeading TO paramHeading.
-	SET orbitTargetApoapsis TO paramApoapsis.
-	SET orbitTargetPeriapsis TO paramPeriapsis.
+	SET targetHeading TO paramHeading.
+	SET targetApoapsis TO paramApoapsis.
+	SET targetPeriapsis TO paramPeriapsis.
 	SET orbitStaging TO paramStaging.
 
 	initializeControls().
@@ -144,5 +231,60 @@ FUNCTION performOrbitalInsertion {
 		WAIT 0.5.
 		RUNONCEPATH("executeNode.ks").
 	}
+
+	FUNCTION performLaunch {
+		PARAMETER paramHeading IS 90,
+							paramApoapsis IS 100000,
+							paramPeriapsis IS 100000,
+							paramScaleHeight IS 100000,
+							useNode IS FALSE,
+							warpFlag IS FALSE,
+							orbitFlag IS TRUE,
+							paramGoalTWR IS 2,
+							paramStaging TO TRUE.
+
+		SET targetHeading TO paramHeading.
+		SET targetApoapsis TO paramApoapsis.
+		SET targetPeriapsis TO paramPeriapsis.
+		SET staging TO paramStaging.
+		SET scaleHeight TO paramScaleHeight.
+		SET goalTWR TO paramGoalTWR.
+
+		sanitizeInput().
+		initializeControls().
+		SET lockedCompassHeading TO launchTargetHeading.
+		ignition().
+		ascend().
+
+		IF orbitFlag AND useNode {
+			correctForEccentricity().
+			LOCAL burnNode IS createOnOrbitManeuverNode().
+			ADD burnNode.
+		}
+
+		IF SHIP:BODY:ATM:EXISTS {
+			//WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
+			WAIT UNTIL (SHIP:STATUS <> "FLYING").
+			engageDeployables().
+			correctForDrag().
+		}
+		IF orbitFlag{
+			IF useNode {
+				if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
+				WAIT 0.5.
+				RUNONCEPATH("executeNode.ks").
+				waitUntilNode(warpFlag).
+				performManeuverNodeBurn().
+				REMOVE node.
+				LOCK STEERING TO PROGRADE.
+				deinitializeControls().
+			} ELSE {
+				performOnOrbitBurn().
+			}
+		}
+
+	}
+
+
 
 }

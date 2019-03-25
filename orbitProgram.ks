@@ -10,7 +10,6 @@ PARAMETER inputHeading IS 90,
 
           RUNONCEPATH(bootfile).
 
-          dependsOn("launch.ks").
           dependsOn("orbitLib.ks").
           dependsOn("shipStats.ks").
 

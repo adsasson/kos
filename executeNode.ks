@@ -15,7 +15,7 @@ dependsOn("navigationLib.ks").
 dependsOn("shipStats.ks").
 
 FUNCTION waitUntilNode {
-	PARAMETER shouldWarp IS FALSE.
+	PARAMETER node IS NEXTNODE, shouldWarp IS FALSE.
 	IF NOT(HASNODE) RETURN.
 
 	IF shouldWarp {
@@ -95,7 +95,7 @@ FUNCTION initializeNode {
 }
 
 FUNCTION executeNode {
-	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
+	PARAMETER shouldWarp IS FALSE, buffer IS 60.
 	IF NOT(HASNODE) {PRINT "NO NODE IN FLIGHT PLAN". RETURN.}
 	initializeControls().
 	initializeNode().
@@ -111,4 +111,3 @@ FUNCTION executeNode {
 	deinitializeControls().
 
 }
-executeNode().
