@@ -2,10 +2,7 @@
 
 
 
-LOCAL node TO "UNDEFINED".
-LOCAL timeBuffer TO 60.
-LOCAL nodePrograde TO 0.
-LOCAL nodeBurnTime IS 0.
+
 LOCAL timeOfNode IS 0.
 
 //RUNONCEPATH(bootfile).
@@ -15,12 +12,21 @@ dependsOn("navigationLib.ks").
 dependsOn("shipStats.ks").
 
 FUNCTION waitUntilNode {
-	PARAMETER node IS NEXTNODE, shouldWarp IS FALSE.
+	PARAMETER node IS NEXTNODE, shouldWarp IS FALSE, timeBuffer IS 60.
 	IF NOT(HASNODE) RETURN.
+	SET timeOfNode TO TIME:SECONDS + node:ETA.
+	LOCAL LOCK nodePrograde TO node:BURNVECTOR.
+	LOCAL nodeBurnTime TO calculateBurnTimeForDeltaV(node:DELTAV:MAG).
+
+	//IF VERBOSE
+	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
+	//IF VERBOSE
+	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
 	IF shouldWarp {
 		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + timeBuffer).
 	}
+
 	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
 	LOCK STEERING TO nodePrograde.
 
@@ -34,8 +40,10 @@ FUNCTION waitUntilNode {
 }
 
 FUNCTION performManeuverNodeBurn {
+	PARAMETER node IS NEXTNODE.
 	LOCAL done TO FALSE.
-	LOCK STEERING TO nodePrograde.
+	LOCK STEERING TO node:BURNVECTOR.
+.
 	IF NOT(HASNODE) {PRINT "NO NODE IN FLIGHT PLAN". RETURN.}
 	LOCAL oldNodeDeltaV IS node:DELTAV:MAG.
 	//INITIAL DELTAV
@@ -83,29 +91,16 @@ FUNCTION performManeuverNodeBurn {
 
 }
 
-FUNCTION initializeNode {
-	SET node TO NEXTNODE.
-	SET timeOfNode TO TIME:SECONDS + node:ETA.
-	LOCAL debugNow IS TIME:SECONDS.
-	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + debugNow.
-	SET nodeBurnTime TO calculateBurnTimeForDeltaV(node:DELTAV:MAG).
-	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + (debugNow - TIME:SECONDS).
-
-	LOCK nodePrograde TO node:BURNVECTOR.
-}
 
 FUNCTION executeNode {
-	PARAMETER shouldWarp IS FALSE, buffer IS 60.
+	PARAMETER node IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
 	IF NOT(HASNODE) {PRINT "NO NODE IN FLIGHT PLAN". RETURN.}
 	initializeControls().
-	initializeNode().
-	//IF VERBOSE
-	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
-	//IF VERBOSE
-	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
-	waitUntilNode(shouldWarp).
-	performManeuverNodeBurn().
+	IF waitUntilNode(node, shouldWarp, buffer) {
+			performManeuverNodeBurn(node).
+	}
+
 	REMOVE node.
 	LOCK STEERING TO PROGRADE.
 	deinitializeControls().
