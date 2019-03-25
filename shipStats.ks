@@ -1,5 +1,5 @@
 @LAZYGLOBAL OFF.
-RUNONCEPATH(bootfile).
+//RUNONCEPATH(bootfile).
 //this is inspired by a script called 'stageAnalysis' by brekus from reddit.
 
 //TODO: refactor based on part:decoupler?

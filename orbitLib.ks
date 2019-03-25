@@ -1,6 +1,13 @@
 //orbital maneuver library
 @LAZYGLOBAL OFF.
-RUNONCEPATH(bootfile).
+
+LOCAL orbitTargetHeading IS 90.
+LOCAL orbitTargetApoapsis IS 100000.
+LOCAL orbitTargetPeriapsis IS 100000.
+LOCAL orbitStaging IS TRUE.
+//LOCAL useNode IS TRUE.
+
+//RUNONCEPATH(bootfile).
 
 dependsOn("orbitalMechanicsLib.ks").
 dependsOn("shipStats.ks").
@@ -8,11 +15,6 @@ dependsOn("navigationLib.ks").
 //dependsOn("constants.ks").
 
 
-LOCAL orbitTargetHeading IS 90.
-LOCAL orbitTargetApoapsis IS 100000.
-LOCAL orbitTargetPeriapsis IS 100000.
-LOCAL orbitStaging IS TRUE.
-//LOCAL useNode IS TRUE.
 
 LOCAL targetApsisHeight IS orbitTargetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.

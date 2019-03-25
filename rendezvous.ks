@@ -1,12 +1,12 @@
 @LAZYGLOBAL OFF.
+
+LOCAL targetBody IS TARGET.
+
 RUNONCEPATH(bootfile).
 
 dependsOn("shipLib.ks").
 dependsOn("shipStats.ks").
 dependsOn("navigationLib.ks").
-
-LOCAL targetBody IS TARGET.
-
 
 FUNCTION targetDistanceAtTime {
 	PARAMETER tau.

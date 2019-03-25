@@ -1,6 +1,4 @@
 @LAZYGLOBAL OFF.
-RUNONCEPATH(bootfile).
-
 
 PARAMETER inputHeading IS 90,
           inputApoapsis IS 100000,
@@ -9,6 +7,8 @@ PARAMETER inputHeading IS 90,
           inputGoalTWR IS 2,
           inputStaging TO TRUE,
           inputUseNode IS TRUE.
+
+          RUNONCEPATH(bootfile).
 
           dependsOn("launch.ks").
           dependsOn("orbitLib.ks").

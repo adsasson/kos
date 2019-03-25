@@ -1,9 +1,5 @@
 @LAZYGLOBAL OFF.
-RUNONCEPATH(bootfile).
 
-dependsOn("shipLib.ks").
-dependsOn("navigationLib.ks").
-dependsOn("shipStats.ks").
 
 
 LOCAL node TO NEXTNODE.
@@ -12,6 +8,11 @@ LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
 LOCAL timeOfNode IS 0.
 
+//RUNONCEPATH(bootfile).
+
+dependsOn("shipLib.ks").
+dependsOn("navigationLib.ks").
+dependsOn("shipStats.ks").
 
 FUNCTION waitUntilNode {
 	PARAMETER shouldWarp IS FALSE.

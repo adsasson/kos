@@ -1,16 +1,14 @@
 @LAZYGLOBAL OFF.
-RUNONCEPATH(bootfile).
-
-
-
-//TODO: add param for inclination launch, which is heading =  90 + inclination
-
 
 LOCAL launchTargetHeading IS 90.
 LOCAL launchTargetApoapsis IS 100000.
 LOCAL launchScaleHeight IS 100000.
 LOCAL launchGoalTWR IS 2.
 LOCAL launchStaging TO TRUE.
+
+//RUNONCEPATH(bootfile).
+
+//TODO: add param for inclination launch, which is heading =  90 + inclination
 
 dependsOn("shipLib.ks").
 dependsOn("navigationLib.ks").
