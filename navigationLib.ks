@@ -58,7 +58,7 @@ FUNCTION performBurn {
 	PARAMETER burnVector, burnStartTime, burnEndTime, targetThrottle IS 1.
 	LOCK STEERING TO burnVector.
 	waitForAlignmentTo(burnVector).
-	print "debug waiting for burn".
+	IF verbose PRINT "Waiting for burn.".
 	WAIT UNTIL TIME:SECONDS >= burnStartTime.
 	SET lockedThrottle TO targetThrottle.
 	stageLogic().

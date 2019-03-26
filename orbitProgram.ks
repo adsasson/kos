@@ -10,7 +10,7 @@ PARAMETER inputHeading IS 90,
           inputGoalTWR IS 2.
 
 
-          dependsOn("launch.ks").
+          dependsOn("launchLib.ks").
           dependsOn("orbitLib.ks").
           dependsOn("shipStats.ks").
 
@@ -18,4 +18,4 @@ SET vesselStatsLexicon TO stageAnalysis().
 
 performLaunch(inputHeading,inputApoapsis,inputGoalTWR).
 IF VERBOSE PRINT "Finished launch program, beginning orbital insertion".
-performOrbitalInsertion(inputHeading,inputApoapsis,inputPeriapsis,inputStaging,inputUseNode).
+performOrbitalInsertion(inputApoapsis,inputPeriapsis,inputUseWarp,inputUseNode).

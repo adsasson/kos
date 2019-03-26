@@ -62,7 +62,7 @@ FUNCTION performManeuverNodeBurn {
 		//HERE'S THE TRICKY PART, WE NEED TO CUT THE THROTTLE AS SOON AS OUR
 		//ND:DELTAV AND INITIAL DELTAV START FACING OPPOSITE DIRECTIONS
 		//THIS CHECK IS DONE VIA CHECKING THE DOT PRODUCT OF THOSE 2 VECTORS
-		IF VDOT(deltaV0, node:DELTAV) =< 0 { //maybe change threshold
+		IF VDOT(deltaV0, node:DELTAV) <= 0 { //maybe change threshold
 			PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0, node:DELTAV),1).
 			SET lockedThrottle TO 0.
 			BREAK.
@@ -80,7 +80,7 @@ FUNCTION performManeuverNodeBurn {
 			SET done TO TRUE.
 			WAIT 1.
 		}
-		IF node:DELTAV:MAG > oldNodeDeltaV {PRINT "DELTA V INCREASING". BREAK.}
+		// IF node:DELTAV:MAG > oldNodeDeltaV {PRINT "DELTA V INCREASING". BREAK.}
 	}
 
 }

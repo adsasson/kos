@@ -75,14 +75,16 @@ FUNCTION performOnOrbitBurn {
 
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
 
-	LOCAL LOCK r0 TO SHIP:POSITION.
-	LOCAL LOCK r1 TO POSITIONAT(SHIP,tau).
-	LOCAL LOCK deltaR TO r1 - r0.
+	// LOCAL LOCK r0 TO SHIP:POSITION.
+	// LOCAL LOCK r1 TO POSITIONAT(SHIP,tau).
+	// LOCAL LOCK deltaR TO r1 - r0.
+	//
+	// LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * orbitalInsertionBurnDV.
+	// LOCAL LOCK v0 TO SHIP:VELOCITY:ORBIT.
+	// LOCAL LOCK burnVector TO deltaR + v1.
 
-	LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * orbitalInsertionBurnDV.
-	LOCAL LOCK v0 TO SHIP:VELOCITY:ORBIT.
-	LOCAL LOCK burnVector TO deltaR + v1.
-
+	LOCAL burnVector IS calculateBurnVector(orbitalInsertionBurnDV,tau).
+	
 	LOCK STEERING TO burnVector.
 
 	waitForAlignmentTo(burnVector).
@@ -94,8 +96,19 @@ FUNCTION performOnOrbitBurn {
 
 	LOCAL startTime IS tau - orbitalInsertionBurnTime/2.
 
+
 	waitUntil(startTime,useWarp).
-	performBurn(burnVector,startTime,(startTime + orbitalInsertionBurnTime)).
+	IF useNode {
+		LOCAL burnNode IS createOnOrbitManeuverNode().
+		ADD burnNode.
+		if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
+		WAIT 0.5.
+		RUNONCEPATH("executeNode.ks").
+		performManeuverNodeBurn(burnNode).
+	} ELSE {
+			performBurn(burnVector,startTime,(startTime + orbitalInsertionBurnTime)).
+	}
+
 	// WAIT UNTIL TIME:SECONDS >= startTime. {
 	// 	SET lockedThrottle TO 1.
 	// 	stageLogic().
@@ -130,14 +143,6 @@ FUNCTION performOrbitalInsertion {
 	correctForEccentricity().
 	calculateOrbitBurnParameters().
 
-	IF useNode = FALSE {
-		performOnOrbitBurn().
-	} ELSE {
-		LOCAL burnNode IS createOnOrbitManeuverNode().
-		ADD burnNode.
-		if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
-		WAIT 0.5.
-		RUNONCEPATH("executeNode.ks").
-	}
+	performOnOrbitBurn().
 
 }
