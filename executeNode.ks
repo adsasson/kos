@@ -2,9 +2,7 @@
 RUNONCEPATH(bootfile).
 
 
-LOCAL node TO NEXTNODE.
 LOCAL timeBuffer TO 60.
-LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
 LOCAL timeOfNode IS 0.
 
@@ -14,32 +12,37 @@ dependsOn("navigationLib.ks").
 dependsOn("shipStats.ks").
 
 
-FUNCTION waitUntilNode {
-	PARAMETER shouldWarp IS FALSE.
-	IF NOT(HASNODE) RETURN.
-
-	IF shouldWarp {
-		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + timeBuffer).
-	}
-	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
-	LOCK STEERING TO nodePrograde.
-
-	IF VERBOSE notify("Orienting to node").
-	waitForAlignmentTo(nodePrograde).
-	IF VERBOSE notify("Completed orientation to node burn vector.").
-
-	WAIT UNTIL (TIME:SECONDS >= (timeOfNode - nodeBurnTime/2)).
-
-	RETURN TRUE.
-}
+// FUNCTION waitUntilNode {
+// 	PARAMETER shouldWarp IS FALSE.
+// 	IF NOT(HASNODE) RETURN.
+//
+// 	IF shouldWarp {
+// 		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + timeBuffer).
+// 	}
+// 	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
+// 	LOCK STEERING TO nodePrograde.
+//
+// 	IF VERBOSE notify("Orienting to node").
+// 	waitForAlignmentTo(nodePrograde).
+// 	IF VERBOSE notify("Completed orientation to node burn vector.").
+//
+// 	WAIT UNTIL (TIME:SECONDS >= (timeOfNode - nodeBurnTime/2)).
+//
+// 	RETURN TRUE.
+// }
 
 FUNCTION performManeuverNodeBurn {
+	PARAMETER node IS NEXTNODE.
+
 	LOCAL done TO FALSE.
-	LOCK STEERING TO nodePrograde.
-	IF NOT(HASNODE) RETURN.
+
+	LOCK STEERING TO node:BURNVECTOR.
+
 	LOCAL oldNodeDeltaV IS node:DELTAV:MAG.
+
 	//INITIAL DELTAV
 	LOCAL deltaV0 TO node:DELTAV.
+
 	UNTIL DONE {
 		SET oldNodeDeltaV TO node:DELTAV:MAG.
 		stageLogic().
@@ -48,7 +51,6 @@ FUNCTION performManeuverNodeBurn {
 		//WE BURN THROUGH FUEL
 		LOCAL maxAcceleration TO SHIP:MAXTHRUST/SHIP:MASS.
 
-		//debug escape
 		IF maxAcceleration = 0 {
 			IF VERBOSE notifyError("No available thrust.").
 		} ELSE {
@@ -60,7 +62,7 @@ FUNCTION performManeuverNodeBurn {
 		//HERE'S THE TRICKY PART, WE NEED TO CUT THE THROTTLE AS SOON AS OUR
 		//ND:DELTAV AND INITIAL DELTAV START FACING OPPOSITE DIRECTIONS
 		//THIS CHECK IS DONE VIA CHECKING THE DOT PRODUCT OF THOSE 2 VECTORS
-		IF VDOT(deltaV0, node:DELTAV) < 0 {
+		IF VDOT(deltaV0, node:DELTAV) =< 0 { //maybe change threshold
 			PRINT "END BURN, REMAIN DV " + ROUND(node:DELTAV:MAG,1) + "M/S, VDOT: " + ROUND(VDOT(deltaV0, node:DELTAV),1).
 			SET lockedThrottle TO 0.
 			BREAK.
@@ -78,37 +80,36 @@ FUNCTION performManeuverNodeBurn {
 			SET done TO TRUE.
 			WAIT 1.
 		}
-		IF node:DELTAV:MAG > oldNodeDeltaV {BREAK.}
+		IF node:DELTAV:MAG > oldNodeDeltaV {PRINT "DELTA V INCREASING". BREAK.}
 	}
 
 }
 
 FUNCTION initializeNode {
-	SET node TO NEXTNODE.
+	PARAMETER node IS NEXTNODE.
 	SET timeOfNode TO TIME:SECONDS + node:ETA.
-	LOCAL debugNow IS TIME:SECONDS.
-	PRINT "DEBUG STARTING CALCULATE NODE BURN TIME AT " + debugNow.
-	SET nodeBurnTime TO calculateBurnTimeForDeltaV(node:DELTAV:MAG).
-	PRINT "DEBUG ENDING CALCULATE NODE BURN TIME AT " + (debugNow - TIME:SECONDS).
 
-	LOCK nodePrograde TO node:BURNVECTOR.
+	SET nodeBurnTime TO calculateBurnTimeForDeltaV(node:DELTAV:MAG).
 }
 
 FUNCTION executeNode {
 	PARAMETER newNode IS NEXTNODE, shouldWarp IS FALSE, buffer IS 60.
 	IF NOT(HASNODE) RETURN.
-	initializeControls().
-	initializeNode().
-	//IF VERBOSE
-	PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).
-	//IF VERBOSE
-	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
-	waitUntilNode(shouldWarp).
-	performManeuverNodeBurn().
+	initializeControls().
+	initializeNode(newNode).
+
+	IF VERBOSE {PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).}
+	IF VERBOSE {PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).}
+
+	// waitUntilNode(shouldWarp).
+	waitForAlignmentTo(node:BURNVECTOR).
+
+	waitUntil(timeOfNode - nodeBurnTime/2,shouldWarp,buffer).
+
+	performManeuverNodeBurn(newNode).
+
 	REMOVE node.
 	LOCK STEERING TO PROGRADE.
 	//deinitializeControls().
-
 }
-executeNode().

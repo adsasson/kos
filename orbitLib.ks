@@ -2,16 +2,18 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-LOCAL orbitTargetHeading IS 90.
-LOCAL orbitTargetApoapsis IS 100000.
-LOCAL orbitTargetPeriapsis IS 100000.
-LOCAL orbitStaging IS TRUE.
-//LOCAL useNode IS TRUE.
+LOCAL targetApoapsis IS 100000.
+LOCAL targetPeriapsis IS 100000.
+LOCAL useNode IS FALSE.
+LOCAL useWarp IS FALSE.
 
-LOCAL targetApsisHeight IS orbitTargetApoapsis.
+LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
 LOCAL burnDirection TO SHIP:PROGRADE.
 
+LOCAL orbitalInsertionBurnDV IS 0.
+LOCAL orbitalInsertionBurnTime IS 0.
+LOCAL etaToBurn IS 0.
 
 dependsOn("orbitalMechanicsLib.ks").
 dependsOn("shipStats.ks").
@@ -22,56 +24,56 @@ FUNCTION correctForEccentricity {
 	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
 		SET apsis TO SHIP:APOAPSIS.
 		SET burnDirection TO SHIP:PROGRADE.
+		SET etaToBurn TO ETA:APOAPSIS.
 	} ELSE { //parabolic or hyperbolic
 		SET apsis TO SHIP:PERIAPSIS.
 		SET burnDirection TO SHIP:RETROGRADE.
-		SET targetApsisHeight TO orbitTargetPeriapsis.
+		SET targetApsisHeight TO targetPeriapsis.
+		SET etaToBurn TO ETA:PERIAPSIS.
 	}
 }
 //TODO: functions to check that burn apsis is above atmosphere or minimum feature HEIGHT,
 //then correct burn time and burn point if too low. Which leads to the idea of:
 //TODO: aerobrake function for atmospheric bodies.
 
-
 FUNCTION checkPeriapsisMinimumValue {
 	PARAMETER tolerance IS 0.1.
-		//first make sure peri < apo.
-		IF orbitTargetPeriapsis > orbitTargetApoapsis {
-			LOCAL temp IS orbitTargetPeriapsis.
-			SET orbitTargetPeriapsis TO orbitTargetApoapsis.
-			SET orbitTargetApoapsis TO temp.
-		}
+	//first make sure peri < apo.
+	IF targetPeriapsis > targetApoapsis {
+		LOCAL temp IS targetPeriapsis.
+		SET targetPeriapsis TO targetApoapsis.
+		SET targetApoapsis TO temp.
+	}
 
-		IF SHIP:BODY:ATM:EXISTS {
-		IF orbitTargetPeriapsis < SHIP:BODY:ATM:HEIGHT {
-			SET orbitTargetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
+	IF SHIP:BODY:ATM:EXISTS {
+		IF targetPeriapsis < SHIP:BODY:ATM:HEIGHT {
+			SET targetPeriapsis TO SHIP:BODY:ATM:HEIGHT * (1 + tolerance).
 			notify("WARNING: Orbit will not clear atmosphere. " +
-							"Adjusting periapsis to " +	orbitTargetPeriapsis + " m").
+			"Adjusting periapsis to " +	targetPeriapsis + " m").
 		}
 	} ELSE {
 		LOCAL minFeatureHeight TO surfaceFeature[SHIP:BODY:NAME].
-		IF orbitTargetPeriapsis < minFeatureHeight {
+		IF targetPeriapsis < minFeatureHeight {
 			SET targetAlt TO minFeatureHeight * (1 + tolerance).
 			notify("WARNING: Orbit will not clear minimum surface feature altitude."
-						+ " Adjusting periapsis to " + orbitTargetPeriapsis + " m").
+			+ " Adjusting periapsis to " + targetPeriapsis + " m").
 		}
 	}
 }
 
+FUNCTION calculateOrbitBurnParameters {
+	LOCAL pressure IS 0.
+	IF SHIP:BODY:ATM:EXISTS {SET pressure TO SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).}
+
+	LOCAL targetSemiMajorAxis IS (targetPeriapsis + targetApoapsis)/2 + SHIP:BODY:RADIUS.
+	SET orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
+	SET orbitalInsertionBurnTime TO calculateBurnTimeForDeltaV(orbitalInsertionBurnDV, pressure).
+}
+
 FUNCTION performOnOrbitBurn {
 	LOCAL currentPressure IS SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).
-	LOCAL etaToBurn TO ETA:APOAPSIS.
-
-	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
-		//parabolic or hyperbolic
-		SET etaToBurn TO ETA:PERIAPSIS.
-	}
 
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
-
-	LOCAL targetSemiMajorAxis TO (orbitTargetPeriapsis + orbitTargetApoapsis)/2 + SHIP:BODY:RADIUS.
-	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
-	LOCAL orbitalInsertionBurnTime TO calculateBurnTimeForDeltaV(orbitalInsertionBurnDV, currentPressure).
 
 	LOCAL LOCK r0 TO SHIP:POSITION.
 	LOCAL LOCK r1 TO POSITIONAT(SHIP,tau).
@@ -84,32 +86,26 @@ FUNCTION performOnOrbitBurn {
 	LOCK STEERING TO burnVector.
 
 	waitForAlignmentTo(burnVector).
-	print "Debug burn deltaV: " + orbitalInsertionBurnDV.
-	print "Debug burn time: " + orbitalInsertionBurnTime.
-	print "Debug eta time: " + etaToBurn.
+	IF VERBOSE {
+		print "Burn deltaV: " + ROUND(orbitalInsertionBurnDV,2).
+		print "Burn time: " + ROUND(orbitalInsertionBurnTime,2).
+		print "Burn eta: " + ROUND(etaToBurn,2).
+	}
 
 	LOCAL startTime IS tau - orbitalInsertionBurnTime/2.
-	//performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
 
-	WAIT UNTIL TIME:SECONDS >= startTime. {
-		SET lockedThrottle TO 1.
-		stageLogic().
-		WAIT orbitalInsertionBurnTime.
-		SET lockedThrottle TO 0.
-	}
+	waitUntil(startTime,useWarp).
+	performBurn(burnVector,startTime,(startTime + orbitalInsertionBurnTime)).
+	// WAIT UNTIL TIME:SECONDS >= startTime. {
+	// 	SET lockedThrottle TO 1.
+	// 	stageLogic().
+	// 	WAIT orbitalInsertionBurnTime.
+	// 	SET lockedThrottle TO 0.
+	// }
 }
 
 FUNCTION createOnOrbitManeuverNode {
-	LOCAL LOCK etaToBurn TO ETA:APOAPSIS.
-
-	// IF SHIP:ORBIT:ECCENTRICITY >= 1 {
-	// 	//parabolic or hyperbolic
-	// 	LOCK etaToBurn TO ETA:PERIAPSIS.
-	// }
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
-
-	LOCAL targetSemiMajorAxis TO (orbitTargetPeriapsis + orbitTargetApoapsis)/2 + SHIP:BODY:RADIUS.
-	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
 
 	LOCAL onOrbitNode IS NODE(tau, 0, 0, orbitalInsertionBurnDV).
 	RETURN onOrbitNode.
@@ -119,20 +115,21 @@ FUNCTION createOnOrbitManeuverNode {
 
 
 FUNCTION performOrbitalInsertion {
-	PARAMETER paramHeading IS 90,
-						paramApoapsis IS 100000,
-						paramPeriapsis IS 100000,
-						paramStaging TO TRUE,
-						useNode IS FALSE.
+	PARAMETER paramApoapsis IS 100000,
+	paramPeriapsis IS 100000,
+	paramUseNode IS FALSE,
+	paramUseWarp IS FALSE.
 
-	SET orbitTargetHeading TO paramHeading.
-	SET orbitTargetApoapsis TO paramApoapsis.
-	SET orbitTargetPeriapsis TO paramPeriapsis.
-	SET orbitStaging TO paramStaging.
+	SET targetApoapsis TO paramApoapsis.
+	SET targetPeriapsis TO paramPeriapsis.
+	SET useWarp TO paramUseWarp.
+	SET useNode TO paramUseNode.
 
-	initializeControls().
-	correctForEccentricity().
+	//initializeControls().
 	checkPeriapsisMinimumValue().
+	correctForEccentricity().
+	calculateOrbitBurnParameters().
+
 	IF useNode = FALSE {
 		performOnOrbitBurn().
 	} ELSE {
