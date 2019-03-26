@@ -23,11 +23,8 @@ FUNCTION waitUntilNode {
 	//IF VERBOSE
 	PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).
 
-	IF shouldWarp {
-		KUNIVERSE:TIMEWARP:WARPTO(timeOfNode - nodeBurnTime/2 + timeBuffer).
-	}
+	waitUntil((timeOfNode - nodeBurnTime/2),shouldWarp,timeBuffer).
 
-	WAIT UNTIL node:ETA <= (ROUND(node:ETA - nodeBurnTime/2) + timeBuffer).
 	LOCK STEERING TO nodePrograde.
 
 	IF VERBOSE notify("Orienting to node").

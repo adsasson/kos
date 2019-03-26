@@ -6,13 +6,14 @@ LOCAL targetApoapsis IS 100000.
 LOCAL targetPeriapsis IS 100000.
 //LOCAL scaleHeight IS 100000.
 LOCAL goalTWR IS 2.
-LOCAL staging IS TRUE.
+
 LOCAL targetApsisHeight IS targetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
 
 LOCAL orbitalInsertionBurnDV IS 0.
 LOCAL orbitalInsertionBurnTime IS 0.
 LOCAL etaToBurn IS 0.
+LOCAL burnVector IS 0.
 
 //LOCAL useNode IS TRUE.
 
@@ -79,7 +80,6 @@ FUNCTION countdown {
 	}
 }
 
-
 FUNCTION correctForEccentricity {
 	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
 		SET apsis TO SHIP:APOAPSIS.
@@ -92,17 +92,20 @@ FUNCTION correctForEccentricity {
 FUNCTION ascend {
 	LOCAL LOCK maximumTWR TO maxTWR().
 	//normalize altitude to scale height.
-	//LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/scaleHeight),2).
-	LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/targetApoapsis),2).
+	LOCAL scaleHeight IS 1.
+	IF SHIP:BODY:ATM:EXISTS {
+		SET scaleHeight TO MAX(targetApoapsis, SHIP:BODY:ATM:HEIGHT * 1.1).
+	} ELSE {
+		SET scaleHeight TO targetApoapsis.
+	}
+	LOCK normalizedAltitude TO ROUND((SHIP:ALTITUDE/scaleHeight),2).
 
 	LOCK deltaPitch TO 90 * SQRT(normalizedAltitude).
 	clearscreen.
 
 	UNTIL SHIP:APOAPSIS >= targetApoapsis {
 
-		IF staging {
 			stageLogic().
-		}
 
 		IF (SHIP:BODY:ATM:EXISTS AND (SHIP:ALTITUDE < SHIP:BODY:ATM:HEIGHT)) {
 			IF (maximumTWR <> 0) SET lockedThrottle TO MIN(1,MAX(0,goalTWR/maximumTWR)).
@@ -129,6 +132,7 @@ FUNCTION correctForDrag {
 
 		SET lockedThrottle TO 0.
 	}
+	correctForEccentricity().
 }
 
 
@@ -137,151 +141,100 @@ FUNCTION correctForDrag {
 //TODO: aerobrake function for atmospheric bodies.
 
 
-FUNCTION performOnOrbitBurn {
-	LOCAL tau TO etaToBurn + TIME:SECONDS.
-
-	LOCAL LOCK r0 TO SHIP:POSITION.
-	LOCAL LOCK r1 TO POSITIONAT(SHIP,tau).
-	LOCAL LOCK deltaR TO r1 - r0.
-
-	LOCAL LOCK v1 TO VELOCITYAT(SHIP,tau):ORBIT * orbitalInsertionBurnDV.
-	LOCAL LOCK v0 TO SHIP:VELOCITY:ORBIT.
-	LOCAL LOCK burnVector TO deltaR + v1.
-
-	LOCK STEERING TO burnVector.
-
-	waitForAlignmentTo(burnVector).
-	print "Debug burn deltaV: " + orbitalInsertionBurnDV.
-	print "Debug burn time: " + orbitalInsertionBurnTime.
-	print "Debug eta time: " + etaToBurn.
-
-
-}
-
-FUNCTION createOnOrbitManeuverNode {
-	LOCAL etaToBurn TO ETA:APOAPSIS.
-
-	// IF SHIP:ORBIT:ECCENTRICITY >= 1 {
-	// 	//parabolic or hyperbolic
-	// 	LOCK etaToBurn TO ETA:PERIAPSIS.
-	// }
-	LOCAL tau TO etaToBurn + TIME:SECONDS.
+FUNCTION calculateBurnParameters {
+	PARAMETER pressure IS 0.
+	IF SHIP:BODY:ATM:EXISTS {
+		SET pressure TO SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).
+	}
 
 	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
-	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
+	SET orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
+	SET orbitalInsertionBurnTime TO calculateBurnTimeForDeltaV(orbitalInsertionBurnDV, pressure).
 
-	LOCAL onOrbitNode IS NODE(tau, 0, 0, orbitalInsertionBurnDV).
-	RETURN onOrbitNode.
+	SET etaToBurn TO ETA:APOAPSIS.
+
+	IF SHIP:ORBIT:ECCENTRICITY >= 1 {
+		//parabolic or hyperbolic
+		SET etaToBurn TO ETA:PERIAPSIS.
+	}
+	LOCAL tau TO etaToBurn + TIME:SECONDS.
+
+	LOCAL r0 TO SHIP:POSITION.
+	LOCAL r1 TO POSITIONAT(SHIP,tau).
+	LOCAL deltaR TO r1 - r0.
+
+	LOCAL v1 TO VELOCITYAT(SHIP,tau):ORBIT * orbitalInsertionBurnDV.
+	LOCAL v0 TO SHIP:VELOCITY:ORBIT.
+	SET burnVector TO deltaR + v1.
 }
-
 //======================================
 
 
 FUNCTION performOrbitalInsertion {
-	PARAMETER paramHeading IS 90,
-	paramApoapsis IS 100000,
-	paramPeriapsis IS 100000,
-	paramStaging TO TRUE,
-	useNode IS FALSE.
+	PARAMETER useNode IS FALSE, warpFlag IS FALSE, buffer IS 60.
+
+	LOCAL startTime IS (etaToBurn + TIME:SECONDS) - orbitalInsertionBurnTime/2.
+	waitUntil(startTime,warpFlag,buffer).
+
+	IF useNode = FALSE {
+		LOCK STEERING TO burnVector.
+		waitForAlignmentTo(burnVector).
+
+		WAIT UNTIL TIME:SECONDS >= startTime. {
+			SET lockedThrottle TO 1.
+			stageLogic().
+			WAIT orbitalInsertionBurnTime.
+			SET lockedThrottle TO 0.
+		}
+	} ELSE {
+		LOCAL onOrbitNode IS NODE(etaToBurn + TIME:SECONDS, 0, 0, orbitalInsertionBurnDV).
+		ADD onOrbitNode.
+
+		if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
+		WAIT 0.5.
+		LOCK STEERING TO onOrbitNode:BURNVECTOR.
+		waitForAlignmentTo(onOrbitNode:BURNVECTOR).
+
+		RUNONCEPATH("executeNode.ks").
+		performManeuverNodeBurn(onOrbitNode).
+		REMOVE node.
+	}
+}
+
+FUNCTION performLaunch {
+	PARAMETER paramHeading IS 90, paramApoapsis IS 100000, paramPeriapsis IS 100000,
+	orbitFlag IS TRUE,
+	useNode IS TRUE, warpFlag IS FALSE,
+	paramGoalTWR IS 2,
+	buffer IS 60.
 
 	SET targetHeading TO paramHeading.
-	SET targetApoapsis TO paramApoapsis.
-	SET targetPeriapsis TO paramPeriapsis.
-	SET orbitStaging TO paramStaging.
+	SET targetApoapsis TO paramApoapsis. SET targetPeriapsis TO paramPeriapsis.
+	SET goalTWR TO paramGoalTWR.
 
+	sanitizeInput().
 	initializeControls().
-	correctForEccentricity().
-	checkPeriapsisMinimumValue().
-	IF useNode = FALSE {
-		performOnOrbitBurn().
-	} ELSE {
-		LOCAL burnNode IS createOnOrbitManeuverNode().
-		ADD burnNode.
-		WAIT 0.5.
-		executeNode().
+	SET lockedCompassHeading TO targetHeading.
+	ignition().
+	ascend().
+
+	IF orbitFlag { //put this here because calculating params may take some time
+		correctForEccentricity().
+		calculateBurnParameters().
 	}
 
-	FUNCTION performLaunch {
-		PARAMETER paramHeading IS 90,
-		paramApoapsis IS 100000,
-		paramPeriapsis IS 100000,
-		paramScaleHeight IS 100000,
-		useNode IS FALSE,
-		warpFlag IS FALSE,
-		orbitFlag IS TRUE,
-		paramGoalTWR IS 2,
-		paramStaging TO TRUE.
-
-		SET targetHeading TO paramHeading.
-		SET targetApoapsis TO paramApoapsis.
-		SET targetPeriapsis TO paramPeriapsis.
-		SET staging TO paramStaging.
-		SET scaleHeight TO paramScaleHeight.
-		SET goalTWR TO paramGoalTWR.
-
-		sanitizeInput().
-		initializeControls().
-		SET lockedCompassHeading TO launchTargetHeading.
-		ignition().
-		ascend().
-
-		IF orbitFlag { //put this here because calculating node may take some time
-			correctForEccentricity().
-			calculateBurnParameters().
-		}
-
-		IF SHIP:BODY:ATM:EXISTS {
-			//WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
-			WAIT UNTIL (SHIP:STATUS <> "FLYING").
-			engageDeployables().
-			correctForDrag().
-		}
-		IF orbitFlag{
-			//wait until burn
-			LOCAL startTime IS (etaToBurn + TIME:SECONDS) - orbitalInsertionBurnTime/2.
-			//performBurn(burnVector,startTime,startTime + orbitalInsertionBurnTime).
-
-
-
-			IF useNode {
-				LOCAL onOrbitNode IS NODE(etaToBurn + TIME:SECONDS, 0, 0, orbitalInsertionBurnDV).
-				ADD onOrbitNode.
-				if not hasFile("executeNode.ks",1) {download("executeNode.ks",1).}
-				WAIT 0.5.
-				RUNONCEPATH("executeNode.ks").
-
-				performManeuverNodeBurn(onOrbitNode).
-
-				REMOVE node.
-			} ELSE {
-				WAIT UNTIL TIME:SECONDS >= startTime. {
-					SET lockedThrottle TO 1.
-					stageLogic().
-					WAIT orbitalInsertionBurnTime.
-					SET lockedThrottle TO 0.
-				}
-						}
-		}
-		LOCK STEERING TO PROGRADE.
-		deinitializeControls().
+	IF SHIP:BODY:ATM:EXISTS {
+		//WAIT UNTIL (SHIP:ALTITUDE >= SHIP:BODY:ATM:HEIGHT).
+		WAIT UNTIL (SHIP:STATUS <> "FLYING").
+		engageDeployables().
+		correctForDrag().
 	}
 
-	FUNCTION calculateBurnParameters {
-		PARAMETER pressure IS 0.
-		IF SHIP:BODY:ATM:EXISTS {
-			SET pressure TO SHIP:BODY:ATM:ALTITUDEPRESSURE(apsis).
-		}
-		SET etaToBurn TO ETA:APOAPSIS.
-
-		IF SHIP:ORBIT:ECCENTRICITY >= 1 {
-			//parabolic or hyperbolic
-			SET etaToBurn TO ETA:PERIAPSIS.
-		}
-		LOCAL tau TO etaToBurn + TIME:SECONDS.
-
-		LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
-		SET orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
-		SET orbitalInsertionBurnTime TO calculateBurnTimeForDeltaV(orbitalInsertionBurnDV, currentPressure).
-
+	IF orbitFlag{
+		IF VERBOSE PRINT "Finished launch program, beginning orbital insertion".
+		performOrbitalInsertion(useNode,warpFlag,buffer).
 	}
+
+	LOCK STEERING TO PROGRADE.
+	deinitializeControls().
 }

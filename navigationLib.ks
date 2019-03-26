@@ -42,6 +42,16 @@ FUNCTION waitForAlignmentTo {
 	RETURN TRUE.
 }
 
+FUNCTION waitUntil {
+	PARAMETER absoluteTime, shouldWarp IS TRUE, timeBuffer IS 60.
+
+	IF shouldWarp AND ((absoluteTime - TIME:SECONDS) > 2*timeBuffer) {
+		KUNIVERSE:TIMEWARP:WARPTO(absoluteTime - timeBuffer).
+	} ELSE {
+		WAIT UNTIL absoluteTime - timeBuffer.
+	}
+}
+
 FUNCTION performBurn {
 	PARAMETER burnVector, burnStartTime, burnEndTime, useStaging IS TRUE, targetThrottle IS 1.
 	LOCK STEERING TO burnVector.
