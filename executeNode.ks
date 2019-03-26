@@ -1,16 +1,17 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-dependsOn("shipLib.ks").
-dependsOn("navigationLib.ks").
-dependsOn("shipStats.ks").
-
 
 LOCAL node TO NEXTNODE.
 LOCAL timeBuffer TO 60.
 LOCAL nodePrograde TO 0.
 LOCAL nodeBurnTime IS 0.
 LOCAL timeOfNode IS 0.
+
+
+dependsOn("shipLib.ks").
+dependsOn("navigationLib.ks").
+dependsOn("shipStats.ks").
 
 
 FUNCTION waitUntilNode {

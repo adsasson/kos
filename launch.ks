@@ -1,10 +1,6 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-dependsOn("shipLib.ks").
-dependsOn("navigationLib.ks").
-//dependsOn("constants.ks").
-
 //TODO: add param for inclination launch, which is heading =  90 + inclination
 
 
@@ -13,6 +9,11 @@ LOCAL launchTargetApoapsis IS 100000.
 LOCAL launchScaleHeight IS 100000.
 LOCAL launchGoalTWR IS 2.
 LOCAL launchStaging TO TRUE.
+
+
+dependsOn("shipLib.ks").
+dependsOn("navigationLib.ks").
+//dependsOn("constants.ks").
 
 FUNCTION sanitizeInput {
 	IF launchTargetHeading > 360 {

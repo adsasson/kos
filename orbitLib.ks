@@ -2,12 +2,6 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-dependsOn("orbitalMechanicsLib.ks").
-dependsOn("shipStats.ks").
-dependsOn("navigationLib.ks").
-//dependsOn("constants.ks").
-
-
 LOCAL orbitTargetHeading IS 90.
 LOCAL orbitTargetApoapsis IS 100000.
 LOCAL orbitTargetPeriapsis IS 100000.
@@ -17,6 +11,12 @@ LOCAL orbitStaging IS TRUE.
 LOCAL targetApsisHeight IS orbitTargetApoapsis.
 LOCAL apsis TO SHIP:APOAPSIS.
 LOCAL burnDirection TO SHIP:PROGRADE.
+
+
+dependsOn("orbitalMechanicsLib.ks").
+dependsOn("shipStats.ks").
+dependsOn("navigationLib.ks").
+//dependsOn("constants.ks").
 
 FUNCTION correctForEccentricity {
 	IF SHIP:ORBIT:ECCENTRICITY < 1 { //elliptical
@@ -69,7 +69,7 @@ FUNCTION performOnOrbitBurn {
 
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
 
-	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
+	LOCAL targetSemiMajorAxis TO (orbitTargetPeriapsis + orbitTargetApoapsis)/2 + SHIP:BODY:RADIUS.
 	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
 	LOCAL orbitalInsertionBurnTime TO calculateBurnTimeForDeltaV(orbitalInsertionBurnDV, currentPressure).
 
@@ -108,7 +108,7 @@ FUNCTION createOnOrbitManeuverNode {
 	// }
 	LOCAL tau TO etaToBurn + TIME:SECONDS.
 
-	LOCAL targetSemiMajorAxis TO (apsis + targetApsisHeight)/2 + SHIP:BODY:RADIUS.
+	LOCAL targetSemiMajorAxis TO (orbitTargetPeriapsis + orbitTargetApoapsis)/2 + SHIP:BODY:RADIUS.
 	LOCAL orbitalInsertionBurnDV TO deltaV(apsis, SHIP:ORBIT:SEMIMAJORAXIS, targetSemiMajorAxis).
 
 	LOCAL onOrbitNode IS NODE(tau, 0, 0, orbitalInsertionBurnDV).

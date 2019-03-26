@@ -1,10 +1,6 @@
 @LAZYGLOBAL OFF.
 RUNONCEPATH(bootfile).
 
-dependsOn("launch.ks").
-dependsOn("orbitLib.ks").
-dependsOn("shipStats.ks").
-
 
 PARAMETER inputHeading IS 90,
           inputApoapsis IS 100000,
@@ -13,6 +9,12 @@ PARAMETER inputHeading IS 90,
           inputGoalTWR IS 2,
           inputStaging TO TRUE,
           inputUseNode IS FALSE.
+
+
+          dependsOn("launch.ks").
+          dependsOn("orbitLib.ks").
+          dependsOn("shipStats.ks").
+
 SET vesselStatsLexicon TO stageAnalysis().
 
 performLaunch(inputHeading,inputApoapsis,inputScaleHeight,inputGoalTWR,inputStaging).
