@@ -7,7 +7,6 @@ PARAMETER inputHeading IS 90,
           inputUseNode IS TRUE,
           inputWarpFlag IS FALSE,
           inputGoalTWR IS 2,
-          inputStaging TO TRUE,
           inputBuffer IS 60.
 
           RUNONCEPATH(bootfile).
@@ -17,6 +16,4 @@ PARAMETER inputHeading IS 90,
 
 SET vesselStatsLexicon TO stageAnalysis().
 
-performLaunch(inputHeading,inputApoapsis,inputPeriapsis,inputOrbitFlag,inputUseNode,inputWarpFlag,inputGoalTWR,inputStaging,inputBuffer).
-IF VERBOSE PRINT "Finished launch program, beginning orbital insertion".
-performOrbitalInsertion(inputHeading,inputApoapsis,inputPeriapsis,inputStaging,inputUseNode).
+performLaunch(inputHeading,inputApoapsis,inputPeriapsis,inputOrbitFlag,inputUseNode,inputWarpFlag,inputGoalTWR,inputBuffer).
