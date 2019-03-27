@@ -99,17 +99,19 @@ FUNCTION executeNode {
 	initializeControls().
 	initializeNode(newNode).
 
-	IF VERBOSE {PRINT "Node in: " + ROUND(node:ETA) + ", DeltaV: " + ROUND(node:DELTAV:MAG).}
-	IF VERBOSE {PRINT "Burn Start in: " + ROUND(node:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).}
+	IF VERBOSE {PRINT "Node in: " + ROUND(newNode:ETA) + ", DeltaV: " + ROUND(newNode:DELTAV:MAG).}
+	IF VERBOSE {PRINT "Burn Start in: " + ROUND(newNode:ETA - nodeBurnTime/2) + ", BurnTime: " + ROUND(nodeBurnTime).}
+
+	LOCK STEERING TO newNode:BURNVECTOR.
 
 	// waitUntilNode(shouldWarp).
-	waitForAlignmentTo(node:BURNVECTOR).
+	waitForAlignmentTo(newNode:BURNVECTOR).
 
 	waitUntil(timeOfNode - nodeBurnTime/2,shouldWarp,buffer).
-
+	WAIT UNTIL TIME:SECONDS >= (timeOfNode - nodeBurnTime/2).
 	performManeuverNodeBurn(newNode).
 
-	REMOVE node.
+	REMOVE newNode.
 	LOCK STEERING TO PROGRADE.
 	//deinitializeControls().
 }

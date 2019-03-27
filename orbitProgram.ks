@@ -11,7 +11,6 @@ PARAMETER inputHeading IS 90,
 
 
           dependsOn("launchLib.ks").
-          dependsOn("orbitLib.ks").
           dependsOn("shipStats.ks").
 
 SET vesselStatsLexicon TO stageAnalysis().

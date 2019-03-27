@@ -84,7 +84,7 @@ FUNCTION performOnOrbitBurn {
 	// LOCAL LOCK burnVector TO deltaR + v1.
 
 	LOCAL burnVector IS calculateBurnVector(orbitalInsertionBurnDV,tau).
-	
+
 	LOCK STEERING TO burnVector.
 
 	waitForAlignmentTo(burnVector).
