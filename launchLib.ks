@@ -10,6 +10,17 @@ LOCAL goalTWR IS 2.
 
 LOCAL deployablesDeployed IS FALSE.
 
+LOCAL targetPeriapsis IS 100000.
+LOCAL useNode IS FALSE.
+LOCAL useWarp IS FALSE.
+
+LOCAL targetApsisHeight IS targetApoapsis.
+LOCAL apsis TO SHIP:APOAPSIS.
+LOCAL burnDirection TO SHIP:PROGRADE.
+
+LOCAL orbitalInsertionBurnDV IS 0.
+LOCAL orbitalInsertionBurnTime IS 0.
+LOCAL etaToBurn IS 0.
 
 dependsOn("shipLib.ks").
 dependsOn("navigationLib.ks").
@@ -119,18 +130,7 @@ FUNCTION performLaunch {
 }
 
 //ORBIT FUNCTIONS
-LOCAL targetApoapsis IS 100000.
-LOCAL targetPeriapsis IS 100000.
-LOCAL useNode IS FALSE.
-LOCAL useWarp IS FALSE.
 
-LOCAL targetApsisHeight IS targetApoapsis.
-LOCAL apsis TO SHIP:APOAPSIS.
-LOCAL burnDirection TO SHIP:PROGRADE.
-
-LOCAL orbitalInsertionBurnDV IS 0.
-LOCAL orbitalInsertionBurnTime IS 0.
-LOCAL etaToBurn IS 0.
 
 
 FUNCTION correctForEccentricity {
@@ -197,7 +197,7 @@ FUNCTION performOnOrbitBurn {
 	// LOCAL LOCK burnVector TO deltaR + v1.
 
 	LOCAL burnVector IS calculateBurnVector(orbitalInsertionBurnDV,tau).
-	
+
 	LOCK STEERING TO burnVector.
 
 	waitForAlignmentTo(burnVector).
