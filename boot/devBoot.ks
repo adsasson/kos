@@ -92,8 +92,6 @@ FUNCTION restore {
   download(fileName,targetVolume).
   PRINT "Restored " + fileName + " from archive.".
 }
-  //download("landProgram.ks",1).
-  download("orbitProgram.ks",1).
-  download("executeNodeProgram.ks",1).
+  download("testHover.ks",1).
 
 dependsOn("constants.ks").
