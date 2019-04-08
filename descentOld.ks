@@ -4,6 +4,7 @@ RUNONCEPATH(bootfile).
 dependsOn("navigationLib.ks").
 dependsOn("hohmann.ks").
 dependsOn("orbitalMechanicsLib.ks").
+dependsOn("shipLib.ks").
 
 FUNCTION descent {
 	PARAMETER transitionHeight IS 1000, flag IS "analytic".
@@ -151,9 +152,9 @@ FUNCTION poweredLanding {
 DECLARE FUNCTION hover {
 	DECLARE PARAMETER hoverPoint, bingoFuel IS 0.1.
 
-	LOCAL Kp TO 0.1.
-	LOCAL Ki TO 0.005.
-	LOCAL Kd TO 0.01.
+	LOCAL Kp TO 2.7.
+	LOCAL Ki TO 4.4.
+	LOCAL Kd TO 0.12.
 
 	initializeControls().
 

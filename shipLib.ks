@@ -72,7 +72,24 @@ FUNCTION engageParachutes {
 	}
 }
 //================================================================
+FUNCTION fuelReserve {
+	PARAMETER resourceName, allStages IS FALSE.
+	LOCAL fuelRes TO 0.
+	LOCAL resList TO LIST().
 
+	IF allStages {
+		SET resList TO RESOURCES.
+	} ELSE {
+		SET resList TO STAGE:RESOURCES.
+	}
+
+	FOR res IN resList {
+		IF res:NAME = resourceName.
+		SET fuelRes TO res.
+	}
+
+	IF fuelRes <> 0 RETURN fuelRes:AMOUNT/fuelRes:CAPACITY.
+}
 
 FUNCTION burnTimeTotal {
   PARAMETER burnDV, pressure IS 0.

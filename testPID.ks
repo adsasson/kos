@@ -1,0 +1,2 @@
+@LAZYGLOBAL OFF.
+RUNONCEPATH(bootfile).
