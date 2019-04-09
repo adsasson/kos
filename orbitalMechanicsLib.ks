@@ -46,6 +46,17 @@ FUNCTION calculateBurnVector {
 	LOCAL v1 TO VELOCITYAT(SHIP,timeOfBurn):ORBIT * burnDeltaV.
 	RETURN (r1 - r0) + v1.
 }
+//===========================
+//vis viva
+
+FUNCTION VisViva {
+	//v = sqrt(mu*(2/r - 1/a))
+	PARAMETER R, alpha IS SHIP:ORBIT:SEMIMAJORAXIS, cMu IS SHIP:BODY:MU.
+
+	LOCAL velAtR TO SQRT(cMu * (2/R - 1/alpha)).
+
+	RETURN velAtR.
+}
 //tofang
 //
 //a angle around orbit
