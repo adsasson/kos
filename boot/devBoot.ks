@@ -2,6 +2,7 @@
 
 GLOBAL bootFile IS SHIP:MODULESNAMED("kosprocessor")[0]:BOOTFILENAME.
 GLOBAL verbose IS FALSE.
+GLOBAL vesselStatsLexicon IS "UNDEFINED".
 
 CORE:DOEVENT("open terminal").
 

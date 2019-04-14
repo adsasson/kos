@@ -158,21 +158,43 @@ FUNCTION poweredLanding {
   //SET hoverPID:SETPOINT TO 0.
 
   //LOCAL LOCK fuelRes TO fuelReserve("liquidFuel").
+	LOCK STEERING TO SHIP:SRFRETROGRADE.
 
-  LOCK STEERING TO SHIP:SRFRETROGRADE.
+  //LOCK STEERING TO descent_vector().
   LOCK THROTTLE TO MIN(targetTWR/mTWR,1).
-	RCS ON.
-  UNTIL SHIP:STATUS = "LANDED" {
-		SET hoverPID:SETPOINT TO SHIP:ALTITUDE/10.
-    SET hoverPID:MAXOUTPUT TO mTWR.
-    SET targetTWR TO hoverPID:UPDATE(TIME:SECONDS, SHIP:VERTICALSPEED).
-		IF starComponent:MAG > 1 SET starComponent TO starComponent:NORMALIZED.
-		IF topComponent:MAG > 1 SET topComponent TO topComponent:NORMALIZED.
+	//RCS ON.
 
-	  SET SHIP:CONTROL:STARBOARD  TO starComponent 	* SHIP:FACING:STARVECTOR.
-	  SET SHIP:CONTROL:TOP        TO topComponent 	* SHIP:FACING:TOPVECTOR.
+  UNTIL SHIP:STATUS = "LANDED" {
+		SET hoverPID:SETPOINT TO -SHIP:ALTITUDE/50.
+
+    SET hoverPID:MAXOUTPUT TO mTWR.
+		//fix for going back up
+    SET targetTWR TO hoverPID:UPDATE(TIME:SECONDS, SHIP:VERTICALSPEED).
+		//IF starComponent:MAG > 1 SET starComponent TO starComponent:NORMALIZED.
+		//IF topComponent:MAG > 1 SET topComponent TO topComponent:NORMALIZED.
+
+	  //SET SHIP:CONTROL:STARBOARD  TO starComponent 	* SHIP:FACING:STARVECTOR.
+	  //SET SHIP:CONTROL:TOP        TO topComponent 	* SHIP:FACING:TOPVECTOR.
     WAIT 0.
   }
 	SAS ON.
 	SET lockedThrottle TO 0.
+}
+
+function descent_vector {
+
+	if vang(srfretrograde:vector, up:vector) > 90 return unrotate(up).
+
+	return unrotate(up:vector * g() - velocity:surface).
+
+}
+
+  function g { return body:mu / ((ship:altitude + body:radius)^2). }
+
+function unrotate {
+
+	parameter v. if v:typename <> "Vector" set v to v:vector.
+
+	return lookdirup(v, ship:facing:topvector).
+
 }

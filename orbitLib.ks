@@ -17,7 +17,7 @@ LOCAL burnVector IS 0.
 
 //LOCAL useNode IS TRUE.
 
-//RUNONCEPATH(bootfile).
+RUNONCEPATH(bootfile).
 
 dependsOn("orbitalMechanicsLib.ks").
 dependsOn("shipStats.ks").
@@ -94,7 +94,8 @@ FUNCTION ascend {
 	//normalize altitude to scale height.
 	LOCAL scaleHeight IS 1.
 	IF SHIP:BODY:ATM:EXISTS {
-		SET scaleHeight TO MAX(targetApoapsis, SHIP:BODY:ATM:HEIGHT * 1.1).
+		// SET scaleHeight TO MAX(targetApoapsis, SHIP:BODY:ATM:HEIGHT * 1.1).
+		SET scaleHeight TO SHIP:BODY:ATM:HEIGHT * 1.5.
 	} ELSE {
 		SET scaleHeight TO targetApoapsis.
 	}
@@ -195,9 +196,10 @@ FUNCTION performOrbitalInsertion {
 		LOCK STEERING TO onOrbitNode:BURNVECTOR.
 		waitForAlignmentTo(onOrbitNode:BURNVECTOR).
 
+		WAIT UNTIL TIME:SECONDS >= startTime.
 		RUNONCEPATH("executeNode.ks").
 		performManeuverNodeBurn(onOrbitNode).
-		REMOVE node.
+		REMOVE onOrbitNode.
 	}
 }
 

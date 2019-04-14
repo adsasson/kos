@@ -83,6 +83,7 @@ FUNCTION performManeuverNodeBurn {
 			SET done TO TRUE.
 			WAIT 1.
 		}
+		WAIT 0.
 		//IF node:DELTAV:MAG > oldNodeDeltaV {PRINT "DELTA V INCREASING". BREAK.}
 	}
 
@@ -98,7 +99,7 @@ FUNCTION executeNode {
 			performManeuverNodeBurn(node).
 	}
 
-	REMOVE node.
+	//REMOVE node.
 	LOCK STEERING TO PROGRADE.
 	deinitializeControls().
 
