@@ -94,3 +94,6 @@ FUNCTION restore {
   download(fileName,targetVolume).
   PRINT "Restored " + fileName + " from archive.".
 }
+
+dependsOn("constants.ks").
+download("orbitProgram.ks",1).
